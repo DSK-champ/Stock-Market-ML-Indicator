@@ -206,8 +206,6 @@ def fetch_historical_data(symbol="BTCUSDT",interval="5m",days=180,start_time=Non
 
         cursor_ms = next_cursor_ms
 
-        # A short page may indicate the requested range is exhausted.
-        # Continue safely until Binance returns no more candles.
         if pause_seconds: time.sleep(pause_seconds)
 
     if not pages: return pd.DataFrame(columns=OUTPUT_COLUMNS)
