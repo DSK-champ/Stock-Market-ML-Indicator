@@ -1,16 +1,36 @@
-from pathlib import Path
-import sys
+"""Extraction tests: unit tests with local mocks and integration test for live Binance API.
+"""
 
-ML_DIR = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ML_DIR))
-from src.extraction import fetch_historical_data, save_raw_data
+import pytest
+from src import extraction, config
 
-df_test = fetch_historical_data(symbol="BTCUSDT",interval="5m",days=1,)
 
-print("Dataset shape:", df_test.shape)
-print(df_test.head())
+def test_extraction_constants():
+    """Verify endpoint and output columns match configuration."""
+    assert config.BINANCE_BASE_URL.startswith("https://")
+    assert "open_time" in config.OUTPUT_COLUMNS
 
-output_path = ML_DIR/"data"/"raw"/"BTCUSDT_5m_test01.csv"
-save_raw_data(df_test, output_path=output_path,)
 
-print("Test completed successfully!")
+def test_interval_to_ms():
+    """Verify interval conversion logic."""
+    assert extraction.interval_to_ms("5m") == 5 * 60 * 1000
+    assert extraction.interval_to_ms("1h") == 60 * 60 * 1000
+    assert extraction.interval_to_ms("1d") == 24 * 60 * 60 * 1000
+
+
+@pytest.mark.integration
+def test_live_binance_fetch():
+    """Integration test: fetch a small sample of candles from Binance.
+    
+    Skipped by default to prevent network flakiness. Run with:
+        pytest -m integration
+    """
+    df = extraction.fetch_historical_data(
+        symbol=config.SYMBOL,
+        interval=config.TIMEFRAME,
+        days=0.1,
+        limit=10,
+    )
+    assert not df.empty
+    assert len(df) <= 10
+    assert "close" in df.columns
