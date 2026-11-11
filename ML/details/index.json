@@ -65,17 +65,29 @@
       "size_bytes": 5772
     },
     {
+      "name": "step04b_drawings",
+      "path": "details/step04b_drawings.json",
+      "step": 4,
+      "created_at": "2026-11-11T14:06:44.444131+00:00",
+      "git_commit": "7e2b9e7",
+      "size_bytes": 11133,
+      "shape": {
+        "n_rows": 318240,
+        "n_columns": 10
+      }
+    },
+    {
       "name": "step_master",
       "path": "details/step_master.json",
       "step": 4,
-      "created_at": "2026-11-11T11:51:22.254870+00:00",
-      "git_commit": "538b007",
-      "size_bytes": 166961,
+      "created_at": "2026-11-11T14:06:42.838999+00:00",
+      "git_commit": "7e2b9e7",
+      "size_bytes": 213213,
       "shape": {
         "n_rows": 318240,
-        "n_columns": 172
+        "n_columns": 223
       }
     }
   ],
-  "updated_at": "2026-11-11T12:41:27.659796+00:00"
+  "updated_at": "2026-11-11T14:06:44.487723+00:00"
 }

@@ -1,0 +1,142 @@
+position,column,role,group,dtype,unit,description
+1,open,market,market,float64,USDT,Candle open price in USDT (Binance kline field 2). First traded price in the 5-minute interval.
+2,high,market,market,float64,USDT,Highest traded price within the 5-minute candle (Binance kline field 3).
+3,low,market,market,float64,USDT,Lowest traded price within the 5-minute candle (Binance kline field 4).
+4,close,market,market,float64,USDT,Candle close price in USDT (Binance kline field 5). Last traded price in the 5-minute interval. Used as reference for all labels.
+5,volume,market,market,float64,BTC,Total traded volume in BTC (base asset) during the candle (Binance kline field 6).
+6,quote_volume,market,market,float64,USDT,Total traded volume in USDT (quote asset) during the candle (Binance kline field 8).
+7,number_of_trades,market,market,float64,count,Count of individual trades executed during the 5-minute candle (Binance kline field 9).
+8,taker_buy_base_volume,market,market,float64,BTC,Volume in BTC bought by taker orders during candle (Binance kline field 10).
+9,taker_buy_quote_volume,market,market,float64,USDT,Volume in USDT bought by taker orders during candle (Binance kline field 11).
+10,gap_id,flag,metadata,int64,integer index,Contiguous segment identifier. Increments at every non-consecutive 5m gap. Rows with same gap_id form a continuous OHLCV segment.
+11,is_gap_boundary,flag,metadata,bool,boolean,True if row is the first candle of a new contiguous segment.
+12,feat_ret_1,feature,returns,float64,fraction,Log return over 1 candle (5m)
+13,feat_ret_3,feature,returns,float64,fraction,Log return over 3 candles (15m)
+14,feat_ret_6,feature,returns,float64,fraction,Log return over 6 candles (30m)
+15,feat_ret_12,feature,returns,float64,fraction,Log return over 12 candles (60m / 1h)
+16,feat_ret_24,feature,returns,float64,fraction,Log return over 24 candles (120m / 2h)
+17,feat_ret_open_gap,feature,returns,float64,fraction,Open gap return relative to previous close
+18,feat_vol_sigma_288,feature,volatility,float64,fraction,Causal rolling return std over 288 candles (24h)
+19,feat_vol_sigma_60,feature,volatility,float64,fraction,Causal rolling return std over 60 candles (5h)
+20,feat_vol_sigma_12,feature,volatility,float64,fraction,Causal rolling return std over 12 candles (1h)
+21,feat_vol_ratio_60_288,feature,volatility,float64,ratio,Volatility ratio: 5h sigma / 24h sigma
+22,feat_vol_ratio_12_60,feature,volatility,float64,ratio,Volatility ratio: 1h sigma / 5h sigma
+23,feat_vol_natr_14,feature,volatility,float64,ratio,Normalized Average True Range over 14 candles
+24,feat_vol_bb_pct_20,feature,volatility,float64,"ratio in [0, 1]","Bollinger Bands %B (20-period, 2 sigma)"
+25,feat_vol_bb_width_20,feature,volatility,float64,ratio,Bollinger Bands bandwidth normalized by SMA
+26,feat_vol_range_12,feature,volatility,float64,ratio,Normalized 12-candle high-low range
+27,feat_shape_body_pct,feature,candle_shape,float64,fraction,Candle real body size relative to close price
+28,feat_shape_body_to_range,feature,candle_shape,float64,ratio,"Candle body size relative to full range [0, 1]"
+29,feat_shape_upper_wick_pct,feature,candle_shape,float64,fraction,Upper wick length relative to close price
+30,feat_shape_lower_wick_pct,feature,candle_shape,float64,fraction,Lower wick length relative to close price
+31,feat_shape_close_pos,feature,candle_shape,float64,ratio,"Close position within candle range [0, 1]"
+32,feat_shape_candle_dir,feature,candle_shape,float64,"integer {-1,0,1}","Directional sign of candle body (+1 bullish, -1 bearish, 0 doji)"
+33,feat_mom_sma_ratio_10,feature,momentum,float64,ratio,Distance of close from 10-candle SMA
+34,feat_mom_sma_ratio_20,feature,momentum,float64,ratio,Distance of close from 20-candle SMA
+35,feat_mom_sma_ratio_50,feature,momentum,float64,ratio,Distance of close from 50-candle SMA
+36,feat_mom_ema_ratio_10,feature,momentum,float64,ratio,Distance of close from 10-candle EMA
+37,feat_mom_ema_ratio_20,feature,momentum,float64,ratio,Distance of close from 20-candle EMA
+38,feat_mom_ema_ratio_50,feature,momentum,float64,ratio,Distance of close from 50-candle EMA
+39,feat_mom_sma_ratio_10_50,feature,momentum,float64,ratio,Spread between short and medium SMA
+40,feat_mom_rsi_7,feature,momentum,float64,oscillator,"Relative Strength Index over 7 candles [0, 1]"
+41,feat_mom_rsi_14,feature,momentum,float64,oscillator,"Relative Strength Index over 14 candles [0, 1]"
+42,feat_mom_macd_line,feature,momentum,float64,ratio,MACD line normalized by close price
+43,feat_mom_macd_signal,feature,momentum,float64,ratio,MACD 9-period signal line normalized by close
+44,feat_mom_macd_hist,feature,momentum,float64,ratio,MACD histogram normalized by close
+45,feat_mom_adx_14,feature,momentum,float64,oscillator,"Average Directional Index over 14 candles [0, 1]"
+46,feat_volume_log,feature,volume,float64,log volume,Log volume
+47,feat_volume_zscore_60,feature,volume,float64,z-score,Rolling volume Z-score over 60 candles
+48,feat_volume_zscore_12,feature,volume,float64,z-score,Rolling volume Z-score over 12 candles
+49,feat_volume_change_1,feature,volume,float64,ratio,1-candle fractional volume change
+50,feat_volume_ratio_12_60,feature,volume,float64,ratio,Volume trend ratio: short / medium volume SMA
+51,feat_of_taker_buy_ratio,feature,order_flow,float64,ratio,"Taker buy volume fraction in [0, 1]"
+52,feat_of_taker_buy_zscore_60,feature,order_flow,float64,z-score,Rolling Z-score of taker buy ratio over 60 candles
+53,feat_of_trades_zscore_60,feature,order_flow,float64,z-score,Rolling Z-score of number of trades over 60 candles
+54,feat_of_trades_zscore_12,feature,order_flow,float64,z-score,Rolling Z-score of number of trades over 12 candles
+55,feat_of_avg_trade_size,feature,order_flow,float64,BTC / trade,Average trade size in BTC
+56,feat_of_avg_trade_size_zscore_60,feature,order_flow,float64,z-score,Rolling Z-score of average trade size over 60 candles
+57,feat_time_sin_hour,feature,time,float64,"coordinate in [-1, 1]",Sine transform of UTC hour of day
+58,feat_time_cos_hour,feature,time,float64,"coordinate in [-1, 1]",Cosine transform of UTC hour of day
+59,feat_time_sin_weekday,feature,time,float64,"coordinate in [-1, 1]",Sine transform of day of week (Monday=0)
+60,feat_time_cos_weekday,feature,time,float64,"coordinate in [-1, 1]",Cosine transform of day of week (Monday=0)
+61,feat_mtf_1h_ret,feature,mtf_1h,float64,fraction,Log return of last COMPLETED 1h candle
+62,feat_mtf_1h_range,feature,mtf_1h,float64,ratio,High-low range of last COMPLETED 1h candle normalized by close
+63,feat_mtf_1h_vol_ratio,feature,mtf_1h,float64,ratio,Volume of last COMPLETED 1h candle vs 24h rolling mean
+64,feat_mtf_1h_close_vs_sma_6,feature,mtf_1h,float64,ratio,Distance of last completed 1h close from 6h SMA
+65,feat_mtf_1h_rsi_6,feature,mtf_1h,float64,oscillator,"RSI(6) of completed 1h candles [0, 1]"
+66,fwd_ret_2,target,targets_base,float64,fraction,Forward close-to-close return over 2 candles (10 min).
+67,fwd_ret_open_2,target,targets_base,float64,fraction,Conservative forward return for backtesting over 2 candles (10 min). Entry at open[t+1].
+68,raw_sign_2,target,targets_base,float64,"integer {-1, 0, +1}","Raw directional sign of fwd_ret_2 (+1, -1, 0)."
+69,has_valid_target_2,flag,targets_base,bool,boolean,"True if row t has a valid forward label for horizon N=2 (no gap crossing, not in boundary)."
+70,fwd_ret_3,target,targets_base,float64,fraction,Forward close-to-close return over 3 candles (15 min).
+71,fwd_ret_open_3,target,targets_base,float64,fraction,Conservative forward return for backtesting over 3 candles (15 min). Entry at open[t+1].
+72,raw_sign_3,target,targets_base,float64,"integer {-1, 0, +1}","Raw directional sign of fwd_ret_3 (+1, -1, 0)."
+73,has_valid_target_3,flag,targets_base,bool,boolean,"True if row t has a valid forward label for horizon N=3 (no gap crossing, not in boundary)."
+74,fwd_ret_6,target,targets_base,float64,fraction,Forward close-to-close return over 6 candles (30 min).
+75,fwd_ret_open_6,target,targets_base,float64,fraction,Conservative forward return for backtesting over 6 candles (30 min). Entry at open[t+1].
+76,raw_sign_6,target,targets_base,float64,"integer {-1, 0, +1}","Raw directional sign of fwd_ret_6 (+1, -1, 0)."
+77,has_valid_target_6,flag,targets_base,bool,boolean,"True if row t has a valid forward label for horizon N=6 (no gap crossing, not in boundary)."
+78,fwd_ret_12,target,targets_base,float64,fraction,Forward close-to-close return over 12 candles (60 min).
+79,fwd_ret_open_12,target,targets_base,float64,fraction,Conservative forward return for backtesting over 12 candles (60 min). Entry at open[t+1].
+80,raw_sign_12,target,targets_base,float64,"integer {-1, 0, +1}","Raw directional sign of fwd_ret_12 (+1, -1, 0)."
+81,has_valid_target_12,flag,targets_base,bool,boolean,"True if row t has a valid forward label for horizon N=12 (no gap crossing, not in boundary)."
+82,target_2_S1,target,targets_labels,float64,"integer {-1, 0, +1} or NaN","3-class label for horizon N=2 (10 min), rule S1 (+1 Up, -1 Down, 0 Neutral). Symmetric cost-floor threshold: theta_up = theta_down = c (0.23%)."
+83,target_2_S2,target,targets_labels,float64,"integer {-1, 0, +1} or NaN","3-class label for horizon N=2 (10 min), rule S2 (+1 Up, -1 Down, 0 Neutral). Symmetric fixed threshold: theta_up = theta_down = 0.30%."
+84,target_2_Q1,target,targets_labels,float64,"integer {-1, 0, +1} or NaN","3-class label for horizon N=2 (10 min), rule Q1 (+1 Up, -1 Down, 0 Neutral). Symmetric quantile threshold: theta = max(c, median |ret|). Floor binds (Q1 == S1)."
+85,target_2_V1,target,targets_labels,float64,"integer {-1, 0, +1} or NaN","3-class label for horizon N=2 (10 min), rule V1 (+1 Up, -1 Down, 0 Neutral). Volatility-adjusted threshold (half-sigma): theta = max(c, 0.5 * sigma * sqrt(N))."
+86,target_2_V2,target,targets_labels,float64,"integer {-1, 0, +1} or NaN","3-class label for horizon N=2 (10 min), rule V2 (+1 Up, -1 Down, 0 Neutral). Volatility-adjusted threshold (one-sigma): theta = max(c, 1.0 * sigma * sqrt(N))."
+87,target_2_A1,target,targets_labels,float64,"integer {-1, 0, +1} or NaN","3-class label for horizon N=2 (10 min), rule A1 (+1 Up, -1 Down, 0 Neutral). Asymmetric threshold: theta_up = 0.23%, theta_down = 0.30%."
+88,target_2_A2,target,targets_labels,float64,"integer {-1, 0, +1} or NaN","3-class label for horizon N=2 (10 min), rule A2 (+1 Up, -1 Down, 0 Neutral). Asymmetric threshold: theta_up = 0.30%, theta_down = 0.23%."
+89,target_2_F05,target,targets_labels,float64,"integer {-1, 0, +1} or NaN","3-class label for horizon N=2 (10 min), rule F05 (+1 Up, -1 Down, 0 Neutral). Research sub-cost threshold: theta_up = theta_down = 0.05% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money)."
+90,target_2_F10,target,targets_labels,float64,"integer {-1, 0, +1} or NaN","3-class label for horizon N=2 (10 min), rule F10 (+1 Up, -1 Down, 0 Neutral). Research sub-cost threshold: theta_up = theta_down = 0.10% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money)."
+91,target_2_F15,target,targets_labels,float64,"integer {-1, 0, +1} or NaN","3-class label for horizon N=2 (10 min), rule F15 (+1 Up, -1 Down, 0 Neutral). Research sub-cost threshold: theta_up = theta_down = 0.15% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money)."
+92,target_3_S1,target,targets_labels,float64,"integer {-1, 0, +1} or NaN","3-class label for horizon N=3 (15 min), rule S1 (+1 Up, -1 Down, 0 Neutral). Symmetric cost-floor threshold: theta_up = theta_down = c (0.23%)."
+93,target_3_S2,target,targets_labels,float64,"integer {-1, 0, +1} or NaN","3-class label for horizon N=3 (15 min), rule S2 (+1 Up, -1 Down, 0 Neutral). Symmetric fixed threshold: theta_up = theta_down = 0.30%."
+94,target_3_Q1,target,targets_labels,float64,"integer {-1, 0, +1} or NaN","3-class label for horizon N=3 (15 min), rule Q1 (+1 Up, -1 Down, 0 Neutral). Symmetric quantile threshold: theta = max(c, median |ret|). Floor binds (Q1 == S1)."
+95,target_3_V1,target,targets_labels,float64,"integer {-1, 0, +1} or NaN","3-class label for horizon N=3 (15 min), rule V1 (+1 Up, -1 Down, 0 Neutral). Volatility-adjusted threshold (half-sigma): theta = max(c, 0.5 * sigma * sqrt(N))."
+96,target_3_V2,target,targets_labels,float64,"integer {-1, 0, +1} or NaN","3-class label for horizon N=3 (15 min), rule V2 (+1 Up, -1 Down, 0 Neutral). Volatility-adjusted threshold (one-sigma): theta = max(c, 1.0 * sigma * sqrt(N))."
+97,target_3_A1,target,targets_labels,float64,"integer {-1, 0, +1} or NaN","3-class label for horizon N=3 (15 min), rule A1 (+1 Up, -1 Down, 0 Neutral). Asymmetric threshold: theta_up = 0.23%, theta_down = 0.30%."
+98,target_3_A2,target,targets_labels,float64,"integer {-1, 0, +1} or NaN","3-class label for horizon N=3 (15 min), rule A2 (+1 Up, -1 Down, 0 Neutral). Asymmetric threshold: theta_up = 0.30%, theta_down = 0.23%."
+99,target_3_F05,target,targets_labels,float64,"integer {-1, 0, +1} or NaN","3-class label for horizon N=3 (15 min), rule F05 (+1 Up, -1 Down, 0 Neutral). Research sub-cost threshold: theta_up = theta_down = 0.05% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money)."
+100,target_3_F10,target,targets_labels,float64,"integer {-1, 0, +1} or NaN","3-class label for horizon N=3 (15 min), rule F10 (+1 Up, -1 Down, 0 Neutral). Research sub-cost threshold: theta_up = theta_down = 0.10% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money)."
+101,target_3_F15,target,targets_labels,float64,"integer {-1, 0, +1} or NaN","3-class label for horizon N=3 (15 min), rule F15 (+1 Up, -1 Down, 0 Neutral). Research sub-cost threshold: theta_up = theta_down = 0.15% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money)."
+102,target_6_S1,target,targets_labels,float64,"integer {-1, 0, +1} or NaN","3-class label for horizon N=6 (30 min), rule S1 (+1 Up, -1 Down, 0 Neutral). Symmetric cost-floor threshold: theta_up = theta_down = c (0.23%)."
+103,target_6_S2,target,targets_labels,float64,"integer {-1, 0, +1} or NaN","3-class label for horizon N=6 (30 min), rule S2 (+1 Up, -1 Down, 0 Neutral). Symmetric fixed threshold: theta_up = theta_down = 0.30%."
+104,target_6_Q1,target,targets_labels,float64,"integer {-1, 0, +1} or NaN","3-class label for horizon N=6 (30 min), rule Q1 (+1 Up, -1 Down, 0 Neutral). Symmetric quantile threshold: theta = max(c, median |ret|). Floor binds (Q1 == S1)."
+105,target_6_V1,target,targets_labels,float64,"integer {-1, 0, +1} or NaN","3-class label for horizon N=6 (30 min), rule V1 (+1 Up, -1 Down, 0 Neutral). Volatility-adjusted threshold (half-sigma): theta = max(c, 0.5 * sigma * sqrt(N))."
+106,target_6_V2,target,targets_labels,float64,"integer {-1, 0, +1} or NaN","3-class label for horizon N=6 (30 min), rule V2 (+1 Up, -1 Down, 0 Neutral). Volatility-adjusted threshold (one-sigma): theta = max(c, 1.0 * sigma * sqrt(N))."
+107,target_6_A1,target,targets_labels,float64,"integer {-1, 0, +1} or NaN","3-class label for horizon N=6 (30 min), rule A1 (+1 Up, -1 Down, 0 Neutral). Asymmetric threshold: theta_up = 0.23%, theta_down = 0.30%."
+108,target_6_A2,target,targets_labels,float64,"integer {-1, 0, +1} or NaN","3-class label for horizon N=6 (30 min), rule A2 (+1 Up, -1 Down, 0 Neutral). Asymmetric threshold: theta_up = 0.30%, theta_down = 0.23%."
+109,target_6_F05,target,targets_labels,float64,"integer {-1, 0, +1} or NaN","3-class label for horizon N=6 (30 min), rule F05 (+1 Up, -1 Down, 0 Neutral). Research sub-cost threshold: theta_up = theta_down = 0.05% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money)."
+110,target_6_F10,target,targets_labels,float64,"integer {-1, 0, +1} or NaN","3-class label for horizon N=6 (30 min), rule F10 (+1 Up, -1 Down, 0 Neutral). Research sub-cost threshold: theta_up = theta_down = 0.10% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money)."
+111,target_6_F15,target,targets_labels,float64,"integer {-1, 0, +1} or NaN","3-class label for horizon N=6 (30 min), rule F15 (+1 Up, -1 Down, 0 Neutral). Research sub-cost threshold: theta_up = theta_down = 0.15% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money)."
+112,target_12_S1,target,targets_labels,float64,"integer {-1, 0, +1} or NaN","3-class label for horizon N=12 (60 min), rule S1 (+1 Up, -1 Down, 0 Neutral). Symmetric cost-floor threshold: theta_up = theta_down = c (0.23%)."
+113,target_12_S2,target,targets_labels,float64,"integer {-1, 0, +1} or NaN","3-class label for horizon N=12 (60 min), rule S2 (+1 Up, -1 Down, 0 Neutral). Symmetric fixed threshold: theta_up = theta_down = 0.30%."
+114,target_12_Q1,target,targets_labels,float64,"integer {-1, 0, +1} or NaN","3-class label for horizon N=12 (60 min), rule Q1 (+1 Up, -1 Down, 0 Neutral). Symmetric quantile threshold: theta = max(c, median |ret|). Floor binds (Q1 == S1)."
+115,target_12_V1,target,targets_labels,float64,"integer {-1, 0, +1} or NaN","3-class label for horizon N=12 (60 min), rule V1 (+1 Up, -1 Down, 0 Neutral). Volatility-adjusted threshold (half-sigma): theta = max(c, 0.5 * sigma * sqrt(N))."
+116,target_12_V2,target,targets_labels,float64,"integer {-1, 0, +1} or NaN","3-class label for horizon N=12 (60 min), rule V2 (+1 Up, -1 Down, 0 Neutral). Volatility-adjusted threshold (one-sigma): theta = max(c, 1.0 * sigma * sqrt(N))."
+117,target_12_A1,target,targets_labels,float64,"integer {-1, 0, +1} or NaN","3-class label for horizon N=12 (60 min), rule A1 (+1 Up, -1 Down, 0 Neutral). Asymmetric threshold: theta_up = 0.23%, theta_down = 0.30%."
+118,target_12_A2,target,targets_labels,float64,"integer {-1, 0, +1} or NaN","3-class label for horizon N=12 (60 min), rule A2 (+1 Up, -1 Down, 0 Neutral). Asymmetric threshold: theta_up = 0.30%, theta_down = 0.23%."
+119,target_12_F05,target,targets_labels,float64,"integer {-1, 0, +1} or NaN","3-class label for horizon N=12 (60 min), rule F05 (+1 Up, -1 Down, 0 Neutral). Research sub-cost threshold: theta_up = theta_down = 0.05% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money)."
+120,target_12_F10,target,targets_labels,float64,"integer {-1, 0, +1} or NaN","3-class label for horizon N=12 (60 min), rule F10 (+1 Up, -1 Down, 0 Neutral). Research sub-cost threshold: theta_up = theta_down = 0.10% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money)."
+121,target_12_F15,target,targets_labels,float64,"integer {-1, 0, +1} or NaN","3-class label for horizon N=12 (60 min), rule F15 (+1 Up, -1 Down, 0 Neutral). Research sub-cost threshold: theta_up = theta_down = 0.15% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money)."
+122,big_move_2,target,targets_labels,float64,"binary {0, 1} or NaN","1 if |forward return over 2 candles| exceeds the round-trip cost c (0.23%), else 0; basis for the worth-it model"
+123,big_move_3,target,targets_labels,float64,"binary {0, 1} or NaN","1 if |forward return over 3 candles| exceeds the round-trip cost c (0.23%), else 0; basis for the worth-it model"
+124,big_move_6,target,targets_labels,float64,"binary {0, 1} or NaN","1 if |forward return over 6 candles| exceeds the round-trip cost c (0.23%), else 0; basis for the worth-it model"
+125,big_move_12,target,targets_labels,float64,"binary {0, 1} or NaN","1 if |forward return over 12 candles| exceeds the round-trip cost c (0.23%), else 0; basis for the worth-it model"
+126,theta_up_2_V1,threshold,targets_labels,float64,fraction,"Up threshold for horizon N=2, rule V1. Volatility-adjusted threshold (half-sigma): theta = max(c, 0.5 * sigma * sqrt(N))."
+127,theta_down_2_V1,threshold,targets_labels,float64,fraction,"Down threshold for horizon N=2, rule V1. Volatility-adjusted threshold (half-sigma): theta = max(c, 0.5 * sigma * sqrt(N))."
+128,theta_up_2_V2,threshold,targets_labels,float64,fraction,"Up threshold for horizon N=2, rule V2. Volatility-adjusted threshold (one-sigma): theta = max(c, 1.0 * sigma * sqrt(N))."
+129,theta_down_2_V2,threshold,targets_labels,float64,fraction,"Down threshold for horizon N=2, rule V2. Volatility-adjusted threshold (one-sigma): theta = max(c, 1.0 * sigma * sqrt(N))."
+130,theta_up_3_V1,threshold,targets_labels,float64,fraction,"Up threshold for horizon N=3, rule V1. Volatility-adjusted threshold (half-sigma): theta = max(c, 0.5 * sigma * sqrt(N))."
+131,theta_down_3_V1,threshold,targets_labels,float64,fraction,"Down threshold for horizon N=3, rule V1. Volatility-adjusted threshold (half-sigma): theta = max(c, 0.5 * sigma * sqrt(N))."
+132,theta_up_3_V2,threshold,targets_labels,float64,fraction,"Up threshold for horizon N=3, rule V2. Volatility-adjusted threshold (one-sigma): theta = max(c, 1.0 * sigma * sqrt(N))."
+133,theta_down_3_V2,threshold,targets_labels,float64,fraction,"Down threshold for horizon N=3, rule V2. Volatility-adjusted threshold (one-sigma): theta = max(c, 1.0 * sigma * sqrt(N))."
+134,theta_up_6_V1,threshold,targets_labels,float64,fraction,"Up threshold for horizon N=6, rule V1. Volatility-adjusted threshold (half-sigma): theta = max(c, 0.5 * sigma * sqrt(N))."
+135,theta_down_6_V1,threshold,targets_labels,float64,fraction,"Down threshold for horizon N=6, rule V1. Volatility-adjusted threshold (half-sigma): theta = max(c, 0.5 * sigma * sqrt(N))."
+136,theta_up_6_V2,threshold,targets_labels,float64,fraction,"Up threshold for horizon N=6, rule V2. Volatility-adjusted threshold (one-sigma): theta = max(c, 1.0 * sigma * sqrt(N))."
+137,theta_down_6_V2,threshold,targets_labels,float64,fraction,"Down threshold for horizon N=6, rule V2. Volatility-adjusted threshold (one-sigma): theta = max(c, 1.0 * sigma * sqrt(N))."
+138,theta_up_12_V1,threshold,targets_labels,float64,fraction,"Up threshold for horizon N=12, rule V1. Volatility-adjusted threshold (half-sigma): theta = max(c, 0.5 * sigma * sqrt(N))."
+139,theta_down_12_V1,threshold,targets_labels,float64,fraction,"Down threshold for horizon N=12, rule V1. Volatility-adjusted threshold (half-sigma): theta = max(c, 0.5 * sigma * sqrt(N))."
+140,theta_up_12_V2,threshold,targets_labels,float64,fraction,"Up threshold for horizon N=12, rule V2. Volatility-adjusted threshold (one-sigma): theta = max(c, 1.0 * sigma * sqrt(N))."
+141,theta_down_12_V2,threshold,targets_labels,float64,fraction,"Down threshold for horizon N=12, rule V2. Volatility-adjusted threshold (one-sigma): theta = max(c, 1.0 * sigma * sqrt(N))."

@@ -1,0 +1,16 @@
+feature_1,feature_2,pearson,spearman
+taker_buy_ratio,taker_imbalance,1.0,1.0
+hl_spread,body_size,0.8383,0.7272
+volume_change,trades_change,0.7082,0.6855
+log_volume,hl_spread,0.6985,0.7767
+log_volume,log_trades,0.6431,0.5904
+log_trades,hl_spread,0.6219,0.6967
+return_1c,close_pos_range,0.6035,0.7562
+hl_spread,lower_wick,0.5937,0.4536
+log_volume,body_size,0.5256,0.4967
+hl_spread,upper_wick,0.5126,0.4328
+log_volume,avg_trade_size,0.5025,0.5065
+close_pos_range,taker_buy_ratio,0.4838,0.4835
+close_pos_range,taker_imbalance,0.4838,0.4835
+log_trades,body_size,0.4639,0.4395
+log_volume,rolling_vol_24h,0.4529,0.4785

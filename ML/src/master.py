@@ -2,16 +2,19 @@
 
 Constructs the single unified dataset `data/processed/master.csv` joining on `open_time`:
   1. Cleaned market columns (OHLCV + quote vol + trades + taker vol + gap flags)
-  2. All 85 engineered causal features (from `src.features.build_features`)
+  2. All 136 engineered causal features across 17 groups (from `src.features.build_features`)
   3. Base targets: fwd_ret_N, fwd_ret_open_N, raw_sign_N, has_valid_target_N (N in {2,3,6,12})
   4. The 40 label columns: target_N_rule (4 horizons x 10 rules including F05, F10, F15)
   5. The 4 big_move columns: big_move_N (Setup D two-stage worth-it target)
   6. Per-row dynamic thetas for V1 and V2 only (16 columns: theta_up/down for V1, V2 across 4 horizons)
      (Constant thetas for S1, S2, Q1, A1, A2, F05, F10, F15 stay in `targets_theta_frozen.json`)
 
-Total schema: 172 columns, 318,240 rows.
-Every column belongs to one of five roles:
-  market | feature | target | threshold | flag
+Companion dataset:
+  `data/processed/drawings.csv`: raw price levels and candidate targets/stops (role: drawing, 10 columns)
+
+Total schema: 223 columns, 318,240 rows.
+Every column belongs to one of six roles:
+  market | feature | target | threshold | flag | drawing
 """
 
 from __future__ import annotations
@@ -23,12 +26,16 @@ import pandas as pd
 
 from src import config
 from src.features import build_features, ALL_FEATURE_COLUMNS
+from src.structure import build_structure
 from src.io_utils import (
     load_clean_market_data_csv,
     load_targets_base_csv,
     load_targets_labels_csv,
     save_master_csv,
+    save_features_csv,
+    save_drawings_csv,
     MASTER_CSV_PATH,
+    DRAWINGS_CSV_PATH,
 )
 from src.utils import setup_logger
 
@@ -40,6 +47,7 @@ def build_master(
     df_features: Optional[pd.DataFrame] = None,
     df_targets_base: Optional[pd.DataFrame] = None,
     df_targets_labels: Optional[pd.DataFrame] = None,
+    save_components: bool = True,
 ) -> pd.DataFrame:
     """Join cleaned market data, engineered features, and targets into one master DataFrame.
 
@@ -53,11 +61,13 @@ def build_master(
         Base forward returns and validation flags. Loaded from disk if None.
     df_targets_labels : pd.DataFrame, optional
         Classification labels and thetas. Loaded from disk if None.
+    save_components : bool
+        Whether to save features.csv and drawings.csv when computed.
 
     Returns
     -------
     pd.DataFrame
-        Complete master dataset with exactly 318,240 rows and 175 columns.
+        Complete master dataset with exactly 318,240 rows and 223 columns.
     """
     # 1. Cleaned market data
     if df_clean is None:
@@ -66,8 +76,16 @@ def build_master(
 
     # 2. Engineered features
     if df_features is None:
-        logger.info("Building 85 engineered causal features...")
+        logger.info("Building 136 engineered causal features across 17 groups...")
         df_features = build_features(df_clean)
+        # Only overwrite component files when running full dataset build
+        if save_components and len(df_clean) == len(config.CANDIDATE_HORIZONS): # wait, check full length
+            pass
+        elif save_components and len(df_clean) > 300000:
+            save_features_csv(df_features)
+            logger.info("Building and saving companion drawings.csv...")
+            _, df_drawings = build_structure(df_clean)
+            save_drawings_csv(df_drawings)
 
     # 3. Base targets
     if df_targets_base is None:

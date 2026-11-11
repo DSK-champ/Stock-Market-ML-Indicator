@@ -418,6 +418,68 @@ _FEATURE_DESCRIPTIONS: Dict[str, Tuple[str, str, str]] = {
     "feat_time_is_weekend": ("Weekend indicator (Saturday or Sunday UTC)", "binary {0, 1}", "1.0 if weekday >= 5 else 0.0"),
     "feat_time_sin_week": ("Sine transform of 168-hour weekly cycle", "coordinate in [-1, 1]", "sin(2 * pi * (weekday*24 + hour + min/60) / 168)"),
     "feat_time_cos_week": ("Cosine transform of 168-hour weekly cycle", "coordinate in [-1, 1]", "cos(2 * pi * (weekday*24 + hour + min/60) / 168)"),
+
+    # Moving Average Structure & Multi-Timeframe MAs (G16)
+    "feat_ma_sma_ratio_5": ("Ratio of 5m close to 5-period SMA", "ratio", "(close - sma5) / sma5"),
+    "feat_ma_sma_ratio_25": ("Ratio of 5m close to 25-period SMA", "ratio", "(close - sma25) / sma25"),
+    "feat_ma_sma_ratio_100": ("Ratio of 5m close to 100-period SMA", "ratio", "(close - sma100) / sma100"),
+    "feat_ma_ema_ratio_5": ("Ratio of 5m close to 5-period EMA", "ratio", "(close - ema5) / ema5"),
+    "feat_ma_ema_ratio_25": ("Ratio of 5m close to 25-period EMA", "ratio", "(close - ema25) / ema25"),
+    "feat_ma_ema_ratio_100": ("Ratio of 5m close to 100-period EMA", "ratio", "(close - ema100) / ema100"),
+
+    "feat_ma_sma_slope_5": ("5-candle slope of 5-period SMA", "fraction", "sma5_t / sma5_{t-5} - 1"),
+    "feat_ma_sma_slope_10": ("5-candle slope of 10-period SMA", "fraction", "sma10_t / sma10_{t-5} - 1"),
+    "feat_ma_sma_slope_25": ("5-candle slope of 25-period SMA", "fraction", "sma25_t / sma25_{t-5} - 1"),
+    "feat_ma_sma_slope_50": ("5-candle slope of 50-period SMA", "fraction", "sma50_t / sma50_{t-5} - 1"),
+    "feat_ma_sma_slope_100": ("5-candle slope of 100-period SMA", "fraction", "sma100_t / sma100_{t-5} - 1"),
+
+    "feat_ma_ema_slope_5": ("5-candle slope of 5-period EMA", "fraction", "ema5_t / ema5_{t-5} - 1"),
+    "feat_ma_ema_slope_10": ("5-candle slope of 10-period EMA", "fraction", "ema10_t / ema10_{t-5} - 1"),
+    "feat_ma_ema_slope_25": ("5-candle slope of 25-period EMA", "fraction", "ema25_t / ema25_{t-5} - 1"),
+    "feat_ma_ema_slope_50": ("5-candle slope of 50-period EMA", "fraction", "ema50_t / ema50_{t-5} - 1"),
+    "feat_ma_ema_slope_100": ("5-candle slope of 100-period EMA", "fraction", "ema100_t / ema100_{t-5} - 1"),
+
+    "feat_ma_alignment_sma_5m": ("Pairwise alignment score of 5m SMAs (5,10,25,50,100)", "score in [-1, 1]", "(2*sum(short>long) - 10) / 10"),
+    "feat_ma_alignment_ema_5m": ("Pairwise alignment score of 5m EMAs (5,10,25,50,100)", "score in [-1, 1]", "(2*sum(short>long) - 10) / 10"),
+
+    "feat_ma_1h_sma_ratio_5": ("Ratio of 5m close to completed 1h 5-period SMA", "ratio", "(close - sma5_1h) / sma5_1h"),
+    "feat_ma_1h_sma_ratio_10": ("Ratio of 5m close to completed 1h 10-period SMA", "ratio", "(close - sma10_1h) / sma10_1h"),
+    "feat_ma_1h_sma_ratio_25": ("Ratio of 5m close to completed 1h 25-period SMA", "ratio", "(close - sma25_1h) / sma25_1h"),
+    "feat_ma_1h_sma_ratio_50": ("Ratio of 5m close to completed 1h 50-period SMA", "ratio", "(close - sma50_1h) / sma50_1h"),
+    "feat_ma_1h_sma_ratio_100": ("Ratio of 5m close to completed 1h 100-period SMA", "ratio", "(close - sma100_1h) / sma100_1h"),
+
+    "feat_ma_1h_ema_ratio_5": ("Ratio of 5m close to completed 1h 5-period EMA", "ratio", "(close - ema5_1h) / ema5_1h"),
+    "feat_ma_1h_ema_ratio_10": ("Ratio of 5m close to completed 1h 10-period EMA", "ratio", "(close - ema10_1h) / ema10_1h"),
+    "feat_ma_1h_ema_ratio_25": ("Ratio of 5m close to completed 1h 25-period EMA", "ratio", "(close - ema25_1h) / ema25_1h"),
+    "feat_ma_1h_ema_ratio_50": ("Ratio of 5m close to completed 1h 50-period EMA", "ratio", "(close - ema50_1h) / ema50_1h"),
+    "feat_ma_1h_ema_ratio_100": ("Ratio of 5m close to completed 1h 100-period EMA", "ratio", "(close - ema100_1h) / ema100_1h"),
+
+    "feat_ma_1h_sma_slope_5": ("5-hour slope of completed 1h 5-period SMA", "fraction", "sma5_{1h,t} / sma5_{1h,t-5} - 1"),
+    "feat_ma_1h_sma_slope_10": ("5-hour slope of completed 1h 10-period SMA", "fraction", "sma10_{1h,t} / sma10_{1h,t-5} - 1"),
+    "feat_ma_1h_sma_slope_25": ("5-hour slope of completed 1h 25-period SMA", "fraction", "sma25_{1h,t} / sma25_{1h,t-5} - 1"),
+    "feat_ma_1h_sma_slope_50": ("5-hour slope of completed 1h 50-period SMA", "fraction", "sma50_{1h,t} / sma50_{1h,t-5} - 1"),
+    "feat_ma_1h_sma_slope_100": ("5-hour slope of completed 1h 100-period SMA", "fraction", "sma100_{1h,t} / sma100_{1h,t-5} - 1"),
+
+    "feat_ma_alignment_sma_1h": ("Pairwise alignment score of completed 1h SMAs", "score in [-1, 1]", "(2*sum(short>long) - 10) / 10"),
+    "feat_ma_alignment_ema_1h": ("Pairwise alignment score of completed 1h EMAs", "score in [-1, 1]", "(2*sum(short>long) - 10) / 10"),
+    "feat_ma_1h_natr_14": ("Completed 1h 14-period Wilder ATR normalized by 5m close", "ratio", "atr14_1h / close"),
+
+    # Causal Market Structure & Dow Trend (G17)
+    "feat_struct_dist_support_atr": ("Distance from close to nearest support in 5m ATR units", "ATR multiple", "(close - S) / ATR"),
+    "feat_struct_dist_support_pct": ("Fractional distance from close to nearest support", "fraction", "(close - S) / close"),
+    "feat_struct_dist_resistance_atr": ("Distance from close to nearest resistance in 5m ATR units", "ATR multiple", "(R - close) / ATR"),
+    "feat_struct_dist_resistance_pct": ("Fractional distance from close to nearest resistance", "fraction", "(R - close) / close"),
+    "feat_struct_support_strength": ("Touch count of nearest active support level", "count", "level.touches"),
+    "feat_struct_resistance_strength": ("Touch count of nearest active resistance level", "count", "level.touches"),
+    "feat_struct_trend_up": ("Dow Theory uptrend indicator (HH and HL persist)", "binary {0, 1}", "1.0 if trend == Up else 0.0"),
+    "feat_struct_trend_down": ("Dow Theory downtrend indicator (LH and LL persist)", "binary {0, 1}", "1.0 if trend == Down else 0.0"),
+    "feat_struct_trend_range": ("Dow Theory sideways/range market indicator", "binary {0, 1}", "1.0 if trend == Range else 0.0"),
+    "feat_struct_trend_age": ("Candles elapsed since current Dow trend state began", "count", "t - trend_start"),
+    "feat_struct_pullback_depth_atr": ("Pullback depth from trend extreme in ATR units", "ATR multiple", "(peak - close) / ATR or (close - trough) / ATR"),
+    "feat_struct_bars_since_break": ("Candles elapsed since last support/resistance level break", "count", "bars since break event"),
+    "feat_struct_bars_since_retest": ("Candles elapsed since last flipped level retest", "count", "bars since retest event"),
+    "feat_struct_retest_direction": ("Direction of last flipped level retest (+1 bullish, -1 bearish, 0 neutral)", "trinary {-1, 0, 1}", "retest direction"),
+    "feat_struct_rule_vote": ("Rule-based 4th voter signal per decisions table (+1, -1, 0)", "trinary {-1, 0, 1}", "Section 9.2 rule vote"),
 }
 
 
@@ -427,7 +489,7 @@ def _feature_entries() -> Dict[str, Any]:
     for group_name, cols in FEATURE_GROUPS.items():
         for col in cols:
             desc, unit, formula = _FEATURE_DESCRIPTIONS.get(col, (f"Engineered feature {col}", "unitless", ""))
-            entries[col] = {
+            entry = {
                 "description": desc,
                 "unit": unit,
                 "formula": formula,
@@ -437,7 +499,117 @@ def _feature_entries() -> Dict[str, Any]:
                 "allowed_as_model_input": True,
                 "source_columns": [],
             }
+            if col == "feat_struct_rule_vote":
+                entry["tag"] = "rule_vote"
+            entries[col] = entry
     return entries
+
+
+# ---------------------------------------------------------------------------
+# Drawings: raw price levels and candidate targets/stops (drawings.csv)
+# ---------------------------------------------------------------------------
+_DRAWINGS: Dict[str, Any] = {
+    "level_support_price": {
+        "description": "Raw USDT price of the nearest active/flipped support level below close.",
+        "unit": "USDT",
+        "formula": "max(level.price for level in active_support if level.price < close)",
+        "group": "drawing",
+        "role": "drawing",
+        "is_future_looking": False,
+        "allowed_as_model_input": False,
+        "source_columns": ["close", "high", "low"],
+    },
+    "level_resistance_price": {
+        "description": "Raw USDT price of the nearest active/flipped resistance level above close.",
+        "unit": "USDT",
+        "formula": "min(level.price for level in active_resistance if level.price > close)",
+        "group": "drawing",
+        "role": "drawing",
+        "is_future_looking": False,
+        "allowed_as_model_input": False,
+        "source_columns": ["close", "high", "low"],
+    },
+    "candidate_target_price": {
+        "description": "Target price in USDT for active structural rule signals; NaN when vote == 0.",
+        "unit": "USDT",
+        "formula": "Next resistance above (vote=+1) or support below (vote=-1), min 1.5 ATR",
+        "group": "drawing",
+        "role": "drawing",
+        "is_future_looking": False,
+        "allowed_as_model_input": False,
+        "source_columns": ["close", "high", "low"],
+    },
+    "candidate_stop_price": {
+        "description": "Stop-loss price in USDT for active structural rule signals; NaN when vote == 0.",
+        "unit": "USDT",
+        "formula": "Beyond opposite level by buffer (0.2 ATR), min 1.5 ATR distance",
+        "group": "drawing",
+        "role": "drawing",
+        "is_future_looking": False,
+        "allowed_as_model_input": False,
+        "source_columns": ["close", "high", "low"],
+    },
+    "target_dist_pct": {
+        "description": "Absolute fractional distance from close to candidate target price.",
+        "unit": "fraction",
+        "formula": "|target - close| / close",
+        "group": "drawing",
+        "role": "drawing",
+        "is_future_looking": False,
+        "allowed_as_model_input": False,
+        "source_columns": ["close"],
+    },
+    "stop_dist_pct": {
+        "description": "Absolute fractional distance from close to candidate stop price.",
+        "unit": "fraction",
+        "formula": "|stop - close| / close",
+        "group": "drawing",
+        "role": "drawing",
+        "is_future_looking": False,
+        "allowed_as_model_input": False,
+        "source_columns": ["close"],
+    },
+    "target_dist_c_mult": {
+        "description": "Candidate target distance expressed as a multiple of round-trip cost c (0.23%).",
+        "unit": "multiple of c",
+        "formula": "target_dist_pct / 0.0023",
+        "group": "drawing",
+        "role": "drawing",
+        "is_future_looking": False,
+        "allowed_as_model_input": False,
+        "source_columns": ["close"],
+    },
+    "stop_dist_c_mult": {
+        "description": "Candidate stop distance expressed as a multiple of round-trip cost c (0.23%).",
+        "unit": "multiple of c",
+        "formula": "stop_dist_pct / 0.0023",
+        "group": "drawing",
+        "role": "drawing",
+        "is_future_looking": False,
+        "allowed_as_model_input": False,
+        "source_columns": ["close"],
+    },
+    "reward_to_risk": {
+        "description": "Ratio of target distance to stop distance for active structural rule signals.",
+        "unit": "ratio",
+        "formula": "target_dist_pct / stop_dist_pct",
+        "group": "drawing",
+        "role": "drawing",
+        "is_future_looking": False,
+        "allowed_as_model_input": False,
+        "source_columns": [],
+    },
+    "rule_reason_code": {
+        "description": "Causal text trigger code for the 4th rule voter (BULL_RETEST, BEAR_RETEST, BULL_PULLBACK_MA, BEAR_PULLBACK_MA, NEUTRAL).",
+        "unit": "category string",
+        "formula": "Decision table in docs/decisions.md",
+        "group": "drawing",
+        "role": "drawing",
+        "is_future_looking": False,
+        "allowed_as_model_input": False,
+        "source_columns": [],
+    },
+}
 
 
 # ---------------------------------------------------------------------------
@@ -449,6 +621,7 @@ COLUMN_DICT.update(_CLEAN)
 COLUMN_DICT.update(_target_base_entries())
 COLUMN_DICT.update(_target_label_entries())
 COLUMN_DICT.update(_feature_entries())
+COLUMN_DICT.update(_DRAWINGS)
 
 
 def get_column_meta(col_name: str) -> Dict[str, Any]:
@@ -461,7 +634,7 @@ def get_column_meta(col_name: str) -> Dict[str, Any]:
     return COLUMN_DICT[col_name]
 
 
-COLUMN_ROLES: List[str] = ["market", "feature", "target", "threshold", "flag"]
+COLUMN_ROLES: List[str] = ["market", "feature", "target", "threshold", "flag", "drawing"]
 
 
 def get_column_role(col_name: str) -> str:

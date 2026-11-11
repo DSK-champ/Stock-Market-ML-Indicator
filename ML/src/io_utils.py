@@ -127,6 +127,7 @@ TARGETS_LABELS_PATH = config.DATA_PROCESSED_DIR / "targets_labels.csv"
 TARGETS_THETA_PATH  = config.DATA_PROCESSED_DIR / "targets_theta_frozen.json"
 FEATURES_PATH       = config.DATA_PROCESSED_DIR / "features.csv"
 MASTER_CSV_PATH     = config.DATA_PROCESSED_DIR / "master.csv"
+DRAWINGS_CSV_PATH   = config.DATA_PROCESSED_DIR / "drawings.csv"
 
 
 def _target_base_dtypes(horizons=None) -> dict:
@@ -528,5 +529,102 @@ def load_features_csv(
         return df.copy()
     else:
         raise ValueError(f"Unknown split: '{split}'. Expected 'train', 'val', 'train_val', 'test', or 'all'.")
+
+
+def save_drawings_csv(
+    df: pd.DataFrame,
+    filepath: Union[str, Path] = DRAWINGS_CSV_PATH,
+) -> Path:
+    """Save companion drawings DataFrame (role 'drawing') to CSV.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Drawings dataset with open_time index in UTC.
+    filepath : Union[str, Path]
+        Target CSV file path.
+
+    Returns
+    -------
+    Path
+        Absolute path to written drawings.csv.
+    """
+    path = Path(filepath).resolve()
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    out = df.copy()
+    if isinstance(out.index, pd.DatetimeIndex):
+        if out.index.tz is None:
+            out.index = out.index.tz_localize("UTC")
+        else:
+            out.index = out.index.tz_convert("UTC")
+        out.index.name = "open_time"
+        out.to_csv(path, index=True, date_format="%Y-%m-%d %H:%M:%S%z")
+    else:
+        out.to_csv(path, index=True)
+
+    logger.info("Saved drawings CSV to %s (%d rows, %d cols)", path, len(out), len(out.columns))
+    return path
+
+
+def load_drawings_csv(
+    filepath: Union[str, Path] = DRAWINGS_CSV_PATH,
+    split: str = "train",
+    unlock_test: bool = False,
+) -> pd.DataFrame:
+    """Load companion drawings CSV with partition slicing and test-split locking.
+
+    Parameters
+    ----------
+    filepath : Union[str, Path]
+        Path to drawings.csv.
+    split : str
+        Partition to load: 'train' (default), 'val', 'train_val', 'test', or 'all'.
+    unlock_test : bool
+        Safety lock. Must be True to load 'test' or 'all'.
+
+    Returns
+    -------
+    pd.DataFrame
+        Selected partition with UTC DatetimeIndex.
+    """
+    path = Path(filepath).resolve()
+    if not path.exists():
+        raise FileNotFoundError(f"drawings.csv not found: {path}")
+
+    if split in ("test", "all") and not unlock_test:
+        raise PermissionError(
+            f"Test set is LOCKED. Cannot load split='{split}' with unlock_test=False."
+        )
+
+    df = pd.read_csv(
+        path,
+        parse_dates=["open_time"],
+        index_col="open_time",
+        low_memory=False,
+    )
+    if df.index.tz is None:
+        df.index = df.index.tz_localize("UTC")
+    else:
+        df.index = df.index.tz_convert("UTC")
+
+    train_end = config.SPLIT_BOUNDARIES["train"]["end"]
+    val_start = config.SPLIT_BOUNDARIES["val"]["start"]
+    val_end   = config.SPLIT_BOUNDARIES["val"]["end"]
+    test_start = config.SPLIT_BOUNDARIES["test"]["start"]
+
+    if split == "train":
+        return df.loc[:train_end].copy()
+    elif split == "val":
+        return df.loc[val_start:val_end].copy()
+    elif split == "train_val":
+        return df.loc[:val_end].copy()
+    elif split == "test":
+        return df.loc[test_start:].copy()
+    elif split == "all":
+        return df.copy()
+    else:
+        raise ValueError(f"Unknown split: '{split}'. Expected 'train', 'val', 'train_val', 'test', or 'all'.")
+
 
 

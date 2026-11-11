@@ -1,0 +1,86 @@
+feature,group,unit,formula,warmup_candles,nan_count_train,nan_share_train,zero_count_train,zero_share_train
+feat_ret_1,returns,fraction,ln(close[t] / close[t-1]),2018,1,4.52584938878404e-06,551,0.002493743013220006
+feat_ret_3,returns,fraction,ln(close[t] / close[t-3]),2018,3,1.357754816635212e-05,119,0.0005385760772653007
+feat_ret_6,returns,fraction,ln(close[t] / close[t-6]),2018,6,2.715509633270424e-05,59,0.00026702511393825835
+feat_ret_12,returns,fraction,ln(close[t] / close[t-12]),2018,13,5.883604205419252e-05,47,0.0002127149212728499
+feat_ret_24,returns,fraction,ln(close[t] / close[t-24]),2018,24,0.00010862038533081696,36,0.00016293057799622544
+feat_vol_sigma_288,volatility,fraction,"rolling_sigma(ret_1, 288)",2018,287,0.0012989187745810196,0,0.0
+feat_vol_sigma_60,volatility,fraction,"rolling_sigma(ret_1, 60)",2018,71,0.00032133530660366684,0,0.0
+feat_vol_sigma_12,volatility,fraction,"rolling_sigma(ret_1, 12)",2018,13,5.883604205419252e-05,0,0.0
+feat_vol_ratio_60_288,volatility,ratio,sigma_60 / sigma_288,2018,287,0.0012989187745810196,0,0.0
+feat_vol_ratio_12_60,volatility,ratio,sigma_12 / sigma_60,2018,71,0.00032133530660366684,0,0.0
+feat_vol_natr_14,volatility,ratio,ATR(14) / close,2018,13,5.883604205419252e-05,0,0.0
+feat_vol_bb_pct_20,volatility,"ratio in [0, 1]",(close - lower) / (upper - lower),2018,23,0.00010409453594203292,0,0.0
+feat_vol_bb_width_20,volatility,ratio,(upper - lower) / SMA(20),2018,23,0.00010409453594203292,0,0.0
+feat_vol_range_12,volatility,ratio,(max(H_12) - min(L_12)) / close,2018,13,5.883604205419252e-05,0,0.0
+feat_shape_body_pct,candle_shape,fraction,|close - open| / close,2018,1,4.52584938878404e-06,531,0.002403226025444325
+feat_shape_body_to_range,candle_shape,ratio,|close - open| / (high - low),2018,1,4.52584938878404e-06,531,0.002403226025444325
+feat_shape_upper_wick_pct,candle_shape,fraction,"(high - max(open, close)) / close",2018,1,4.52584938878404e-06,31132,0.14089874317162474
+feat_shape_lower_wick_pct,candle_shape,fraction,"(min(open, close) - low) / close",2018,1,4.52584938878404e-06,27947,0.12648391286834756
+feat_shape_close_pos,candle_shape,ratio,(close - low) / (high - low),2018,1,4.52584938878404e-06,11274,0.05102442600915127
+feat_shape_candle_dir,candle_shape,"integer {-1,0,1}",sign(close - open),2018,1,4.52584938878404e-06,531,0.002403226025444325
+feat_mom_sma_ratio_10,momentum,ratio,close / SMA(10) - 1.0,2018,13,5.883604205419252e-05,1,4.52584938878404e-06
+feat_mom_sma_ratio_20,momentum,ratio,close / SMA(20) - 1.0,2018,23,0.00010409453594203292,0,0.0
+feat_mom_sma_ratio_50,momentum,ratio,close / SMA(50) - 1.0,2018,1,4.52584938878404e-06,0,0.0
+feat_mom_ema_ratio_10,momentum,ratio,close / EMA(10) - 1.0,2018,13,5.883604205419252e-05,0,0.0
+feat_mom_ema_ratio_20,momentum,ratio,close / EMA(20) - 1.0,2018,23,0.00010409453594203292,0,0.0
+feat_mom_ema_ratio_50,momentum,ratio,close / EMA(50) - 1.0,2018,49,0.00022176662005041797,0,0.0
+feat_mom_sma_ratio_10_50,momentum,ratio,SMA(10) / SMA(50) - 1.0,2018,13,5.883604205419252e-05,0,0.0
+feat_mom_rsi_7,momentum,oscillator,RSI(7) / 100.0,2018,7,3.168094572148828e-05,0,0.0
+feat_mom_rsi_14,momentum,oscillator,RSI(14) / 100.0,2018,14,6.336189144297656e-05,0,0.0
+feat_mom_macd_line,momentum,ratio,(EMA(12) - EMA(26)) / close,2018,25,0.000113146234719601,0,0.0
+feat_mom_macd_signal,momentum,ratio,"EMA(macd_line, 9) / close",2018,33,0.00014935302982987332,0,0.0
+feat_mom_macd_hist,momentum,ratio,(macd_line - macd_signal) / close,2018,33,0.00014935302982987332,0,0.0
+feat_mom_adx_14,momentum,oscillator,ADX(14) / 100.0,2018,27,0.00012219793349716907,0,0.0
+feat_volume_log,volume,log volume,ln(1 + volume),2018,1,4.52584938878404e-06,0,0.0
+feat_volume_zscore_60,volume,z-score,"zscore(volume, 60)",2018,71,0.00032133530660366684,0,0.0
+feat_volume_zscore_12,volume,z-score,"zscore(volume, 12)",2018,13,5.883604205419252e-05,0,0.0
+feat_volume_change_1,volume,ratio,volume[t] / volume[t-1] - 1.0,2018,1,4.52584938878404e-06,0,0.0
+feat_volume_ratio_12_60,volume,ratio,"SMA(volume, 12) / SMA(volume, 60)",2018,71,0.00032133530660366684,0,0.0
+feat_of_taker_buy_ratio,order_flow,ratio,taker_buy_base_volume / volume,2018,1,4.52584938878404e-06,0,0.0
+feat_of_taker_buy_zscore_60,order_flow,z-score,"zscore(taker_buy_ratio, 60)",2018,71,0.00032133530660366684,0,0.0
+feat_of_trades_zscore_60,order_flow,z-score,"zscore(number_of_trades, 60)",2018,71,0.00032133530660366684,1,4.52584938878404e-06
+feat_of_trades_zscore_12,order_flow,z-score,"zscore(number_of_trades, 12)",2018,13,5.883604205419252e-05,2,9.05169877756808e-06
+feat_of_avg_trade_size,order_flow,BTC / trade,volume / number_of_trades,2018,1,4.52584938878404e-06,0,0.0
+feat_of_avg_trade_size_zscore_60,order_flow,z-score,"zscore(avg_trade_size, 60)",2018,71,0.00032133530660366684,0,0.0
+feat_time_sin_hour,time,"coordinate in [-1, 1]",sin(2 * pi * hour / 24),2018,1,4.52584938878404e-06,9215,0.041705702117644926
+feat_time_cos_hour,time,"coordinate in [-1, 1]",cos(2 * pi * hour / 24),2018,1,4.52584938878404e-06,0,0.0
+feat_time_sin_weekday,time,"coordinate in [-1, 1]",sin(2 * pi * weekday / 7),2018,1,4.52584938878404e-06,31392,0.1420754640127086
+feat_time_cos_weekday,time,"coordinate in [-1, 1]",cos(2 * pi * weekday / 7),2018,1,4.52584938878404e-06,0,0.0
+feat_mtf_1h_ret,mtf_1h,fraction,ln(close_1h / open_1h) shifted 1h,2018,12,5.431019266540848e-05,24,0.00010862038533081696
+feat_mtf_1h_range,mtf_1h,ratio,(high_1h - low_1h) / close_1h shifted 1h,2018,12,5.431019266540848e-05,0,0.0
+feat_mtf_1h_vol_ratio,mtf_1h,ratio,"vol_1h / SMA(vol_1h, 24) shifted 1h",2018,12,5.431019266540848e-05,0,0.0
+feat_mtf_1h_close_vs_sma_6,mtf_1h,ratio,"(close_1h - SMA(close_1h, 6)) / SMA shifted 1h",2018,24,0.00010862038533081696,0,0.0
+feat_mtf_1h_rsi_6,mtf_1h,oscillator,"RSI(close_1h, 6) / 100.0 shifted 1h",2018,84,0.00038017134865785937,0,0.0
+feat_vol_parkinson_12,vol_range,fraction,sqrt(1/(4 ln 2 * 12) * sum(ln(H/L)^2)),2018,13,5.883604205419252e-05,0,0.0
+feat_vol_parkinson_60,vol_range,fraction,sqrt(1/(4 ln 2 * 60) * sum(ln(H/L)^2)),2018,71,0.00032133530660366684,0,0.0
+feat_vol_parkinson_288,vol_range,fraction,sqrt(1/(4 ln 2 * 288) * sum(ln(H/L)^2)),2018,287,0.0012989187745810196,0,0.0
+feat_vol_gk_12,vol_range,fraction,sqrt(1/12 * sum(0.5 ln(H/L)^2 - (2 ln 2 - 1) ln(C/O)^2)),2018,13,5.883604205419252e-05,0,0.0
+feat_vol_gk_60,vol_range,fraction,sqrt(1/60 * sum(0.5 ln(H/L)^2 - (2 ln 2 - 1) ln(C/O)^2)),2018,71,0.00032133530660366684,0,0.0
+feat_vol_gk_288,vol_range,fraction,sqrt(1/288 * sum(0.5 ln(H/L)^2 - (2 ln 2 - 1) ln(C/O)^2)),2018,287,0.0012989187745810196,0,0.0
+feat_vol_realized_abs_sum_6,vol_realized,fraction,"sum(|r_5m|, W=6)",2018,5,2.26292469439202e-05,0,0.0
+feat_vol_realized_abs_sum_12,vol_realized,fraction,"sum(|r_5m|, W=12)",2018,13,5.883604205419252e-05,0,0.0
+feat_vol_realized_abs_sum_36,vol_realized,fraction,"sum(|r_5m|, W=36)",2018,35,0.0001584047286074414,0,0.0
+feat_vol_realized_max_abs_12,vol_realized,fraction,"max(|r_5m|, W=12)",2018,13,5.883604205419252e-05,0,0.0
+feat_vol_realized_max_abs_60,vol_realized,fraction,"max(|r_5m|, W=60)",2018,71,0.00032133530660366684,0,0.0
+feat_vol_realized_semi_var_up_ratio_60,vol_realized,"fraction [0, 1]",SV^+ / (SV^+ + SV^-),2018,71,0.00032133530660366684,0,0.0
+feat_vol_seasonal_slot_abs_ret_7d,vol_seasonal,fraction,mean(|r_5m|[t - 288*k]) for k=1..7,2018,2017,0.00912863821717741,0,0.0
+feat_vol_seasonal_vol_ratio_12,vol_seasonal,ratio,"mean(|r_5m|, 12) / slot_abs_ret_7d",2018,2015,0.009119586518399841,0,0.0
+feat_vol_seasonal_volume_ratio_7d,vol_seasonal,ratio,vol[t] / mean(vol[t - 288*k]) for k=1..7,2018,2015,0.009119586518399841,0,0.0
+feat_vol_seasonal_trades_ratio_7d,vol_seasonal,ratio,trades[t] / mean(trades[t - 288*k]) for k=1..7,2018,2015,0.009119586518399841,0,0.0
+feat_vol_har_rv_72,vol_har,fraction,"rolling_sigma(r_5m, 72)",2018,71,0.00032133530660366684,0,0.0
+feat_vol_har_rv_2016,vol_har,fraction,"rolling_sigma(r_5m, 2016)",2018,2015,0.009119586518399841,0,0.0
+feat_vol_har_ratio_12_288,vol_har,ratio,rv_12 / rv_288,2018,287,0.0012989187745810196,0,0.0
+feat_vol_har_ratio_288_2016,vol_har,ratio,rv_288 / rv_2016,2018,2015,0.009119586518399841,0,0.0
+feat_flow_window_net_6,flow_window,"fraction [-1, 1]",sum(2*taker_buy - vol) / sum(vol),2018,5,2.26292469439202e-05,0,0.0
+feat_flow_window_net_12,flow_window,"fraction [-1, 1]",sum(2*taker_buy - vol) / sum(vol),2018,13,5.883604205419252e-05,0,0.0
+feat_flow_window_net_36,flow_window,"fraction [-1, 1]",sum(2*taker_buy - vol) / sum(vol),2018,35,0.0001584047286074414,0,0.0
+feat_flow_window_signed_flow_6,flow_window,"fraction [-1, 1]",net_flow_6 * sign(ret_1),2018,5,2.26292469439202e-05,551,0.002493743013220006
+feat_flow_window_signed_flow_12,flow_window,"fraction [-1, 1]",net_flow_12 * sign(ret_1),2018,13,5.883604205419252e-05,551,0.002493743013220006
+feat_flow_window_signed_flow_36,flow_window,"fraction [-1, 1]",net_flow_36 * sign(ret_1),2018,35,0.0001584047286074414,551,0.002493743013220006
+feat_loc_position_288,location,"fraction [0, 1]",(close - min(L_288)) / (max(H_288) - min(L_288)),2018,287,0.0012989187745810196,72,0.0003258611559924509
+feat_loc_dist_high_288,location,fraction,(max(H_288) - close) / close,2018,287,0.0012989187745810196,144,0.0006517223119849018
+feat_loc_dist_low_288,location,fraction,(close - min(L_288)) / close,2018,287,0.0012989187745810196,72,0.0003258611559924509
+feat_time_is_weekend,time_weekend,"binary {0, 1}",1.0 if weekday >= 5 else 0.0,2018,1,4.52584938878404e-06,157823,0.7142831280860635
+feat_time_sin_week,time_weekend,"coordinate in [-1, 1]",sin(2 * pi * (weekday*24 + hour + min/60) / 168),2018,1,4.52584938878404e-06,109,0.0004933175833774603
+feat_time_cos_week,time_weekend,"coordinate in [-1, 1]",cos(2 * pi * (weekday*24 + hour + min/60) / 168),2018,1,4.52584938878404e-06,0,0.0

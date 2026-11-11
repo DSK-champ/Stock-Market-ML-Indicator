@@ -755,21 +755,34 @@ def compute_breakeven_table(
     warmup_candles: int = config.LOOKBACK_CANDLES,
     cost_c: float = config.TOTAL_ROUNDTRIP_COST,
 ) -> pd.DataFrame:
-    """Compute empirical break-even hit rate over all rows and over big_move=1 rows."""
+    """Compute empirical break-even hit rate over all rows and over big_move=1 rows,
+
+    alongside empirical hit rates of plain reversal baseline rules:
+      Rule 1: sign(0.5 - feat_loc_position_288)
+      Rule 2: sign(EMA50 - close)
+    evaluated on all valid rows and on the 20% most extreme rows.
+    """
     verify_train_only(df_train)
     df_valid = df_train.iloc[warmup_candles:].copy()
     
-    # Load direction metrics to fetch best single-feature AUC per horizon
-    dir_metrics_path = REPORTS_DIR / "feat_direction_metrics.csv"
-    if dir_metrics_path.exists():
-        df_dir = pd.read_csv(dir_metrics_path)
-    else:
-        df_dir = None
+    pos = df_valid["feat_loc_position_288"]
+    rule1_signal = np.sign(0.5 - pos)
+    q10_pos = pos.quantile(0.10)
+    q90_pos = pos.quantile(0.90)
+    rule1_extreme_mask = (pos <= q10_pos) | (pos >= q90_pos)
+    
+    ema_ratio = df_valid["feat_mom_ema_ratio_50"]
+    rule2_signal = -np.sign(ema_ratio)
+    q10_ema = ema_ratio.quantile(0.10)
+    q90_ema = ema_ratio.quantile(0.90)
+    rule2_extreme_mask = (ema_ratio <= q10_ema) | (ema_ratio >= q90_ema)
 
     rows = []
     for N in horizons:
         fwd = df_valid[f"fwd_ret_{N}"].dropna()
         bm = df_valid[f"big_move_{N}"].dropna()
+        raw_sign = df_valid[f"raw_sign_{N}"]
+        valid_mask = raw_sign.isin([-1.0, 1.0])
         
         mean_abs_all = float(fwd.abs().mean())
         be_hit_rate_all = 0.5 + cost_c / (2.0 * max(mean_abs_all, 1e-12))
@@ -778,17 +791,27 @@ def compute_breakeven_table(
         m = float(fwd_bm1.abs().mean())
         be_hit_rate_bm = 0.5 + cost_c / (2.0 * max(m, 1e-12))
         
-        best_auc = float(df_dir[f"auc_{N}"].max()) if df_dir is not None and f"auc_{N}" in df_dir.columns else 0.53
+        # Rule 1
+        m1 = valid_mask & (rule1_signal != 0)
+        hits_r1_all = float((rule1_signal[m1] == raw_sign[m1]).mean())
+        hits_r1_ext = float((rule1_signal[m1 & rule1_extreme_mask] == raw_sign[m1 & rule1_extreme_mask]).mean())
+        
+        # Rule 2
+        m2 = valid_mask & (rule2_signal != 0)
+        hits_r2_all = float((rule2_signal[m2] == raw_sign[m2]).mean())
+        hits_r2_ext = float((rule2_signal[m2 & rule2_extreme_mask] == raw_sign[m2 & rule2_extreme_mask]).mean())
         
         rows.append({
             "horizon_N": N,
             "horizon_minutes": N * 5,
             "mean_abs_return_all": mean_abs_all,
-            "breakeven_hit_rate_all_rows": "not achievable" if be_hit_rate_all > 1.0 else f"{be_hit_rate_all:.4f}",
+            "breakeven_hit_rate_all_rows": "not achievable" if be_hit_rate_all > 1.0 else f"{be_hit_rate_all*100:.2f}%",
             "mean_abs_return_big_move_m": m,
-            "breakeven_hit_rate_big_move": f"{be_hit_rate_bm:.4f}",
-            "best_single_feature_direction_auc": round(best_auc, 4),
-            "skill_gap_to_big_move_breakeven": f"{be_hit_rate_bm - best_auc:+.4f}",
+            "breakeven_hit_rate_big_move": f"{be_hit_rate_bm*100:.2f}%",
+            "rule1_pos288_hit_rate_all": f"{hits_r1_all*100:.2f}%",
+            "rule1_pos288_hit_rate_ext20": f"{hits_r1_ext*100:.2f}%",
+            "rule2_ema50_hit_rate_all": f"{hits_r2_all*100:.2f}%",
+            "rule2_ema50_hit_rate_ext20": f"{hits_r2_ext*100:.2f}%",
             "cost_c": cost_c,
             "note": "big_move row figure is optimistic because it assumes perfect size filtering",
         })

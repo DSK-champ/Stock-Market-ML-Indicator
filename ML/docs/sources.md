@@ -65,3 +65,26 @@ Every assumption, threshold, fee rate, paper, and library behavior referenced in
   4. Microstructure & Order Flow (Taker Buy Ratio, Trade Count Z-score)
 - **Preliminary Citation:** Ang, Andrew (2014). *Asset Management: A Systematic Approach to Factor Investing*. Oxford University Press.
 
+---
+
+## 3. Structure, Pivots & Technical Architecture (Step 4b)
+
+### Dow Theory & Algorithmic Trend State Machine
+- **Status:** `[VERIFIED]`
+- **Concept:** Market structure is partitioned into directional states (Up, Down, Range) based on sequential swing extremes. An uptrend persists as long as price produces consecutive Higher Highs (HH) and Higher Lows (HL); a close breaking below the last confirmed HL by a buffer terminates the uptrend into Range or Down.
+- **Citation:** Rhea, Robert (1932). *The Dow Theory*. Barron's. Edwards, Robert D., and John Magee (1948). *Technical Analysis of Stock Trends*. John Magee Inc.
+
+### Fractal Swing Highs and Lows (Williams Fractals)
+- **Status:** `[VERIFIED]`
+- **Concept:** A local swing high at candle $i$ requires $H_i > \max(H_{i-k \dots i-1})$ and $H_i > \max(H_{i+1 \dots i+k})$. A local swing low requires $L_i < \min(L_{i-k \dots i-1})$ and $L_i < \min(L_{i+1 \dots i+k})$. In high-frequency causal modeling, pivot $i$ is strictly invisible prior to candle $i+k$ (the confirmation candle).
+- **Citation:** Williams, Bill (1995). *Trading Chaos: Applying Expert Techniques to Maximize Your Profits*. John Wiley & Sons.
+
+### Wilder's Average True Range (ATR)
+- **Status:** `[VERIFIED]`
+- **Concept:** Volatility metric accounting for gaps and extreme intraday price spans.
+  $$TR_t = \max(H_t - L_t, |H_t - C_{t-1}|, |L_t - C_{t-1}|)$$
+  $$\text{ATR}_{t} = \frac{13 \cdot \text{ATR}_{t-1} + TR_t}{14}$$
+  Normalized by closing price $\text{ATR}_t / C_t$ to provide a stationary, unitless measure of volatility.
+- **Citation:** Wilder, J. Welles (1978). *New Concepts in Technical Trading Systems*. Trend Research.
+
+

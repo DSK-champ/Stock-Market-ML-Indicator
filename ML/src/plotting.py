@@ -1929,3 +1929,224 @@ def plot_feature_group_correlation_heatmaps(
         saved_paths[grp_name] = out_p
         
     return saved_paths
+
+
+# ===========================================================================
+# Step 4b: Market Structure Engine Plots
+# ===========================================================================
+
+def plot_04b_event_counts(
+    df_events: pd.DataFrame,
+    df_trend_time: pd.DataFrame,
+    figures_dir: Path = FIGURES_DIR,
+) -> Tuple[plt.Figure, Path]:
+    """Plot market structure event counts and trend time share per year."""
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
+    
+    years = [str(y) for y in df_events["year"]]
+    x = np.arange(len(years))
+    width = 0.25
+    
+    ax1.bar(x - width, df_events["level_breaks"], width, label="Level Breaks", color="#e74c3c", alpha=0.85)
+    ax1.bar(x, df_events["retests_total"], width, label="Retests (Total)", color="#3498db", alpha=0.85)
+    ax1.bar(x + width, df_events["trend_state_changes"], width, label="Trend State Changes", color="#2ecc71", alpha=0.85)
+    ax1.set_xticks(x)
+    ax1.set_xticklabels(years)
+    ax1.set_title("Market Structure Event Counts per Year (Train Only)")
+    ax1.set_ylabel("Count")
+    ax1.grid(True, linestyle="--", alpha=0.4)
+    ax1.legend(loc="upper left")
+    
+    # Trend time share
+    up_vals = [float(v.rstrip("%")) for v in df_trend_time["up_trend_pct"]]
+    down_vals = [float(v.rstrip("%")) for v in df_trend_time["down_trend_pct"]]
+    range_vals = [float(v.rstrip("%")) for v in df_trend_time["range_pct"]]
+    
+    ax2.bar(x, up_vals, width=0.5, label="Up Trend", color="#27ae60", alpha=0.85)
+    ax2.bar(x, down_vals, width=0.5, bottom=up_vals, label="Down Trend", color="#c0392b", alpha=0.85)
+    ax2.bar(x, range_vals, width=0.5, bottom=np.array(up_vals) + np.array(down_vals), label="Range", color="#7f8c8d", alpha=0.85)
+    ax2.set_xticks(x)
+    ax2.set_xticklabels(years)
+    ax2.set_title("Dow Trend State Time Share per Year (%)")
+    ax2.set_ylabel("Share of Candles (%)")
+    ax2.set_ylim(0, 100)
+    ax2.grid(True, linestyle="--", alpha=0.4)
+    ax2.legend(loc="upper right")
+    
+    fig.tight_layout()
+    out_path = figures_dir / "04b_event_counts_per_year.png"
+    fig.savefig(out_path, dpi=150)
+    return fig, out_path
+
+
+def plot_04b_conditional_direction(
+    df_cond: pd.DataFrame,
+    figures_dir: Path = FIGURES_DIR,
+) -> Tuple[plt.Figure, Path]:
+    """Plot conditional Up share by Dow trend state and rule vote across horizons."""
+    fig, axes = plt.subplots(1, 2, figsize=(15, 5))
+    
+    # 1. Trend states
+    ax1 = axes[0]
+    trend_df = df_cond[df_cond["condition"].str.startswith("Trend:")]
+    horizons = sorted(trend_df["horizon_N"].unique())
+    x = np.arange(len(horizons))
+    width = 0.25
+    
+    up_shares = [float(trend_df[(trend_df["horizon_N"] == N) & (trend_df["condition"] == "Trend: Up")]["up_share_row_level"].values[0].rstrip("%")) for N in horizons]
+    down_shares = [float(trend_df[(trend_df["horizon_N"] == N) & (trend_df["condition"] == "Trend: Down")]["up_share_row_level"].values[0].rstrip("%")) for N in horizons]
+    range_shares = [float(trend_df[(trend_df["horizon_N"] == N) & (trend_df["condition"] == "Trend: Range")]["up_share_row_level"].values[0].rstrip("%")) for N in horizons]
+    
+    ax1.bar(x - width, up_shares, width, label="Trend Up", color="#27ae60", alpha=0.85)
+    ax1.bar(x, range_shares, width, label="Trend Range", color="#7f8c8d", alpha=0.85)
+    ax1.bar(x + width, down_shares, width, label="Trend Down", color="#c0392b", alpha=0.85)
+    ax1.axhline(50.0, color="black", linestyle="--", linewidth=1.0, label="Neutral (50%)")
+    ax1.set_xticks(x)
+    ax1.set_xticklabels([f"N={N} ({N*5}m)" for N in horizons])
+    ax1.set_title("Up Share by Dow Trend State (Row-Level)")
+    ax1.set_ylabel("Share of Up Forward Returns (%)")
+    ax1.set_ylim(45, 55)
+    ax1.grid(True, linestyle="--", alpha=0.4)
+    ax1.legend(loc="upper right")
+    
+    # 2. Rule votes
+    ax2 = axes[1]
+    vote_df = df_cond[df_cond["condition"].str.startswith("Rule Vote:")]
+    v_up = [float(vote_df[(vote_df["horizon_N"] == N) & (vote_df["condition"] == "Rule Vote: +1 (Bull)")]["up_share_row_level"].values[0].rstrip("%")) for N in horizons]
+    v_down = [float(vote_df[(vote_df["horizon_N"] == N) & (vote_df["condition"] == "Rule Vote: -1 (Bear)")]["up_share_row_level"].values[0].rstrip("%")) for N in horizons]
+    v_zero = [float(vote_df[(vote_df["horizon_N"] == N) & (vote_df["condition"] == "Rule Vote: 0 (Neutral)")]["up_share_row_level"].values[0].rstrip("%")) for N in horizons]
+    
+    ax2.bar(x - width, v_up, width, label="Vote +1 (Bull)", color="#2980b9", alpha=0.85)
+    ax2.bar(x, v_zero, width, label="Vote 0 (Neutral)", color="#95a5a6", alpha=0.85)
+    ax2.bar(x + width, v_down, width, label="Vote -1 (Bear)", color="#d35400", alpha=0.85)
+    ax2.axhline(50.0, color="black", linestyle="--", linewidth=1.0, label="Neutral (50%)")
+    ax2.set_xticks(x)
+    ax2.set_xticklabels([f"N={N} ({N*5}m)" for N in horizons])
+    ax2.set_title("Up Share by 4th Rule Voter (Row-Level)")
+    ax2.set_ylabel("Share of Up Forward Returns (%)")
+    ax2.set_ylim(45, 55)
+    ax2.grid(True, linestyle="--", alpha=0.4)
+    ax2.legend(loc="upper right")
+    
+    fig.tight_layout()
+    out_path = figures_dir / "04b_conditional_direction.png"
+    fig.savefig(out_path, dpi=150)
+    return fig, out_path
+
+
+def plot_04b_target_stop_outcomes(
+    df_outcomes: pd.DataFrame,
+    figures_dir: Path = FIGURES_DIR,
+) -> Tuple[plt.Figure, Path]:
+    """Plot first-touch hit rates and net returns of structural targets vs stops."""
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
+    
+    horizons = [f"N={n} ({n*5}m)" for n in df_outcomes["horizon_N"]]
+    x = np.arange(len(horizons))
+    width = 0.28
+    
+    hr_struct = [float(v.rstrip("%")) for v in df_outcomes["structural_hit_rate"]]
+    hr_be = [float(v.rstrip("%")) for v in df_outcomes["breakeven_hit_rate_rr"]]
+    hr_base = [float(v.rstrip("%")) for v in df_outcomes["baseline_fixed_atr_hit_rate"]]
+    
+    ax1.bar(x - width/2, hr_struct, width, label="Structural Hit Rate (Target 1st)", color="#3498db", alpha=0.85)
+    ax1.bar(x + width/2, hr_base, width, label="Fixed ATR Baseline (2x / 1.5x)", color="#95a5a6", alpha=0.85)
+    ax1.plot(x, hr_be, color="#e74c3c", marker="o", linewidth=2.0, label="R:R Break-even Threshold")
+    ax1.set_xticks(x)
+    ax1.set_xticklabels(horizons)
+    ax1.set_title("Target vs Stop Hit Rate vs Break-even")
+    ax1.set_ylabel("Hit Rate (%)")
+    ax1.set_ylim(20, 60)
+    ax1.grid(True, linestyle="--", alpha=0.4)
+    ax1.legend(loc="upper right")
+    
+    # Net returns in bps
+    ret_struct = [float(v) for v in df_outcomes["mean_net_return_bps"]]
+    ret_base = [float(v) for v in df_outcomes["baseline_fixed_atr_net_bps"]]
+    
+    ax2.bar(x - width/2, ret_struct, width, label="Structural Net Return (after c)", color="#2ecc71" if np.mean(ret_struct) > 0 else "#e74c3c", alpha=0.85)
+    ax2.bar(x + width/2, ret_base, width, label="Fixed ATR Baseline", color="#bdc3c7", alpha=0.85)
+    ax2.axhline(0.0, color="black", linestyle="-", linewidth=1.0)
+    ax2.set_xticks(x)
+    ax2.set_xticklabels(horizons)
+    ax2.set_title("Mean Net Return After Cost c = 0.23% (bps)")
+    ax2.set_ylabel("Basis Points (bps)")
+    ax2.grid(True, linestyle="--", alpha=0.4)
+    ax2.legend(loc="upper right")
+    
+    fig.tight_layout()
+    out_path = figures_dir / "04b_target_stop_outcomes.png"
+    fig.savefig(out_path, dpi=150)
+    return fig, out_path
+
+
+def plot_04b_monthly_regimes(
+    df_reg: pd.DataFrame,
+    figures_dir: Path = FIGURES_DIR,
+) -> Tuple[plt.Figure, Path]:
+    """Plot rule vote hit rate partitioned by monthly market regime (Up, Down, Sideways)."""
+    fig, ax = plt.subplots(figsize=(10, 5))
+    
+    sub12 = df_reg[df_reg["horizon_N"] == 12]
+    regimes = list(sub12["monthly_regime"])
+    x = np.arange(len(regimes))
+    
+    hr_vote = [float(v.rstrip("%")) for v in sub12["rule_vote_hit_rate"]]
+    up_trend = [float(v.rstrip("%")) for v in sub12["up_share_in_uptrend"]]
+    down_trend = [float(v.rstrip("%")) for v in sub12["up_share_in_downtrend"]]
+    
+    width = 0.25
+    ax.bar(x - width, hr_vote, width, label="Rule Vote Hit Rate", color="#3498db", alpha=0.85)
+    ax.bar(x, up_trend, width, label="Up Share in Uptrend", color="#2ecc71", alpha=0.85)
+    ax.bar(x + width, down_trend, width, label="Up Share in Downtrend", color="#e74c3c", alpha=0.85)
+    ax.axhline(50.0, color="black", linestyle="--", linewidth=1.0, label="Neutral (50%)")
+    
+    ax.set_xticks(x)
+    ax.set_xticklabels(regimes)
+    ax.set_title("Structure Signals & Hit Rates Partitioned by Monthly Market Regime (N=12)")
+    ax.set_ylabel("Percentage (%)")
+    ax.set_ylim(40, 60)
+    ax.grid(True, linestyle="--", alpha=0.4)
+    ax.legend(loc="upper right")
+    
+    fig.tight_layout()
+    out_path = figures_dir / "04b_monthly_regimes.png"
+    fig.savefig(out_path, dpi=150)
+    return fig, out_path
+
+
+def plot_04b_distance_distributions(
+    df_drawings: pd.DataFrame,
+    cost_c: float = config.TOTAL_ROUNDTRIP_COST,
+    figures_dir: Path = FIGURES_DIR,
+) -> Tuple[plt.Figure, Path]:
+    """Plot target and stop distance distribution in multiples of trading cost c."""
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
+    
+    valid = df_drawings["candidate_target_price"].notna()
+    sub = df_drawings[valid]
+    
+    t_c = sub["target_dist_c_mult"].clip(upper=15.0)
+    s_c = sub["stop_dist_c_mult"].clip(upper=15.0)
+    
+    ax1.hist(t_c, bins=40, color="#2980b9", alpha=0.75, edgecolor="black", linewidth=0.5)
+    ax1.axvline(1.0, color="#e74c3c", linestyle="--", linewidth=2.0, label=f"Cost c = {cost_c*100:.2f}% (1.0x)")
+    ax1.set_title("Candidate Target Distance in Multiples of Cost c")
+    ax1.set_xlabel("Target Distance / c")
+    ax1.set_ylabel("Frequency")
+    ax1.grid(True, linestyle="--", alpha=0.4)
+    ax1.legend(loc="upper right")
+    
+    ax2.hist(s_c, bins=40, color="#c0392b", alpha=0.75, edgecolor="black", linewidth=0.5)
+    ax2.axvline(1.0, color="black", linestyle="--", linewidth=2.0, label="Cost c (1.0x)")
+    ax2.set_title("Candidate Stop Distance in Multiples of Cost c")
+    ax2.set_xlabel("Stop Distance / c")
+    ax2.set_ylabel("Frequency")
+    ax2.grid(True, linestyle="--", alpha=0.4)
+    ax2.legend(loc="upper right")
+    
+    fig.tight_layout()
+    out_path = figures_dir / "04b_target_stop_distances.png"
+    fig.savefig(out_path, dpi=150)
+    return fig, out_path
+

@@ -217,6 +217,57 @@ A total of 35 new causal, stationary features across 7 new feature groups are ad
 - **Hierarchical Correlation Clusters:** Complete linkage clustering on $1 - |\text{Spearman}|$ at $d < 0.05$ ($|\rho| > 0.95$). Identifies 10 multi-feature clusters; protects `feat_vol_sigma_288`, `feat_vol_natr_14`, `feat_mom_rsi_14`. Final selection deferred to Step 5 walk-forward ablation.
 - **Retraction of Single Setup/Horizon Baseline:** Horizon $N \in \{2, 3, 6, 12\}$ and Setup (A, B, C, D) are NOT pre-selected in Step 4. They will be decided strictly in Step 5 via the pre-declared staged elimination protocol on walk-forward folds.
 
+---
+
+## 9. Structure Engine, Parameter Grid & Voter Combiner Design (Step 4b)
+
+### 9.1 Declared Parameter Grid (Fixed Prior to Computation)
+To prevent data snooping and label overfitting, all structure parameters are pre-declared from a small grid ($\le 3$ values per parameter):
+
+| Component | Parameter | Declared Value | Allowed Grid | Rationale |
+|---|---|---|---|---|
+| **5m Pivots** | $k_{5m}$ | **5 candles** | $\{3, 5, 10\}$ | 5 candles before & after = 25m span; confirmed strictly at $i+5$. |
+| **1h Pivots** | $k_{1h}$ | **3 candles** | $\{2, 3, 5\}$ | 3 hours before & after on completed 1h candles; confirmed at $i+3$. |
+| **Level Merge** | $\tau_{merge}$ | **0.5 ATR** | $\{0.25, 0.50, 0.75\}$ | Consolidates nearby swing highs/lows into a single persistent level. |
+| **Break Buffer** | $\beta_{break}$ | **0.2 ATR** | $\{0.10, 0.20, 0.30\}$ | Break requires candle CLOSE beyond level $+ 0.2 \times ATR$ (never wicks). |
+| **Retest Tolerance** | $\tau_{retest}$ | **0.5 ATR** | $\{0.25, 0.50, 0.75\}$ | Price returning within $0.5 \times ATR$ of a flipped level. |
+| **Max Pivots Kept** | $M_{pivots}$ | **50 pivots** | $\{20, 50, 100\}$ | Bounded memory buffer for streaming support/resistance evaluation. |
+| **Min Target / Stop** | Multiplier | **1.5 ATR** | $\{1.0, 1.5, 2.0\}$ | Prevents stop placement within normal intraday volatility noise. |
+
+### 9.2 Decision Table for Rule Vote (The 4th Voter)
+The rule vote produces an integer signal $v_t \in \{+1, -1, 0\}$ per candle with a causal reason code:
+
+| Rule ID | Trend State | Trigger Conditions | Output Vote | Reason Code |
+|---|---|---|---|---|
+| **R1** | `Up` (+1) | Retest of flipped support from above within last 12 bars ($close_t \ge S_{flip} - 0.2 ATR$) | **+1** | `BULL_RETEST` |
+| **R2** | `Down` (-1) | Retest of flipped resistance from below within last 12 bars ($close_t \le R_{flip} + 0.2 ATR$) | **-1** | `BEAR_RETEST` |
+| **R3** | `Up` (+1) | Pullback depth $\le 1.0 ATR$, $close_t > \text{EMA50}$, distance to EMA50 $\le 0.5 ATR$ | **+1** | `BULL_PULLBACK_MA` |
+| **R4** | `Down` (-1) | Pullback depth $\le 1.0 ATR$, $close_t < \text{EMA50}$, distance to EMA50 $\le 0.5 ATR$ | **-1** | `BEAR_PULLBACK_MA` |
+| **R5** | *Any* | Default / No structural confirmation | **0** | `NEUTRAL` |
+
+### 9.3 Role Separation: Features vs Drawings
+- **Role `feature`:** Ratios and ATR distances only (e.g., $(C - S)/ATR$, $(R - C)/C$, trend state one-hot, pullback depth in ATR). Never raw price levels.
+- **Role `drawing`:** Raw price levels for chart rendering and target/stop evaluation (`level_support_price`, `level_resistance_price`, `candidate_target_price`, `candidate_stop_price`). Excluded from model feature sets.
+
+### 9.4 4-Voter Combiner Architecture (Specification for Step 5)
+- **Voters (4 total):**
+  1. Voter 1: Calibrated Logistic Regression (continuous probability $p_{LR} \in [0, 1]$)
+  2. Voter 2: Calibrated Random Forest (continuous probability $p_{RF} \in [0, 1]$)
+  3. Voter 3: Calibrated LightGBM (continuous probability $p_{LGBM} \in [0, 1]$)
+  4. Voter 4: Rule-based Voter $v_{rule} \in \{+1, -1, 0\}$ (Section 9.2)
+- **Feature Set Variants:**
+  - Variant A: ML models fitted on 85 baseline features (excluding structure group).
+  - Variant B: ML models fitted on all features (baseline + structure group).
+- **Aggregator Mechanisms:**
+  - Aggregator 1 (Confluence Rule): Signal emitted only if $\ge k$ of 4 voters agree (with $k \in \{2, 3, 4\}$ declared) and aggregate model confidence exceeds calibrated threshold $\gamma$.
+  - Aggregator 2 (Meta-Logistic Stacking): Logistic regression trained strictly on OUT-OF-FOLD walk-forward validation predictions plus the rule vote. Training on in-sample predictions is forbidden.
+- **Worth-It Volatility Gating:** Signals from either aggregator are gated by Setup D worth-it model ($\hat{P}(\text{big\_move} = 1) > \theta_{size}$).
+- **Evaluation Mandate:** Evaluated strictly via expanding-window walk-forward cross-validation folds on the Train partition.
+
+### 9.5 SUGGESTION on Trend Lines (Diagonal)
+Diagonal trend lines require connecting non-adjacent pivots through linear regression or iterative slope fitting. Unlike horizontal levels which are invariant across time once established, diagonal lines continuously shift slope upon arrival of newer swing points, creating lookahead risks unless strictly anchored. We recommend deferring diagonal trend lines until the horizontal pivot engine is fully established and validated.
+
+
 
 
 

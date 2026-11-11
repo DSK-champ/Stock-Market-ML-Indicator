@@ -162,6 +162,68 @@ FEATURE_GROUPS: Dict[str, List[str]] = {
         "feat_time_sin_week",
         "feat_time_cos_week",
     ],
+    "ma_structure": [
+        # 5m MA ratios (windows 5, 25, 100) — 10 and 50 are reused from momentum group
+        "feat_ma_sma_ratio_5",
+        "feat_ma_sma_ratio_25",
+        "feat_ma_sma_ratio_100",
+        "feat_ma_ema_ratio_5",
+        "feat_ma_ema_ratio_25",
+        "feat_ma_ema_ratio_100",
+        # 5m MA slopes (windows 5, 10, 25, 50, 100) — MA_t / MA_{t-5} - 1
+        "feat_ma_sma_slope_5",
+        "feat_ma_sma_slope_10",
+        "feat_ma_sma_slope_25",
+        "feat_ma_sma_slope_50",
+        "feat_ma_sma_slope_100",
+        "feat_ma_ema_slope_5",
+        "feat_ma_ema_slope_10",
+        "feat_ma_ema_slope_25",
+        "feat_ma_ema_slope_50",
+        "feat_ma_ema_slope_100",
+        # 5m MA alignment scores in [-1, 1]
+        "feat_ma_alignment_sma_5m",
+        "feat_ma_alignment_ema_5m",
+        # 1h completed MA ratios (windows 5, 10, 25, 50, 100) — (close_5m - MA_1h) / MA_1h
+        "feat_ma_1h_sma_ratio_5",
+        "feat_ma_1h_sma_ratio_10",
+        "feat_ma_1h_sma_ratio_25",
+        "feat_ma_1h_sma_ratio_50",
+        "feat_ma_1h_sma_ratio_100",
+        "feat_ma_1h_ema_ratio_5",
+        "feat_ma_1h_ema_ratio_10",
+        "feat_ma_1h_ema_ratio_25",
+        "feat_ma_1h_ema_ratio_50",
+        "feat_ma_1h_ema_ratio_100",
+        # 1h completed MA slopes (windows 5, 10, 25, 50, 100) — MA_{t,1h} / MA_{t-5,1h} - 1
+        "feat_ma_1h_sma_slope_5",
+        "feat_ma_1h_sma_slope_10",
+        "feat_ma_1h_sma_slope_25",
+        "feat_ma_1h_sma_slope_50",
+        "feat_ma_1h_sma_slope_100",
+        # 1h MA alignment scores in [-1, 1]
+        "feat_ma_alignment_sma_1h",
+        "feat_ma_alignment_ema_1h",
+        # 1h Wilder ATR-14 normalized by 5m close
+        "feat_ma_1h_natr_14",
+    ],
+    "structure": [
+        "feat_struct_dist_support_atr",
+        "feat_struct_dist_support_pct",
+        "feat_struct_dist_resistance_atr",
+        "feat_struct_dist_resistance_pct",
+        "feat_struct_support_strength",
+        "feat_struct_resistance_strength",
+        "feat_struct_trend_up",
+        "feat_struct_trend_down",
+        "feat_struct_trend_range",
+        "feat_struct_trend_age",
+        "feat_struct_pullback_depth_atr",
+        "feat_struct_bars_since_break",
+        "feat_struct_bars_since_retest",
+        "feat_struct_retest_direction",
+        "feat_struct_rule_vote",
+    ],
 }
 
 ALL_FEATURE_COLUMNS: List[str] = [col for cols in FEATURE_GROUPS.values() for col in cols]
@@ -278,7 +340,7 @@ def build_features(df: pd.DataFrame, sigma_window: int = 288) -> pd.DataFrame:
     if missing:
         raise KeyError(f"df is missing required columns: {missing}")
 
-    out = pd.DataFrame(index=df.index)
+    out = {}
     close = df["close"]
     open_ = df["open"]
     high = df["high"]
@@ -534,38 +596,125 @@ def build_features(df: pd.DataFrame, sigma_window: int = 288) -> pd.DataFrame:
     out["feat_time_cos_week"] = np.cos(2.0 * np.pi * hour_of_week / 168.0)
 
     # -----------------------------------------------------------
+    # G16: ma_structure (MAs on 5m and completed 1h, slopes, alignment, 1h ATR)
+    # -----------------------------------------------------------
+    # 1. 5m MAs: windows 5, 10, 25, 50, 100
+    sma5 = close.rolling(5, min_periods=2).mean()
+    sma25 = close.rolling(25, min_periods=2).mean()
+    sma100 = close.rolling(100, min_periods=2).mean()
+
+    ema5 = _ema(close, 5)
+    ema25 = _ema(close, 25)
+    ema100 = _ema(close, 100)
+
+    # 5m MA ratios (5, 25, 100) — 10 and 50 reused from momentum group
+    out["feat_ma_sma_ratio_5"] = (close - sma5) / sma5.replace(0.0, np.nan)
+    out["feat_ma_sma_ratio_25"] = (close - sma25) / sma25.replace(0.0, np.nan)
+    out["feat_ma_sma_ratio_100"] = (close - sma100) / sma100.replace(0.0, np.nan)
+    out["feat_ma_ema_ratio_5"] = (close - ema5) / ema5.replace(0.0, np.nan)
+    out["feat_ma_ema_ratio_25"] = (close - ema25) / ema25.replace(0.0, np.nan)
+    out["feat_ma_ema_ratio_100"] = (close - ema100) / ema100.replace(0.0, np.nan)
+
+    # 5m MA slopes: MA_t / MA_{t-5} - 1 (5-candle lag)
+    out["feat_ma_sma_slope_5"] = (sma5 / sma5.shift(5).replace(0.0, np.nan) - 1.0).fillna(0.0)
+    out["feat_ma_sma_slope_10"] = (sma10 / sma10.shift(5).replace(0.0, np.nan) - 1.0).fillna(0.0)
+    out["feat_ma_sma_slope_25"] = (sma25 / sma25.shift(5).replace(0.0, np.nan) - 1.0).fillna(0.0)
+    out["feat_ma_sma_slope_50"] = (sma50 / sma50.shift(5).replace(0.0, np.nan) - 1.0).fillna(0.0)
+    out["feat_ma_sma_slope_100"] = (sma100 / sma100.shift(5).replace(0.0, np.nan) - 1.0).fillna(0.0)
+
+    out["feat_ma_ema_slope_5"] = (ema5 / ema5.shift(5).replace(0.0, np.nan) - 1.0).fillna(0.0)
+    out["feat_ma_ema_slope_10"] = (ema10 / ema10.shift(5).replace(0.0, np.nan) - 1.0).fillna(0.0)
+    out["feat_ma_ema_slope_25"] = (ema25 / ema25.shift(5).replace(0.0, np.nan) - 1.0).fillna(0.0)
+    out["feat_ma_ema_slope_50"] = (ema50 / ema50.shift(5).replace(0.0, np.nan) - 1.0).fillna(0.0)
+    out["feat_ma_ema_slope_100"] = (ema100 / ema100.shift(5).replace(0.0, np.nan) - 1.0).fillna(0.0)
+
+    # 5m Alignment scores: 10 pairs from {5, 10, 25, 50, 100} in [-1, 1]
+    sma_5m_list = [sma5, sma10, sma25, sma50, sma100]
+    ema_5m_list = [ema5, ema10, ema25, ema50, ema100]
+    sma_agree_5m = sum(np.where(sma_5m_list[i] > sma_5m_list[j], 1.0, 0.0) for i in range(5) for j in range(i + 1, 5))
+    ema_agree_5m = sum(np.where(ema_5m_list[i] > ema_5m_list[j], 1.0, 0.0) for i in range(5) for j in range(i + 1, 5))
+    out["feat_ma_alignment_sma_5m"] = (2.0 * sma_agree_5m - 10.0) / 10.0
+    out["feat_ma_alignment_ema_5m"] = (2.0 * ema_agree_5m - 10.0) / 10.0
+
+    # 2. Completed 1h MAs: windows 5, 10, 25, 50, 100 on df_1h
+    sma_1h_dict = {}
+    ema_1h_dict = {}
+    for w in [5, 10, 25, 50, 100]:
+        s1 = df_1h["close"].rolling(w, min_periods=2).mean()
+        e1 = _ema(df_1h["close"], w)
+        sma_1h_dict[w] = s1
+        ema_1h_dict[w] = e1
+        s1_ffill = s1.shift(1).reindex(df.index, method="ffill")
+        e1_ffill = e1.shift(1).reindex(df.index, method="ffill")
+        out[f"feat_ma_1h_sma_ratio_{w}"] = (close - s1_ffill) / s1_ffill.replace(0.0, np.nan)
+        out[f"feat_ma_1h_ema_ratio_{w}"] = (close - e1_ffill) / e1_ffill.replace(0.0, np.nan)
+        slope_1h = (s1 / s1.shift(5).replace(0.0, np.nan) - 1.0).fillna(0.0)
+        out[f"feat_ma_1h_sma_slope_{w}"] = slope_1h.shift(1).reindex(df.index, method="ffill").fillna(0.0)
+
+    # 1h Alignment scores in [-1, 1]
+    sma_1h_list = [sma_1h_dict[w] for w in [5, 10, 25, 50, 100]]
+    ema_1h_list = [ema_1h_dict[w] for w in [5, 10, 25, 50, 100]]
+    sma_agree_1h = sum(np.where(sma_1h_list[i] > sma_1h_list[j], 1.0, 0.0) for i in range(5) for j in range(i + 1, 5))
+    ema_agree_1h = sum(np.where(ema_1h_list[i] > ema_1h_list[j], 1.0, 0.0) for i in range(5) for j in range(i + 1, 5))
+    align_sma_1h = pd.Series((2.0 * sma_agree_1h - 10.0) / 10.0, index=df_1h.index)
+    align_ema_1h = pd.Series((2.0 * ema_agree_1h - 10.0) / 10.0, index=df_1h.index)
+    out["feat_ma_alignment_sma_1h"] = align_sma_1h.shift(1).reindex(df.index, method="ffill").fillna(0.0)
+    out["feat_ma_alignment_ema_1h"] = align_ema_1h.shift(1).reindex(df.index, method="ffill").fillna(0.0)
+
+    # 1h Wilder ATR-14 normalized by 5m close
+    atr_1h = _atr(df_1h, 14)
+    out["feat_ma_1h_natr_14"] = (atr_1h.shift(1).reindex(df.index, method="ffill")) / close.replace(0.0, np.nan)
+
+    # -----------------------------------------------------------
+    # G17: structure (causal pivots, support/resistance, Dow trend, 4th voter)
+    # -----------------------------------------------------------
+    from src.structure import build_structure, STRUCTURE_FEATURE_COLUMNS
+    df_struct, _ = build_structure(df)
+    for col in STRUCTURE_FEATURE_COLUMNS:
+        out[col] = df_struct[col]
+
+    out_df = pd.DataFrame(out, index=df.index)
+
+    # -----------------------------------------------------------
     # Gap boundary mask protection
     # -----------------------------------------------------------
     if "gap_id" in df.columns:
         gap = df["gap_id"]
         for col in ALL_FEATURE_COLUMNS:
-            if "2016" in col or "seasonal" in col:
+            if "feat_struct_" in col:
+                # Structure engine already handles gap resets internally
+                continue
+            elif "2016" in col or "seasonal" in col:
                 w_gap = 2016
+            elif "feat_ma_1h_" in col or "alignment_sma_1h" in col or "alignment_ema_1h" in col:
+                w_gap = 1260  # 105 hours * 12
             elif "288" in col:
                 w_gap = 288
-            elif "72" in col or "60" in col:
+            elif "100" in col:
+                w_gap = 100
+            elif "72" in col or "60" in col or "50" in col:
                 w_gap = 72
             elif "36" in col:
                 w_gap = 36
-            elif "24" in col or "20" in col:
-                w_gap = 24
+            elif "25" in col or "24" in col or "20" in col:
+                w_gap = 25
             elif "14" in col or "12" in col or "10" in col:
                 w_gap = 14
-            elif "6" in col:
+            elif "6" in col or "5" in col:
                 w_gap = 6
             elif "3" in col:
                 w_gap = 3
             else:
                 w_gap = 2
             same_gap = (gap == gap.shift(w_gap - 1))
-            out[col] = out[col].where(same_gap, np.nan)
+            out_df[col] = out_df[col].where(same_gap, np.nan)
 
     # Final check of columns
-    missing_cols = set(ALL_FEATURE_COLUMNS) - set(out.columns)
+    missing_cols = set(ALL_FEATURE_COLUMNS) - set(out_df.columns)
     if missing_cols:
         raise RuntimeError(f"Engineered features missing expected columns: {missing_cols}")
 
-    return out[ALL_FEATURE_COLUMNS]
+    return out_df[ALL_FEATURE_COLUMNS]
 
 
 def drop_warmup_rows(features_df: pd.DataFrame, n: int = LOOKBACK_CANDLES) -> pd.DataFrame:

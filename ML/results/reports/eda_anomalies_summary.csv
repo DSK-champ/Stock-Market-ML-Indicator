@@ -1,0 +1,2 @@
+anomaly_rule,flagged_candles,pct_of_train_candles,variance_share_pct,excess_kurtosis_with_anomalies,excess_kurtosis_without_anomalies,step01_rolling_z_comparison,note_on_difference
+Train Robust MAD (3 * robust_sigma),11811,5.35,58.11,58.67,0.26,1718,"Step 1 flagged 1,718 on the full 318,240-candle series using rolling 24h z-scores (|z| > 5), whereas Step 3 flags 3,031 on Train only using static global 3 * MAD."

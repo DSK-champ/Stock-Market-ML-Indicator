@@ -1,0 +1,15 @@
+feature,vif
+return_1c,1.98
+log_volume,13.53
+log_trades,10.44
+hl_spread,-26187883979428.12
+body_size,-13076743705915.96
+upper_wick,-2997661124633.35
+lower_wick,-4075279310530.91
+close_pos_range,2.53
+taker_buy_ratio,39185492.92
+taker_imbalance,39185492.92
+avg_trade_size,7.86
+volume_change,2.25
+trades_change,2.16
+rolling_vol_24h,1.37

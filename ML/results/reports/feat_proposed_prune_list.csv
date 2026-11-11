@@ -1,0 +1,21 @@
+feature,group,prune_category,reason,retained_alternative,recommendation
+feat_vol_har_rv_12,vol_har,Exact Duplicate / Identity,Bit-identical (max diff 0.0); rolling sigma over 12 candles,feat_vol_sigma_12,Drop redundant duplicate in Step 5 ablation
+feat_vol_har_rv_288,vol_har,Exact Duplicate / Identity,Bit-identical (max diff 0.0); rolling sigma over 288 candles,feat_vol_sigma_288,Drop redundant duplicate in Step 5 ablation
+feat_vol_realized_semi_var_down_ratio_60,vol_realized,Exact Duplicate / Identity,Exact affine complement: semi_var_down ≡ 1.0 - semi_var_up (Pearson = -1.0),feat_vol_realized_semi_var_up_ratio_60,Drop redundant duplicate in Step 5 ablation
+feat_mom_macd_hist,momentum,Exact Duplicate / Identity,Exact linear identity: hist ≡ line - signal,feat_mom_macd_line,Drop redundant duplicate in Step 5 ablation
+feat_vol_gk_288,vol_range,High Collinearity (|r| > 0.95),Spearman correlation 0.9982 with feat_vol_parkinson_288,feat_vol_parkinson_288,Step 5 walk-forward ablation candidate
+feat_vol_gk_60,vol_range,High Collinearity (|r| > 0.95),Spearman correlation 0.9974 with feat_vol_parkinson_60,feat_vol_parkinson_60,Step 5 walk-forward ablation candidate
+feat_vol_parkinson_12,vol_range,High Collinearity (|r| > 0.95),Spearman correlation 0.9928 with feat_vol_gk_12,feat_vol_gk_12,Step 5 walk-forward ablation candidate
+feat_vol_sigma_288,volatility,High Collinearity (|r| > 0.95),Spearman correlation 0.9909 with feat_vol_parkinson_288,feat_vol_parkinson_288,Step 5 walk-forward ablation candidate
+feat_mom_macd_signal,momentum,High Collinearity (|r| > 0.95),Spearman correlation 0.9899 with feat_mom_sma_ratio_10_50,feat_mom_sma_ratio_10_50,Step 5 walk-forward ablation candidate
+feat_vol_sigma_60,volatility,High Collinearity (|r| > 0.95),Spearman correlation 0.9862 with feat_vol_parkinson_60,feat_vol_parkinson_60,Step 5 walk-forward ablation candidate
+feat_vol_sigma_12,volatility,High Collinearity (|r| > 0.95),Spearman correlation 0.9847 with feat_vol_realized_abs_sum_12,feat_vol_realized_abs_sum_12,Step 5 walk-forward ablation candidate
+feat_vol_har_rv_72,vol_har,High Collinearity (|r| > 0.95),Spearman correlation 0.9763 with feat_vol_parkinson_60,feat_vol_parkinson_60,Step 5 walk-forward ablation candidate
+feat_mom_ema_ratio_10,momentum,High Collinearity (|r| > 0.95),Spearman correlation 0.9712 with feat_mom_sma_ratio_10,feat_mom_sma_ratio_10,Step 5 walk-forward ablation candidate
+feat_mom_sma_ratio_20,momentum,High Collinearity (|r| > 0.95),Spearman correlation 0.9705 with feat_mom_ema_ratio_20,feat_mom_ema_ratio_20,Step 5 walk-forward ablation candidate
+feat_mom_sma_ratio_50,momentum,High Collinearity (|r| > 0.95),Spearman correlation 0.9701 with feat_mom_ema_ratio_50,feat_mom_ema_ratio_50,Step 5 walk-forward ablation candidate
+feat_vol_gk_12,vol_range,High Collinearity (|r| > 0.95),Spearman correlation 0.9647 with feat_vol_natr_14,feat_vol_natr_14,Step 5 walk-forward ablation candidate
+feat_of_taker_buy_zscore_60,order_flow,High Collinearity (|r| > 0.95),Spearman correlation 0.9623 with feat_of_taker_buy_ratio,feat_of_taker_buy_ratio,Step 5 walk-forward ablation candidate
+feat_vol_realized_abs_sum_36,vol_realized,High Collinearity (|r| > 0.95),Spearman correlation 0.9614 with feat_vol_natr_14,feat_vol_natr_14,Step 5 walk-forward ablation candidate
+feat_mom_rsi_7,momentum,High Collinearity (|r| > 0.95),Spearman correlation 0.9614 with feat_vol_bb_pct_20,feat_vol_bb_pct_20,Step 5 walk-forward ablation candidate
+feat_mom_ema_ratio_20,momentum,High Collinearity (|r| > 0.95),Spearman correlation 0.9535 with feat_mom_rsi_14,feat_mom_rsi_14,Step 5 walk-forward ablation candidate

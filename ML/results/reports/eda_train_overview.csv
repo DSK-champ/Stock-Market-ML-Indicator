@@ -1,0 +1,2 @@
+start,end,candles,days,start_price,end_price,min_price,max_price,total_return_pct,annualized_vol_pct,max_drawdown_pct
+2023-11-01T00:00:00+00:00,2025-12-07T04:40:00+00:00,220953,767.19,34601.43,89564.31,34130.73,126011.18,158.85,49.53,-35.76

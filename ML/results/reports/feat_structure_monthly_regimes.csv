@@ -1,0 +1,7 @@
+monthly_regime,horizon_N,horizon_minutes,regime_candles,active_votes,rule_vote_hit_rate,up_share_in_uptrend,up_share_in_downtrend
+Up,6,30,105408,40087,47.73%,49.92%,52.82%
+Up,12,60,105408,40084,47.12%,49.85%,53.46%
+Down,6,30,60768,22772,47.43%,47.31%,51.43%
+Down,12,60,60768,22771,47.29%,47.09%,52.12%
+Sideways,6,30,52759,20014,47.69%,49.23%,51.52%
+Sideways,12,60,52759,20015,47.41%,49.24%,53.28%

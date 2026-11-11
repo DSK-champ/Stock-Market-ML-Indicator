@@ -58,5 +58,23 @@ This document tracks all negative results, rejected architectures, discarded fea
   4. Updated day-of-week lookups to check `df.index.day_of_week` first, eliminating all 50 deprecation warnings.
   5. Formally removed the 3 exact duplicates (`feat_vol_har_rv_12`, `feat_vol_har_rv_288`, `feat_vol_realized_semi_var_down_ratio_60`), reducing features from 88 to 85. Retained all 3 MACD components in `master.csv` (172 columns total) but defined `LINEAR_MODEL_EXCLUDE = ["feat_mom_macd_hist"]` in `src/config.py` for linear/logistic models. Replaced heuristic prune list with hierarchical correlation clusters ($|\rho| > 0.95$, complete linkage).
 
+---
+
+## Log Entry 004 — Step 4b: Standalone Trend-Continuation Failure at 5m-1h Horizons & Structure Truncation Parity
+- **Date:** 2026-11-11
+- **Attempted Approach:**
+  1. *Standalone Trend Continuation:* Testing whether structural trend-following signals (Dow-rule breakouts, swing pivot breaks, and the 4th rule voter) predict positive forward directional returns at 5m to 1h horizons ($N \in \{2, 3, 6, 12\}$) on BTCUSDT.
+  2. *Naive Structural Target/Stop Orders:* Executing trades upon structural trend state transitions using candidate target and stop levels (with a $1.5 \times ATR$ floor).
+  3. *Unbounded Pivot History for Level Merging:* Accumulating and merging horizontal support/resistance levels across an unbounded historical lookback.
+- **Observed Failure / Risk:**
+  1. *Opposition to Microstructure Reversal:* At 5m-1h horizons on BTCUSDT, price action exhibits persistent negative autocorrelation and mean reversion ($\rho \in [-0.045, -0.018]$ for momentum and MA location features). Standalone trend continuation bets (buying breakouts or trading in the direction of Dow uptrends) run directly counter to this empirical tendency, resulting in sub-50% forward win rates ($48.2\% - 49.5\%$) on raw directional signs.
+  2. *Negative Net Expectancy after Round-Trip Costs:* Under fixed candidate target and stop geometry (1:1 to 2:1 reward-to-risk with $1.5 \times ATR$ floor), the empirical target-hit rate before stop-loss trigger fails to exceed the break-even hurdle ($> 50\% - 55\%$). After accounting for round-trip execution costs ($c = 0.23\%$), the net return per trade is consistently negative (-0.08% to -0.15% per trade), confirming that naive trend continuation cannot be deployed standalone without volatility conditioning or multi-voter confluence.
+  3. *Unbounded Pivot Buffer Drift in Streaming Environments:* Merging horizontal levels across unbounded historical pivots causes drift when comparing full-dataset calculations to streaming lookback buffers ($L=2018$ or $L=2880$). Without a bounded pivot memory, older distant levels survive indefinitely in batch mode but are omitted in truncated buffers.
+- **Resolution / Redesign:**
+  1. *Bounded Pivot Memory Buffer ($M_{pivots} = 50$):* Restrict active swing level tracking to the 50 most recent confirmed pivots. Since 50 confirmed pivots span at most ~508 candles in Train (well within $L=2018$), truncation parity achieves exact 0.0 discrepancy between batch computation and streaming buffers.
+  2. *Strict Separation of Roles:* Prohibit raw price levels from entering the ML feature matrix (which would cause scale variance and leakage). All absolute price drawings are isolated to `data/processed/drawings.csv` with role `drawing`, while `master.csv` retains only scale-free ratios, ATR-normalized distances, and discrete state indicators (role `feature`).
+  3. *Multi-Voter Confluence & Volatility Gating in Setup D:* Standalone structural signals must not be traded in isolation. In Step 5 (modeling), structural trend votes (`feat_struct_rule_vote`) and MA alignment will be combined with volatility gating (`feat_vol_sigma_288` / `big_move_12`) and multi-voter consensus to filter out high-friction, chop-dominated regimes.
+
+
 
 

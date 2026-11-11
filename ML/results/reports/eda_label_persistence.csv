@@ -1,0 +1,5 @@
+target,p_same_label_next,mean_run_length,p95_run_length,max_run_length
+target_2_S1,0.8028,5.07,19.0,690
+target_3_S1,0.7852,4.65,15.0,646
+target_6_S1,0.7803,4.55,14.0,418
+target_12_S1,0.801,5.03,16.0,369

@@ -1,0 +1,5 @@
+horizon_N,horizon_minutes,mean_abs_return_all,breakeven_hit_rate_all_rows,mean_abs_return_big_move_m,breakeven_hit_rate_big_move,best_single_feature_direction_auc,skill_gap_to_big_move_breakeven,cost_c,note
+2,10,0.0013853893699354847,not achievable,0.004042338254825765,0.7845,0.5279,+0.2566,0.0023,big_move row figure is optimistic because it assumes perfect size filtering
+3,15,0.0016839133152009482,not achievable,0.004312751669431288,0.7667,0.5293,+0.2373,0.0023,big_move row figure is optimistic because it assumes perfect size filtering
+6,30,0.0023575225152910324,0.9878,0.0049203858648107284,0.7337,0.5286,+0.2051,0.0023,big_move row figure is optimistic because it assumes perfect size filtering
+12,60,0.003307250947140008,0.8477,0.005809898694502252,0.6979,0.5327,+0.1652,0.0023,big_move row figure is optimistic because it assumes perfect size filtering

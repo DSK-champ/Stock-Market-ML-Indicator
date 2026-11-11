@@ -1,0 +1,376 @@
+{
+  "file": {
+    "path": "data/processed/drawings.csv",
+    "size_bytes": 33344305,
+    "sha256": "318a869e3168e724a0fd9da0f221a95b4983b5861a4775f3d3229218ae0f93e5",
+    "created_at": "2026-11-11T14:06:05.808034+00:00",
+    "git_commit": "7e2b9e7",
+    "step": 4,
+    "module": "src.structure",
+    "description": "Companion market structure drawing outputs containing raw support/resistance price levels, candidate target and stop levels, risk-to-reward ratios, and causal rule trigger codes (role 'drawing')."
+  },
+  "shape": {
+    "n_rows": 318240,
+    "n_columns": 10
+  },
+  "index": {
+    "name": "open_time",
+    "dtype": "datetime64[us, UTC]",
+    "timezone": "UTC",
+    "first": "2023-11-01T00:00:00+00:00",
+    "last": "2026-11-09T23:55:00+00:00",
+    "frequency": "5min",
+    "is_monotonic_increasing": true,
+    "n_duplicates": 0
+  },
+  "columns": [
+    {
+      "name": "level_support_price",
+      "dtype": "float64",
+      "position": 0,
+      "description": "Raw USDT price of the nearest active/flipped support level below close.",
+      "unit": "USDT",
+      "formula": "max(level.price for level in active_support if level.price < close)",
+      "group": "drawing",
+      "role": "drawing",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close",
+        "high",
+        "low"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 26165,
+      "stats_train": {
+        "min": 33940.65641859114,
+        "max": 125819.2,
+        "mean": 79916.64930725857,
+        "std": 24753.763210613743,
+        "median": 81644.81
+      },
+      "stats_val": {
+        "min": 58652.67635062632,
+        "max": 97640.68,
+        "mean": 78130.3357999105,
+        "std": 9354.438029741008,
+        "median": 76957.04
+      }
+    },
+    {
+      "name": "level_resistance_price",
+      "dtype": "float64",
+      "position": 1,
+      "description": "Raw USDT price of the nearest active/flipped resistance level above close.",
+      "unit": "USDT",
+      "formula": "min(level.price for level in active_resistance if level.price > close)",
+      "group": "drawing",
+      "role": "drawing",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close",
+        "high",
+        "low"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 27202,
+      "stats_train": {
+        "min": 34212.0,
+        "max": 126403.65893246654,
+        "mean": 80196.8681275887,
+        "std": 24810.165043844263,
+        "median": 82050.4
+      },
+      "stats_val": {
+        "min": 62345.0,
+        "max": 98217.5118813181,
+        "mean": 78402.46041589393,
+        "std": 9329.774713325402,
+        "median": 77194.0
+      }
+    },
+    {
+      "name": "candidate_target_price",
+      "dtype": "float64",
+      "position": 2,
+      "description": "Target price in USDT for active structural rule signals; NaN when vote == 0.",
+      "unit": "USDT",
+      "formula": "Next resistance above (vote=+1) or support below (vote=-1), min 1.5 ATR",
+      "group": "drawing",
+      "role": "drawing",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close",
+        "high",
+        "low"
+      ],
+      "n_missing": 198686,
+      "n_inf": 0,
+      "n_unique": 109361,
+      "stats_train": {
+        "min": 33987.723095328496,
+        "max": 126291.07961957937,
+        "mean": 79729.48300287289,
+        "std": 24841.428093550094,
+        "median": 80717.36562417945
+      },
+      "stats_val": {
+        "min": 61311.790402875944,
+        "max": 97804.83938967159,
+        "mean": 78396.62810725316,
+        "std": 9306.29800033652,
+        "median": 77275.00477030662
+      }
+    },
+    {
+      "name": "candidate_stop_price",
+      "dtype": "float64",
+      "position": 3,
+      "description": "Stop-loss price in USDT for active structural rule signals; NaN when vote == 0.",
+      "unit": "USDT",
+      "formula": "Beyond opposite level by buffer (0.2 ATR), min 1.5 ATR distance",
+      "group": "drawing",
+      "role": "drawing",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close",
+        "high",
+        "low"
+      ],
+      "n_missing": 198686,
+      "n_inf": 0,
+      "n_unique": 119555,
+      "stats_train": {
+        "min": 34200.6630895607,
+        "max": 125640.65778531547,
+        "mean": 79736.84219355407,
+        "std": 24840.157635343803,
+        "median": 81107.97077327617
+      },
+      "stats_val": {
+        "min": 62181.54966940996,
+        "max": 97669.49026538142,
+        "mean": 78424.46795441871,
+        "std": 9279.119768698602,
+        "median": 77350.53624614485
+      }
+    },
+    {
+      "name": "target_dist_pct",
+      "dtype": "float64",
+      "position": 4,
+      "description": "Absolute fractional distance from close to candidate target price.",
+      "unit": "fraction",
+      "formula": "|target - close| / close",
+      "group": "drawing",
+      "role": "drawing",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close"
+      ],
+      "n_missing": 198686,
+      "n_inf": 0,
+      "n_unique": 119495,
+      "stats_train": {
+        "min": 0.00015305916619669834,
+        "max": 0.08607948527996613,
+        "mean": 0.0029045339712968107,
+        "std": 0.0023802193299934525,
+        "median": 0.002342578002068096
+      },
+      "stats_val": {
+        "min": 0.00018765214608546183,
+        "max": 0.029014699957195543,
+        "mean": 0.0027398210332246612,
+        "std": 0.0020534310515171114,
+        "median": 0.002241307514085382
+      }
+    },
+    {
+      "name": "stop_dist_pct",
+      "dtype": "float64",
+      "position": 5,
+      "description": "Absolute fractional distance from close to candidate stop price.",
+      "unit": "fraction",
+      "formula": "|stop - close| / close",
+      "group": "drawing",
+      "role": "drawing",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close"
+      ],
+      "n_missing": 198686,
+      "n_inf": 0,
+      "n_unique": 119555,
+      "stats_train": {
+        "min": 0.00020498002681438663,
+        "max": 0.09697788223846886,
+        "mean": 0.0028755891625230116,
+        "std": 0.002278754748906895,
+        "median": 0.002313643367343187
+      },
+      "stats_val": {
+        "min": 0.00018765214608546183,
+        "max": 0.04720274234217831,
+        "mean": 0.002718119160686659,
+        "std": 0.0021358161618604057,
+        "median": 0.0022299735876816513
+      }
+    },
+    {
+      "name": "target_dist_c_mult",
+      "dtype": "float64",
+      "position": 6,
+      "description": "Candidate target distance expressed as a multiple of round-trip cost c (0.23%).",
+      "unit": "multiple of c",
+      "formula": "target_dist_pct / 0.0023",
+      "group": "drawing",
+      "role": "drawing",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close"
+      ],
+      "n_missing": 198686,
+      "n_inf": 0,
+      "n_unique": 119495,
+      "stats_train": {
+        "min": 0.06654746356378188,
+        "max": 37.425863165202664,
+        "mean": 1.2628408570855698,
+        "std": 1.0348779695623707,
+        "median": 1.0185121748122157
+      },
+      "stats_val": {
+        "min": 0.0815878896023747,
+        "max": 12.615086937911105,
+        "mean": 1.1912265361846353,
+        "std": 0.8927961093552659,
+        "median": 0.9744815278632096
+      }
+    },
+    {
+      "name": "stop_dist_c_mult",
+      "dtype": "float64",
+      "position": 7,
+      "description": "Candidate stop distance expressed as a multiple of round-trip cost c (0.23%).",
+      "unit": "multiple of c",
+      "formula": "stop_dist_pct / 0.0023",
+      "group": "drawing",
+      "role": "drawing",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close"
+      ],
+      "n_missing": 198686,
+      "n_inf": 0,
+      "n_unique": 119555,
+      "stats_train": {
+        "min": 0.08912175078886375,
+        "max": 42.164296625421244,
+        "mean": 1.2502561576187006,
+        "std": 0.9907629343073455,
+        "median": 1.0059318988448638
+      },
+      "stats_val": {
+        "min": 0.0815878896023747,
+        "max": 20.522931453121007,
+        "mean": 1.1817909394289823,
+        "std": 0.9286157225480025,
+        "median": 0.969553733774631
+      }
+    },
+    {
+      "name": "reward_to_risk",
+      "dtype": "float64",
+      "position": 8,
+      "description": "Ratio of target distance to stop distance for active structural rule signals.",
+      "unit": "ratio",
+      "formula": "target_dist_pct / stop_dist_pct",
+      "group": "drawing",
+      "role": "drawing",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 198686,
+      "n_inf": 0,
+      "n_unique": 31745,
+      "stats_train": {
+        "min": 0.11163836969827465,
+        "max": 28.94443858659536,
+        "mean": 1.047108755163689,
+        "std": 0.4240518872794682,
+        "median": 1.0
+      },
+      "stats_val": {
+        "min": 0.17524669367640505,
+        "max": 7.883904882408419,
+        "mean": 1.0410696484799586,
+        "std": 0.3731617407929069,
+        "median": 1.0
+      }
+    },
+    {
+      "name": "rule_reason_code",
+      "dtype": "str",
+      "position": 9,
+      "description": "Causal text trigger code for the 4th rule voter (BULL_RETEST, BEAR_RETEST, BULL_PULLBACK_MA, BEAR_PULLBACK_MA, NEUTRAL).",
+      "unit": "category string",
+      "formula": "Decision table in docs/decisions.md",
+      "group": "drawing",
+      "role": "drawing",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 5,
+      "stats_train": {
+        "min": null,
+        "max": null,
+        "mean": null,
+        "std": null,
+        "median": null
+      },
+      "stats_val": {
+        "min": null,
+        "max": null,
+        "mean": null,
+        "std": null,
+        "median": null
+      }
+    }
+  ],
+  "row_counts_by_split": {
+    "train": 220953,
+    "val": 47347,
+    "test": {
+      "n_rows": 49940,
+      "first": "2026-05-20T14:20:00+00:00",
+      "last": "2026-11-09T23:55:00+00:00",
+      "note": "Test split is LOCKED — no value statistics computed."
+    }
+  },
+  "parameters": {
+    "k_5m": 5,
+    "k_1h": 3,
+    "tau_merge_atr": 0.5,
+    "beta_break_atr": 0.2,
+    "tau_retest_atr": 0.5,
+    "max_levels": 50,
+    "min_target_stop_atr": 1.5
+  },
+  "checks": {
+    "columns_with_valid_roles": 10,
+    "total_rows": 318240
+  },
+  "warnings": []
+}

@@ -1,0 +1,5 @@
+horizon,big_move_candles,up_count,down_count,up_pct_inside_big_move,down_pct_inside_big_move,up_down_ratio,overall_raw_sign_positive_pct
+2,37114,18945,18169,51.05,48.95,1.043,50.11
+3,50030,25434,24596,50.84,49.16,1.034,50.17
+6,76486,39108,37378,51.13,48.87,1.046,50.52
+12,104540,53872,50668,51.53,48.47,1.063,50.82
