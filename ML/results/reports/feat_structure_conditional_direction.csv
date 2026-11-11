@@ -1,25 +1,25 @@
-horizon_N,horizon_minutes,condition,row_count,event_count,up_share_row_level,up_share_event_level,circular_band_p95,circular_band_p99,exceeds_p99_band,relation_to_reversal_finding
-2,10,Trend: Up,83726,3455,49.05%,50.33%,50.39%,50.45%,False,Reversal-Consistent
-2,10,Trend: Down,78634,3525,51.41%,53.28%,50.42%,50.50%,False,Reversal-Consistent
-2,10,Trend: Range,56397,5770,50.01%,50.05%,50.48%,50.56%,False,Neutral
-2,10,Rule Vote: +1 (Bull),43162,4383,48.45%,49.03%,50.50%,50.84%,False,Reversal-Consistent
-2,10,Rule Vote: -1 (Bear),39659,4216,52.21%,52.68%,50.52%,50.77%,False,Reversal-Consistent
-2,10,Rule Vote: 0 (Neutral),135936,8484,50.08%,50.15%,50.32%,50.40%,False,Neutral
-3,15,Trend: Up,83754,3458,48.79%,49.97%,50.48%,50.65%,False,Reversal-Consistent
-3,15,Trend: Down,78650,3525,51.66%,53.13%,50.54%,50.66%,False,Reversal-Consistent
-3,15,Trend: Range,56410,5770,50.23%,49.81%,50.54%,50.70%,False,Neutral
-3,15,Rule Vote: +1 (Bull),43180,4385,48.24%,48.69%,50.65%,50.80%,False,Reversal-Consistent
-3,15,Rule Vote: -1 (Bear),39671,4216,52.73%,53.39%,50.67%,50.94%,False,Reversal-Consistent
-3,15,Rule Vote: 0 (Neutral),135963,8486,50.07%,50.04%,50.37%,50.43%,False,Neutral
-6,30,Trend: Up,83779,3459,49.08%,49.90%,50.86%,51.11%,False,Reversal-Consistent
-6,30,Trend: Down,78668,3525,52.11%,52.57%,51.00%,51.13%,False,Reversal-Consistent
-6,30,Trend: Range,56423,5773,50.42%,50.87%,50.98%,51.15%,False,Neutral
-6,30,Rule Vote: +1 (Bull),43192,4385,48.11%,49.67%,51.11%,51.36%,False,Reversal-Consistent
-6,30,Rule Vote: -1 (Bear),39681,4216,52.87%,53.89%,51.23%,51.42%,False,Reversal-Consistent
-6,30,Rule Vote: 0 (Neutral),135997,8489,50.59%,50.97%,50.75%,50.83%,False,Neutral
-12,60,Trend: Up,83787,3458,48.99%,50.52%,51.31%,51.59%,False,Reversal-Consistent
-12,60,Trend: Down,78666,3525,53.03%,51.06%,51.41%,51.61%,False,Reversal-Consistent
-12,60,Trend: Range,56423,5772,50.51%,50.17%,51.49%,51.69%,False,Neutral
-12,60,Rule Vote: +1 (Bull),43191,4386,48.14%,50.14%,51.60%,51.97%,False,Reversal-Consistent
-12,60,Rule Vote: -1 (Bear),39679,4216,53.75%,52.75%,51.70%,52.15%,False,Reversal-Consistent
-12,60,Rule Vote: 0 (Neutral),136006,8490,50.83%,51.55%,51.10%,51.30%,False,Neutral
+horizon_N,horizon_minutes,condition,row_count,event_count,up_share_row,se_row,up_share_event,se_event,circular_band_95_two_sided,circular_band_99_two_sided,exceeds_99th_band,reversal_contrast
+2,10,Trend: Up,83726,3455,49.05%,0.17%,50.33%,0.85%,"[49.86%, 50.45%]","[49.77%, 50.58%]",True,Reversal-Consistent
+2,10,Trend: Down,78634,3525,51.41%,0.18%,53.28%,0.84%,"[49.82%, 50.47%]","[49.72%, 50.56%]",True,Reversal-Consistent
+2,10,Trend: Range,56397,5770,50.01%,0.21%,50.05%,0.66%,"[49.72%, 50.53%]","[49.61%, 50.60%]",False,Neutral
+2,10,Rule Vote: +1 (Bull),43162,4383,48.45%,0.24%,49.03%,0.76%,"[49.70%, 50.65%]","[49.48%, 50.89%]",True,Reversal-Consistent
+2,10,Rule Vote: -1 (Bear),39659,4216,52.21%,0.25%,52.68%,0.77%,"[49.65%, 50.65%]","[49.51%, 50.82%]",True,Reversal-Consistent
+2,10,Rule Vote: 0 (Neutral),135936,8484,50.08%,0.14%,50.15%,0.54%,"[49.96%, 50.34%]","[49.87%, 50.39%]",False,Neutral
+3,15,Trend: Up,83754,3458,48.79%,0.17%,49.97%,0.85%,"[49.86%, 50.57%]","[49.79%, 50.71%]",True,Reversal-Consistent
+3,15,Trend: Down,78650,3525,51.66%,0.18%,53.13%,0.84%,"[49.80%, 50.58%]","[49.65%, 50.67%]",True,Reversal-Consistent
+3,15,Trend: Range,56410,5770,50.23%,0.21%,49.81%,0.66%,"[49.70%, 50.63%]","[49.61%, 50.72%]",False,Neutral
+3,15,Rule Vote: +1 (Bull),43180,4385,48.24%,0.24%,48.69%,0.75%,"[49.59%, 50.79%]","[49.44%, 50.99%]",True,Reversal-Consistent
+3,15,Rule Vote: -1 (Bear),39671,4216,52.73%,0.25%,53.39%,0.77%,"[49.60%, 50.78%]","[49.40%, 50.97%]",True,Reversal-Consistent
+3,15,Rule Vote: 0 (Neutral),135963,8486,50.07%,0.14%,50.04%,0.54%,"[49.98%, 50.41%]","[49.88%, 50.45%]",False,Neutral
+6,30,Trend: Up,83779,3459,49.08%,0.17%,49.90%,0.85%,"[50.03%, 51.03%]","[49.95%, 51.14%]",True,Reversal-Consistent
+6,30,Trend: Down,78668,3525,52.11%,0.18%,52.57%,0.84%,"[49.90%, 51.05%]","[49.77%, 51.13%]",True,Reversal-Consistent
+6,30,Trend: Range,56423,5773,50.42%,0.21%,50.87%,0.66%,"[49.89%, 51.11%]","[49.75%, 51.26%]",False,Neutral
+6,30,Rule Vote: +1 (Bull),43192,4385,48.11%,0.24%,49.67%,0.76%,"[49.67%, 51.30%]","[49.47%, 51.47%]",True,Reversal-Consistent
+6,30,Rule Vote: -1 (Bear),39681,4216,52.87%,0.25%,53.89%,0.77%,"[49.66%, 51.35%]","[49.37%, 51.54%]",True,Reversal-Consistent
+6,30,Rule Vote: 0 (Neutral),135997,8489,50.59%,0.14%,50.97%,0.54%,"[50.24%, 50.82%]","[50.14%, 50.88%]",False,Neutral
+12,60,Trend: Up,83787,3458,48.99%,0.17%,50.52%,0.85%,"[50.15%, 51.51%]","[49.91%, 51.73%]",True,Reversal-Consistent
+12,60,Trend: Down,78666,3525,53.03%,0.18%,51.06%,0.84%,"[50.09%, 51.57%]","[49.79%, 51.72%]",True,Reversal-Consistent
+12,60,Trend: Range,56423,5772,50.51%,0.21%,50.17%,0.66%,"[49.99%, 51.58%]","[49.83%, 51.75%]",False,Neutral
+12,60,Rule Vote: +1 (Bull),43191,4386,48.14%,0.24%,50.14%,0.75%,"[49.69%, 51.81%]","[49.33%, 52.06%]",True,Reversal-Consistent
+12,60,Rule Vote: -1 (Bear),39679,4216,53.75%,0.25%,52.75%,0.77%,"[49.86%, 51.96%]","[49.43%, 52.33%]",True,Reversal-Consistent
+12,60,Rule Vote: 0 (Neutral),136006,8490,50.83%,0.14%,51.55%,0.54%,"[50.45%, 51.20%]","[50.38%, 51.31%]",False,Neutral

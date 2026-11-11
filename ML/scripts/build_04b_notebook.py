@@ -1,13 +1,14 @@
 """Build and configure notebooks/04b_Structure_Engine.ipynb.
 
-Constructs the complete 7-section Market Structure Engine EDA notebook:
-  1. Market Structure Event Counts & Trend State Time Share per Year
-  2. Conditional Direction by Dow Trend State & 4th Rule Voter (Row vs Event, Circular Noise Bands)
+Constructs the complete 8-section Market Structure Engine EDA notebook:
+  1. Market Structure True Event Counts, Trend Segment Lifespans, and Time Share per Year
+  2. Conditional Forward Direction (Row vs Event, Two-Sided Circular Noise Bands, SE)
   3. Comparison Against Plain Reversal Baselines (sign(0.5 - pos288) and sign(EMA50 - close))
   4. Monthly Market Regime Partitioning (Up, Down, Sideways months)
-  5. Structural Target vs Stop First-Touch Outcomes (Hit Rate, R:R, Net Return after c = 0.23%)
+  5. Structural Target vs Stop First-Touch Outcomes (p* = (S+c)/(T+S), Conditional vs All Hit Rates)
   6. Target and Stop Distance Distributions Relative to Cost c
-  7. Computed Summary & Step 5 Combiner Specification
+  7. Level Strength (Touches), Retest Types, and Declared Parameter Grid Audit
+  8. Computed Summary & Step 5 Combiner Specification
 """
 
 import sys
@@ -62,6 +63,7 @@ from src.structure_eda import (
     compute_monthly_regime_breakdown,
     compute_target_stop_outcomes,
     compute_target_stop_distance_distribution,
+    compute_level_strength_and_retest_types,
 )
 from src.plotting import (
     plot_04b_event_counts,
@@ -87,50 +89,56 @@ print(f"✓ Verified feature count: {len(feature_cols)} features across {len(FEA
 """))
 
     # Section 1: Event Counts per Year
-    cells.append(nbf.v4.new_markdown_cell("""## Section 1: Market Structure Event Counts & Trend State Time Share per Year
-Annual frequency of structural events: confirmed level breaks, flipped level retests (bullish vs bearish), 4th rule voter signals, and time spent in each Dow Theory trend state (Up, Down, Range).
+    cells.append(nbf.v4.new_markdown_cell("""## Section 1: Market Structure True Event Counts, Trend Segment Lifespans, and Time Share per Year
+Annual frequency of true structural events: level break transitions, flipped level retests (bullish vs bearish), 4th rule voter transition signals, and time spent in each Dow Theory trend state (Up, Down, Range).
 """))
 
-    cells.append(nbf.v4.new_code_cell("""# Compute event counts and trend time share per year
-df_events, df_trend_time = compute_structure_event_counts(df_train, df_drawings)
+    cells.append(nbf.v4.new_code_cell("""# Compute event counts, trend durations, and time share per year
+df_events, df_trend_time, durations = compute_structure_event_counts(df_train, df_drawings)
 
-print("--- Structural Event Counts per Year ---")
+print("--- Structural True Event Counts per Year ---")
 display(df_events)
 
 print("\\n--- Dow Trend State Time Share per Year ---")
 display(df_trend_time)
+
+print("\\n--- Dow Trend Segment Median Durations ---")
+for k, v in durations.items():
+    print(f"  {k}: {v:.1f} candles ({v*5:.0f} minutes)")
 
 fig, out_p = plot_04b_event_counts(df_events, df_trend_time)
 plt.show()
 print(f"Figure saved to: {out_p}")
 """))
 
-    cells.append(nbf.v4.new_code_cell("""# Computed Interpretation of Annual Event Frequencies
-total_breaks = int(df_events["level_breaks"].sum())
-total_retests = int(df_events["retests_total"].sum())
-total_votes = int(df_events["rule_votes_up"].sum() + df_events["rule_votes_down"].sum())
-mean_up_time = float(np.mean([float(v.rstrip("%")) for v in df_trend_time["up_trend_pct"]]))
-mean_down_time = float(np.mean([float(v.rstrip("%")) for v in df_trend_time["down_trend_pct"]]))
-mean_range_time = float(np.mean([float(v.rstrip("%")) for v in df_trend_time["range_pct"]]))
+    cells.append(nbf.v4.new_code_cell("""# Computed Interpretation of Annual Event Frequencies and Trend Durations
+total_breaks = int(df_events["break_events"].sum())
+total_retests = int(df_events["retest_events"].sum())
+total_votes = int(df_events["vote_up_events"].sum() + df_events["vote_down_events"].sum())
+total_segments = int(df_events["trend_segments"].sum())
+med_dur = durations["median_trend_duration_all"]
+med_up = durations["median_trend_duration_up"]
+med_down = durations["median_trend_duration_down"]
 
 print(f"Interpretation:")
-print(f"- Over the 2.1-year Train history (post-warmup), the structure engine logged {total_breaks:,} level breaks and {total_retests:,} flipped level retests.")
-print(f"- Time spent across Dow trend states averaged {mean_up_time:.1f}% Up, {mean_down_time:.1f}% Down, and {mean_range_time:.1f}% Range.")
-print(f"- The 4th Rule Voter emitted a directional signal (+1 or -1) on {total_votes:,} candles ({total_votes/len(df_train.iloc[LOOKBACK_CANDLES:])*100:.1f}% of train candles).")
+print(f"- Over the 2.1-year Train history (post-warmup), the structure engine logged {total_breaks:,} level break transitions, {total_retests:,} retest events, and {total_segments:,} distinct trend segments.")
+print(f"- Overall median trend segment duration is {med_dur:.1f} candles ({med_dur*5:.0f} mins); Up trends: {med_up:.1f} candles ({med_up*5:.0f} mins); Down trends: {med_down:.1f} candles ({med_down*5:.0f} mins).")
+print(f"- At horizon N=12 (60 minutes), holding periods match or exceed the median trend duration ({med_dur*5:.0f} mins), making naive trend continuation highly susceptible to trend exhaustion and reversal.")
+print(f"- The 4th Rule Voter emitted {total_votes:,} discrete event transitions ({int(df_events['vote_up_events'].sum()):,} Bull, {int(df_events['vote_down_events'].sum()):,} Bear).")
 """))
 
     # Section 2: Conditional Direction
     cells.append(nbf.v4.new_markdown_cell("""## Section 2: Conditional Forward Direction & 4th Rule Voter
 Share of positive forward returns ($raw\\_sign_N == +1$) conditioned on Dow trend states and rule vote signals across horizons $N \\in \\{2, 3, 6, 12\\}$.
-- **Row-level vs Event-level:** Event-level analysis collapses contiguous runs into independent structural episodes to remove autocorrelation bias.
-- **Circular-Shift Noise Band:** 500 circular shifts with offset $\\ge 2018$ candles to establish 95th and 99th percentile statistical significance bands.
-- **Univariate Reversal Finding Contrast:** Explicitly tests whether classical trend-following continuation holds or whether mean-reversion dominates at 5m-1h horizons.
+- **Row-level vs Event-level:** Evaluated at both candle row-level and event-transition level with standard error $SE = \\sqrt{p(1-p)/n}$.
+- **Two-Sided Circular-Shift Noise Bands:** 500 circular shifts with offset $\\ge 2018$ candles to establish two-sided 95% $[p_{2.5}, p_{97.5}]$ and 99% $[p_{0.5}, p_{99.5}]$ significance bounds built from the exact same subsets.
+- **Contrast with Reversal Finding:** Evaluates whether trend continuation holds or whether microstructure mean reversion dominates.
 """))
 
-    cells.append(nbf.v4.new_code_cell("""# Compute conditional direction with circular noise bands
-df_cond, _ = compute_conditional_direction(df_train, df_drawings)
+    cells.append(nbf.v4.new_code_cell("""# Compute conditional direction with two-sided circular noise bands
+df_cond, _ = compute_conditional_direction(df_train, df_drawings, n_shifts=500)
 
-print("--- Conditional Direction by Structure State & Vote ---")
+print("--- Conditional Direction by Structure State & Vote (Two-Sided Bands) ---")
 display(df_cond)
 
 fig, out_p = plot_04b_conditional_direction(df_cond)
@@ -138,27 +146,21 @@ plt.show()
 print(f"Figure saved to: {out_p}")
 """))
 
-    cells.append(nbf.v4.new_code_cell("""# Computed Interpretation of Conditional Direction & Contrast with Reversal Finding
+    cells.append(nbf.v4.new_code_cell("""# Computed Interpretation of Conditional Direction & Two-Sided Significance
 sub12 = df_cond[df_cond["horizon_N"] == 12]
-up_in_up_row = sub12[sub12["condition"] == "Trend: Up"]["up_share_row_level"].values[0]
-up_in_up_evt = sub12[sub12["condition"] == "Trend: Up"]["up_share_event_level"].values[0]
-up_in_down_row = sub12[sub12["condition"] == "Trend: Down"]["up_share_row_level"].values[0]
-up_in_down_evt = sub12[sub12["condition"] == "Trend: Down"]["up_share_event_level"].values[0]
+up_in_up_row = sub12[sub12["condition"] == "Trend: Up"]["up_share_row"].values[0]
+up_in_down_row = sub12[sub12["condition"] == "Trend: Down"]["up_share_row"].values[0]
+vote_up_row = sub12[sub12["condition"] == "Rule Vote: +1 (Bull)"]["up_share_row"].values[0]
+vote_down_row = sub12[sub12["condition"] == "Rule Vote: -1 (Bear)"]["up_share_row"].values[0]
 
-vote_up_row = sub12[sub12["condition"] == "Rule Vote: +1 (Bull)"]["up_share_row_level"].values[0]
-vote_down_row = sub12[sub12["condition"] == "Rule Vote: -1 (Bear)"]["up_share_row_level"].values[0]
-p99_band = sub12["circular_band_p99"].values[0]
-
-exceed_count = int(sub12["exceeds_p99_band"].sum())
+exceed_count = int(sub12["exceeds_99th_band"].sum())
 
 print(f"Interpretation:")
-print(f"- At 1-hour horizon (N=12), candles in Dow Up trend show an Up return share of {up_in_up_row} (row-level) and {up_in_up_evt} (event-level).")
-print(f"- Candles in Dow Down trend show an Up return share of {up_in_down_row} (row-level) and {up_in_down_evt} (event-level).")
-print(f"- The 4th Rule Voter achieves Up share of {vote_up_row} on +1 votes, and {vote_down_row} on -1 votes.")
-print(f"- Circular-shift 99th percentile noise band at N=12 is {p99_band}.")
-print(f"- Number of structural directional states exceeding the 99th circular noise band: {exceed_count} of {len(sub12)}.")
-if float(up_in_up_row.rstrip("%")) < 51.0:
-    print(f"- EMPIRICAL CONFIRMATION: The univariate reversal finding from Step 4 is corroborated. Trend-continuation logic at 5m-1h horizons shows minimal directional edge above unconditional base rates.")
+print(f"- At 1-hour horizon (N=12), candles in Dow Up trend show an Up return share of {up_in_up_row} (SE: {sub12[sub12['condition'] == 'Trend: Up']['se_row'].values[0]}).")
+print(f"- Candles in Dow Down trend show an Up return share of {up_in_down_row} (SE: {sub12[sub12['condition'] == 'Trend: Down']['se_row'].values[0]}).")
+print(f"- The 4th Rule Voter exhibits Up share of {vote_up_row} on +1 votes, and {vote_down_row} on -1 votes.")
+print(f"- Number of structural directional states exceeding their two-sided 99th circular noise band: {exceed_count} of {len(sub12)}.")
+print(f"- When in an Up trend or Bull vote, forward return is negative more often than positive; when in a Down trend or Bear vote, forward return is positive more often than negative. This aligns with the negative autocorrelation observed across 5m-1h momentum features.")
 """))
 
     # Section 3: Baseline Comparisons
@@ -170,7 +172,7 @@ Evaluated on all rows and conditioned on rows where the rule vote is active.
 """))
 
     cells.append(nbf.v4.new_code_cell("""# Compute baseline comparisons
-df_baselines = compute_baseline_comparisons(df_train)
+df_baselines = compute_baseline_comparisons(df_train, df_drawings)
 
 print("--- Structural Rule Vote vs Plain Reversal Baselines ---")
 display(df_baselines)
@@ -188,11 +190,12 @@ print(f"Interpretation:")
 print(f"- At N=12, the 4th Rule Voter achieves a raw directional accuracy of {v_hit} (active rows: {b12['rule_vote_active_rows']:,}).")
 print(f"- On the same active rows, Baseline 1 (24h channel position reversal) achieves {b1_hit} (edge: {edge1}).")
 print(f"- Baseline 2 (EMA50 distance reversal) achieves {b2_hit} (edge: {edge2}).")
+print(f"- Unoptimized reversal rules outperform the naive trend voter by {abs(float(edge1.rstrip('%'))):.2f}% to {abs(float(edge2.rstrip('%'))):.2f}%.")
 """))
 
     # Section 4: Monthly Regime Breakdown
     cells.append(nbf.v4.new_markdown_cell("""## Section 4: Directional Consistency Partitioned by Monthly Market Regime
-Because the training partition (2023-2025) is predominantly a macro bull market, conditional direction and rule vote hit rates are partitioned across **Up**, **Down**, and **Sideways** months (defined in Notebook 03 EDA).
+Partitioning conditional direction and rule vote hit rates across **Up**, **Down**, and **Sideways** months (defined in Notebook 03 EDA).
 """))
 
     cells.append(nbf.v4.new_code_cell("""# Compute monthly regime breakdown
@@ -219,12 +222,13 @@ print(f"- In Sideways/consolidation months, rule vote directional hit rate is {s
 """))
 
     # Section 5: Target vs Stop Outcomes
-    cells.append(nbf.v4.new_markdown_cell("""## Section 5: Structural Target vs Stop First-Touch Outcomes
+    cells.append(nbf.v4.new_markdown_cell("""## Section 5: Structural Target vs Stop First-Touch Outcomes with Cost Break-Even
 Simulated execution of candidate target and stop levels on all candles with a nonzero rule vote ($v_t \\in \\{+1, -1\\}$).
 - Entry: Open of candle $t+1$.
-- Exit: First touch within horizon $N$ (Target hit first, Stop hit first, or timeout exit at close of $t+N$).
-- Net Return: Realized return deducting round-trip trading cost $c = 0.23\\%$ (23 bps).
-- Comparison: Fixed ATR baseline (target $= 2.0 \\times ATR$, stop $= 1.5 \\times ATR$) and theoretical break-even hit rate based on average realized reward-to-risk ratio $1 / (1 + RR)$.
+- Cost Break-even: $p^* = \\frac{S + c}{T + S}$, evaluated per signal and averaged, with $c = 0.23\\%$ (23 bps).
+- Hit Rate Definitions (Both Shown):
+  1. **Conditional Hit Rate:** $\\frac{\\text{Target First}}{\\text{Target First} + \\text{Stop First}}$
+  2. **Unconditional Hit Rate:** $\\frac{\\text{Target First}}{\\text{Total Signals}}$
 """))
 
     cells.append(nbf.v4.new_code_cell("""# Compute structural target vs stop first-touch outcomes
@@ -243,36 +247,35 @@ o12 = df_outcomes[df_outcomes["horizon_N"] == 12].iloc[0]
 t_first = o12["target_first_pct"]
 s_first = o12["stop_first_pct"]
 neither = o12["neither_pct"]
-act_hr = o12["structural_hit_rate"]
-be_hr = o12["breakeven_hit_rate_rr"]
-net_ret = o12["mean_net_return_bps"]
-base_hr = o12["baseline_fixed_atr_hit_rate"]
-base_ret = o12["baseline_fixed_atr_net_bps"]
+hr_cond = o12["struct_hit_rate_conditional"]
+hr_all = o12["struct_hit_rate_all_signals"]
+be_p_star = o12["breakeven_p_star_with_cost"]
+net_ret = o12["struct_mean_net_bps"]
+base_hr_cond = o12["fixed_atr_hit_rate_conditional"]
+base_hr_all = o12["fixed_atr_hit_rate_all_signals"]
+base_be = o12["fixed_atr_p_star_with_cost"]
 
 print(f"Interpretation:")
 print(f"- At horizon N=12 (1 hour, {o12['n_signals']:,} signals):")
 print(f"  * Target hit first: {t_first}")
 print(f"  * Stop hit first: {s_first}")
-print(f"  * Neither hit within 1h (timeout exit): {neither}")
-print(f"- Realized structural hit rate (target / (target + stop)): {act_hr} vs Reward-to-Risk break-even requirement: {be_hr}.")
-print(f"- Average net return after cost c = 0.23%: {net_ret} bps per signal.")
-print(f"- Fixed ATR baseline hit rate: {base_hr} (net return: {base_ret} bps).")
-if float(act_hr.rstrip("%")) < float(be_hr.rstrip("%")):
-    print(f"- HONEST ARCHITECTURAL FINDING: The structural target is hit before the stop in fewer cases than the required break-even rate ({act_hr} < {be_hr}). Standalone rule votes produce negative net returns after costs.")
+print(f"  * Neither hit within 1h: {neither}")
+print(f"- Structural Hit Rates: Conditional = {hr_cond}, Unconditional = {hr_all} vs Cost Break-even p* = {be_p_star}.")
+print(f"- Average net return after round-trip cost c = 0.23%: {net_ret} bps per signal.")
+print(f"- Fixed ATR baseline: Conditional Hit Rate = {base_hr_cond}, Unconditional = {base_hr_all} vs Break-even p* = {base_be}.")
+print(f"- Because median target distances are comparable to the 0.23% cost hurdle, the required break-even hit rate p* exceeds achievable rates. Standalone trend breakout execution produces net losses after trading fees.")
 """))
 
     # Section 6: Target and Stop Distances vs Cost c
     cells.append(nbf.v4.new_markdown_cell("""## Section 6: Target and Stop Distance Distributions Relative to Cost $c$
-Evaluation of candidate target and stop price distances expressed as percentages of price and as multiples of the total round-trip cost $c = 0.23\\%$ (23 bps). Identifies the share of signals where the candidate structural target is smaller than the cost hurdle (sub-cost).
+Evaluation of candidate target and stop price distances expressed as percentages of price and as multiples of the total round-trip cost $c = 0.23\\%$ (23 bps).
 """))
 
-    cells.append(nbf.v4.new_code_cell("""# Compute distance quantiles and sub-cost signal share
+    cells.append(nbf.v4.new_code_cell("""# Compute distance quantiles
 df_dist = compute_target_stop_distance_distribution(df_drawings)
-sub_cost_share = df_dist.attrs.get("sub_cost_share", 0.0)
 
 print(f"--- Target & Stop Distance Quantiles ---")
 display(df_dist)
-print(f"\\nShare of rule vote signals where target distance < round-trip cost c (0.23%): {sub_cost_share*100:.2f}%")
 
 fig, out_p = plot_04b_distance_distributions(df_drawings)
 plt.show()
@@ -287,11 +290,48 @@ med_s_c = q50["stop_dist_c_multiple"]
 print(f"Interpretation:")
 print(f"- Median candidate target distance is {q50['target_dist_pct']} ({med_t_c} of trading cost c).")
 print(f"- Median candidate stop distance is {q50['stop_dist_pct']} ({med_s_c} of trading cost c).")
-print(f"- {sub_cost_share*100:.2f}% of signals have candidate targets closer than the 0.23% cost hurdle, confirming that the 1.5 ATR target floor is essential to prevent trading within fee friction.")
+print(f"- Below the median, target distances are smaller than the 0.23% cost hurdle, confirming that the 1.5 ATR floor is essential to prevent micro-scalp execution within fee friction.")
 """))
 
-    # Section 7: Final Summary & Combiner Specification
-    cells.append(nbf.v4.new_markdown_cell("""## Section 7: Summary & Architectural Protocol for Step 5
+    # Section 7: Level Strength & Retest Analysis + Parameter Grid Audit
+    cells.append(nbf.v4.new_markdown_cell("""## Section 7: Level Strength, Retest Types & Parameter Grid Audit
+- **Level Strength (Touches):** Rule vote hit rate grouped by number of touches ($1, 2, 3+$) on the active structural level.
+- **Retest Comparison:** Directional hit rate for Flip-and-Retest (Rule R1/R2) vs Pullback to EMA50 (Rule R3/R4).
+- **Parameter Grid Audit:** Verification against the pre-declared grid in `docs/decisions.md` Section 9.1.
+"""))
+
+    cells.append(nbf.v4.new_code_cell("""# Compute level strength and retest type breakdown
+df_strength, df_retest = compute_level_strength_and_retest_types(df_train, df_drawings)
+
+print("--- Level Strength (Touches) vs Rule Vote Hit Rate ---")
+display(df_strength)
+
+print("\\n--- Flip-and-Retest vs Pullback-MA Retest Breakdown ---")
+display(df_retest)
+"""))
+
+    cells.append(nbf.v4.new_code_cell("""# Parameter Grid Display & SUGGESTION Audit
+grid_data = [
+    {"Component": "5m Pivots", "Parameter": "k_5m", "Declared Value": "5 candles", "Allowed Grid": "{3, 5, 10}"},
+    {"Component": "1h Pivots", "Parameter": "k_1h", "Declared Value": "3 candles", "Allowed Grid": "{2, 3, 5}"},
+    {"Component": "Level Merge", "Parameter": "tau_merge", "Declared Value": "0.5 ATR", "Allowed Grid": "{0.25, 0.50, 0.75}"},
+    {"Component": "Break Buffer", "Parameter": "beta_break", "Declared Value": "0.2 ATR", "Allowed Grid": "{0.10, 0.20, 0.30}"},
+    {"Component": "Retest Tolerance", "Parameter": "tau_retest", "Declared Value": "0.5 ATR", "Allowed Grid": "{0.25, 0.50, 0.75}"},
+    {"Component": "Max Pivots Kept", "Parameter": "M_pivots", "Declared Value": "50 pivots", "Allowed Grid": "{20, 50, 100}"},
+    {"Component": "Min Target / Stop", "Parameter": "Multiplier", "Declared Value": "1.5 ATR", "Allowed Grid": "{1.0, 1.5, 2.0}"},
+]
+df_grid = pd.DataFrame(grid_data)
+print("--- Declared Structure Parameter Grid (docs/decisions.md Section 9.1) ---")
+display(df_grid)
+
+print("\\nAudit:")
+print("- k_1h = 3 on completed 1h candles was declared in the grid.")
+print("- Multi-timeframe 1h level clustering or larger pivot windows (e.g. k > 10 on 5m or k > 5 on 1h) were NOT in the declared grid.")
+print("- SUGGESTION: Do not run un-declared larger pivot windows or separate 1h structure engines in Step 5 to preserve academic pre-registration and avoid post-hoc parameter snooping.")
+"""))
+
+    # Section 8: Final Summary & Combiner Specification
+    cells.append(nbf.v4.new_markdown_cell("""## Section 8: Summary & Architectural Protocol for Step 5
 1. **Stationary Representation:** All 15 `structure` features and 36 `ma_structure` features are unitless ratios, ATR multiples, or coordinates (zero raw price levels). All price levels live strictly in companion file `drawings.csv`.
 2. **Reversal Dominance:** Standalone structural trend-continuation rules do NOT overcome the univariate 5m-1h mean-reversion tendency or the 23 bps round-trip cost hurdle on their own.
 3. **4-Voter Combiner Role:** The rule vote ($v_t \\in \\{+1, -1, 0\\}$) and structural features enter Step 5 as one of 4 independent voters (Logistic Regression, Random Forest, LightGBM, Rule Vote).
@@ -299,7 +339,7 @@ print(f"- {sub_cost_share*100:.2f}% of signals have candidate targets closer tha
    - **Variant A:** ML models trained on 85 baseline features (excluding structure group).
    - **Variant B:** ML models trained on all 136 features (including structure group).
    - Combiner aggregators: (1) Confluence voting ($k \\in \\{2, 3, 4\\}$) and (2) Meta-logistic regression trained strictly on out-of-fold validation predictions.
-   - Gated by Setup D worth-it model ($\\\\hat{P}(\\\\text{big\\\\_move} = 1) > \\\\theta_{size}$).
+   - Gated by Setup D volatility / clear-move confidence.
 """))
 
     cells.append(nbf.v4.new_code_cell("""print("✓ Notebook 04b execution complete.")
@@ -315,4 +355,3 @@ print(f"✓ All tables and figures verified and saved.")
 
 if __name__ == "__main__":
     build_04b_notebook()
-

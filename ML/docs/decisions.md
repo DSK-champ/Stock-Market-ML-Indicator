@@ -267,6 +267,50 @@ The rule vote produces an integer signal $v_t \in \{+1, -1, 0\}$ per candle with
 ### 9.5 SUGGESTION on Trend Lines (Diagonal)
 Diagonal trend lines require connecting non-adjacent pivots through linear regression or iterative slope fitting. Unlike horizontal levels which are invariant across time once established, diagonal lines continuously shift slope upon arrival of newer swing points, creating lookahead risks unless strictly anchored. We recommend deferring diagonal trend lines until the horizontal pivot engine is fully established and validated.
 
+### 9.6 Dataset Schema & Column Roles Audit (224 Columns)
+- **File:** `master.csv` (318,240 rows $\times$ 224 columns).
+- **Role Breakdown:**
+  - `market` (10 columns): `open_time`, `open`, `high`, `low`, `close`, `volume`, `quote_volume`, `number_of_trades`, `taker_buy_base_volume`, `taker_buy_quote_volume`.
+  - `flag` (6 columns): `gap_id`, `is_gap_boundary`, `has_valid_target_2`, `has_valid_target_3`, `has_valid_target_6`, `has_valid_target_12`.
+  - `feature` (136 columns across 17 groups): Groups 1–15 (85 core features), Group 16 `ma_structure` (36 features), Group 17 `structure` (15 features).
+  - `target` (56 columns): 16 base targets (`fwd_ret_N`, `fwd_ret_open_N`, `raw_sign_N`, `big_move_N`) + 40 classification labels ($N \in \{2, 3, 6, 12\} \times 10$ rules: $S_1, S_2, Q_1, V_1, V_2, A_1, A_2, F_{05}, F_{10}, F_{15}$).
+  - `threshold` (16 columns): Dynamic volatility thresholds for rules $V_1$ and $V_2$ only ($N \in \{2, 3, 6, 12\} \times \{\text{up}, \text{down}\}$).
+- **Unit Test Protection:** Enforced by `test_label_and_theta_columns_match_config` in `tests/test_labels.py`.
+
+### 9.7 Lookback Sweep, Sizing & Parity on Full 136 Features
+- **Lookback Constants:** `LOOKBACK_CANDLES = 2018`, `LIVE_BUFFER_CANDLES = 2880`.
+- **Bounded Pivot Memory:** $M_{pivots} = 50$ confirmed pivots. Across the Train history, 50 confirmed pivots span at most 508 candles, well within the 2,018-candle buffer.
+- **Parity Results Across Lookback Buffer Sizes:**
+  - $L = 2018$: Failing features count = 0 (zero NaNs in buffer result). Max diff = 0.200 (isolated to `feat_ma_alignment_ema_1h` pairwise rank flip when 1h EMA50 and EMA100 are within $10^{-4}$ of each other). All 15 `structure` features match full history with **exact 0.0 discrepancy**.
+  - $L = 2500$: Failing features count = 0. Max diff = 0.200.
+  - $L = 3000$: Failing features count = 0. Max diff = $7.55 \times 10^{-5}$ (`feat_ma_1h_ema_ratio_100`).
+  - $L = 3500$: Failing features count = 0. Max diff = $3.66 \times 10^{-5}$ (`feat_ma_1h_ema_ratio_100`).
+
+### 9.8 True Event Transitions vs Row States & Trend Segment Lifespan Dynamics
+- **Event Definition:** To eliminate autocorrelation and state persistence bias, structural events are counted strictly upon state *transitions*:
+  - *Break Transitions:* First candle where close crosses beyond level $+ \beta_{break} \times ATR$ (`bars_since_break == 0` preceded by `!= 0`). Total in Train: **190 events** (vs 218,554 row-state occurrences).
+  - *Retest Transitions:* First candle of retest rejection (`bars_since_retest == 0` preceded by `!= 0`). Total in Train: **24,514 events** (12,531 Bull, 11,983 Bear).
+  - *Rule Vote Transitions:* Discrete signal activations (+1 or -1 transitions). Total in Train: **8,690 events** (4,420 Bull, 4,270 Bear).
+  - *Dow Trend Segments:* Distinct trend state episodes (+1, -1, 0). Total in Train: **12,895 segments**.
+- **Trend Lifespan vs Evaluation Horizons:**
+  - Overall Median Trend Duration: **9.0 candles (45 minutes)**.
+  - Up Trend Median Duration: **14.0 candles (70 minutes)**.
+  - Down Trend Median Duration: **12.0 candles (60 minutes)**.
+  - Range Median Duration: **6.0 candles (30 minutes)**.
+  - *Architectural Implication:* At horizon $N=12$ (60 minutes), the evaluation holding period matches or exceeds the median trend duration. Trend-following breakout signals entered mid-trend are highly prone to entering during exhaustion, leading to sub-50% directional accuracy.
+
+### 9.9 Cost-Adjusted Break-Even Formulation & Two-Sided Circular Noise Bands
+- **Break-Even Formula with Cost:**
+  $$\mathbb{E}[\text{net}] = p \cdot (T - c) + (1 - p) \cdot (-S - c) = 0 \implies p^* = \frac{S + c}{T + S}$$
+  Evaluated per signal and averaged over all signals.
+- **Empirical Break-Even Hurdle:** Mean $p^* = 108.40\%$. Because median candidate targets are small ($0.235\%$) and comparable to the round-trip fee hurdle $c = 0.23\%$, fee friction pushes required win rates above 100% on sub-cost candles, yielding a realized net return of **-23.4 bps per trade**.
+- **Two-Sided Circular Noise Bands:** Computed via 500 circular shifts (offset $\ge 2018$ candles, Train post-warmup only) on the exact same row/event subsets. Two-sided 95% $[p_{2.5}, p_{97.5}]$ and 99% $[p_{0.5}, p_{99.5}]$ bands confirm that trend continuation does not achieve statistical significance, and price action exhibits mean-reversion characteristics.
+
+### 9.10 SUGGESTION on 1h Structure and Larger Pivot Windows
+- In `docs/decisions.md` Section 9.1, $k_{1h} = 3$ on completed 1h candles was declared, but multi-timeframe 1h horizontal level clustering and larger pivot windows ($k > 10$ on 5m, $k > 5$ on 1h) were NOT in the declared grid.
+- **SUGGESTION:** Do NOT run un-declared larger pivot windows or a separate 1h horizontal structure engine in Step 5. Modifying pivot parameters after observing Train results violates research pre-registration and introduces post-hoc data snooping.
+
+
 
 
 

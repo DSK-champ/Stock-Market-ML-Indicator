@@ -1947,9 +1947,13 @@ def plot_04b_event_counts(
     x = np.arange(len(years))
     width = 0.25
     
-    ax1.bar(x - width, df_events["level_breaks"], width, label="Level Breaks", color="#e74c3c", alpha=0.85)
-    ax1.bar(x, df_events["retests_total"], width, label="Retests (Total)", color="#3498db", alpha=0.85)
-    ax1.bar(x + width, df_events["trend_state_changes"], width, label="Trend State Changes", color="#2ecc71", alpha=0.85)
+    col_break = "break_events" if "break_events" in df_events.columns else "level_breaks"
+    col_retest = "retest_events" if "retest_events" in df_events.columns else "retests_total"
+    col_trend = "trend_segments" if "trend_segments" in df_events.columns else "trend_state_changes"
+    
+    ax1.bar(x - width, df_events[col_break], width, label="Level Breaks", color="#e74c3c", alpha=0.85)
+    ax1.bar(x, df_events[col_retest], width, label="Retests (Total)", color="#3498db", alpha=0.85)
+    ax1.bar(x + width, df_events[col_trend], width, label="Trend Segments", color="#2ecc71", alpha=0.85)
     ax1.set_xticks(x)
     ax1.set_xticklabels(years)
     ax1.set_title("Market Structure Event Counts per Year (Train Only)")
@@ -1992,10 +1996,11 @@ def plot_04b_conditional_direction(
     horizons = sorted(trend_df["horizon_N"].unique())
     x = np.arange(len(horizons))
     width = 0.25
+    col_up = "up_share_row" if "up_share_row" in trend_df.columns else "up_share_row_level"
     
-    up_shares = [float(trend_df[(trend_df["horizon_N"] == N) & (trend_df["condition"] == "Trend: Up")]["up_share_row_level"].values[0].rstrip("%")) for N in horizons]
-    down_shares = [float(trend_df[(trend_df["horizon_N"] == N) & (trend_df["condition"] == "Trend: Down")]["up_share_row_level"].values[0].rstrip("%")) for N in horizons]
-    range_shares = [float(trend_df[(trend_df["horizon_N"] == N) & (trend_df["condition"] == "Trend: Range")]["up_share_row_level"].values[0].rstrip("%")) for N in horizons]
+    up_shares = [float(trend_df[(trend_df["horizon_N"] == N) & (trend_df["condition"] == "Trend: Up")][col_up].values[0].rstrip("%")) for N in horizons]
+    down_shares = [float(trend_df[(trend_df["horizon_N"] == N) & (trend_df["condition"] == "Trend: Down")][col_up].values[0].rstrip("%")) for N in horizons]
+    range_shares = [float(trend_df[(trend_df["horizon_N"] == N) & (trend_df["condition"] == "Trend: Range")][col_up].values[0].rstrip("%")) for N in horizons]
     
     ax1.bar(x - width, up_shares, width, label="Trend Up", color="#27ae60", alpha=0.85)
     ax1.bar(x, range_shares, width, label="Trend Range", color="#7f8c8d", alpha=0.85)
@@ -2012,9 +2017,10 @@ def plot_04b_conditional_direction(
     # 2. Rule votes
     ax2 = axes[1]
     vote_df = df_cond[df_cond["condition"].str.startswith("Rule Vote:")]
-    v_up = [float(vote_df[(vote_df["horizon_N"] == N) & (vote_df["condition"] == "Rule Vote: +1 (Bull)")]["up_share_row_level"].values[0].rstrip("%")) for N in horizons]
-    v_down = [float(vote_df[(vote_df["horizon_N"] == N) & (vote_df["condition"] == "Rule Vote: -1 (Bear)")]["up_share_row_level"].values[0].rstrip("%")) for N in horizons]
-    v_zero = [float(vote_df[(vote_df["horizon_N"] == N) & (vote_df["condition"] == "Rule Vote: 0 (Neutral)")]["up_share_row_level"].values[0].rstrip("%")) for N in horizons]
+    col_v = "up_share_row" if "up_share_row" in vote_df.columns else "up_share_row_level"
+    v_up = [float(vote_df[(vote_df["horizon_N"] == N) & (vote_df["condition"] == "Rule Vote: +1 (Bull)")][col_v].values[0].rstrip("%")) for N in horizons]
+    v_down = [float(vote_df[(vote_df["horizon_N"] == N) & (vote_df["condition"] == "Rule Vote: -1 (Bear)")][col_v].values[0].rstrip("%")) for N in horizons]
+    v_zero = [float(vote_df[(vote_df["horizon_N"] == N) & (vote_df["condition"] == "Rule Vote: 0 (Neutral)")][col_v].values[0].rstrip("%")) for N in horizons]
     
     ax2.bar(x - width, v_up, width, label="Vote +1 (Bull)", color="#2980b9", alpha=0.85)
     ax2.bar(x, v_zero, width, label="Vote 0 (Neutral)", color="#95a5a6", alpha=0.85)
@@ -2045,24 +2051,30 @@ def plot_04b_target_stop_outcomes(
     x = np.arange(len(horizons))
     width = 0.28
     
-    hr_struct = [float(v.rstrip("%")) for v in df_outcomes["structural_hit_rate"]]
-    hr_be = [float(v.rstrip("%")) for v in df_outcomes["breakeven_hit_rate_rr"]]
-    hr_base = [float(v.rstrip("%")) for v in df_outcomes["baseline_fixed_atr_hit_rate"]]
+    col_hr = "struct_hit_rate_conditional" if "struct_hit_rate_conditional" in df_outcomes.columns else "structural_hit_rate"
+    col_be = "breakeven_p_star_with_cost" if "breakeven_p_star_with_cost" in df_outcomes.columns else "breakeven_hit_rate_rr"
+    col_base = "fixed_atr_hit_rate_conditional" if "fixed_atr_hit_rate_conditional" in df_outcomes.columns else "baseline_fixed_atr_hit_rate"
+    col_ret_struct = "struct_mean_net_bps" if "struct_mean_net_bps" in df_outcomes.columns else "mean_net_return_bps"
+    col_ret_base = "fixed_atr_net_bps" if "fixed_atr_net_bps" in df_outcomes.columns else "baseline_fixed_atr_net_bps"
+
+    hr_struct = [float(v.rstrip("%")) for v in df_outcomes[col_hr]]
+    hr_be = [float(v.rstrip("%")) for v in df_outcomes[col_be]]
+    hr_base = [float(v.rstrip("%")) for v in df_outcomes[col_base]]
     
     ax1.bar(x - width/2, hr_struct, width, label="Structural Hit Rate (Target 1st)", color="#3498db", alpha=0.85)
     ax1.bar(x + width/2, hr_base, width, label="Fixed ATR Baseline (2x / 1.5x)", color="#95a5a6", alpha=0.85)
-    ax1.plot(x, hr_be, color="#e74c3c", marker="o", linewidth=2.0, label="R:R Break-even Threshold")
+    ax1.plot(x, hr_be, color="#e74c3c", marker="o", linewidth=2.0, label="Cost Break-even (p*)")
     ax1.set_xticks(x)
     ax1.set_xticklabels(horizons)
     ax1.set_title("Target vs Stop Hit Rate vs Break-even")
     ax1.set_ylabel("Hit Rate (%)")
-    ax1.set_ylim(20, 60)
+    ax1.set_ylim(20, 65)
     ax1.grid(True, linestyle="--", alpha=0.4)
     ax1.legend(loc="upper right")
     
     # Net returns in bps
-    ret_struct = [float(v) for v in df_outcomes["mean_net_return_bps"]]
-    ret_base = [float(v) for v in df_outcomes["baseline_fixed_atr_net_bps"]]
+    ret_struct = [float(v) for v in df_outcomes[col_ret_struct]]
+    ret_base = [float(v) for v in df_outcomes[col_ret_base]]
     
     ax2.bar(x - width/2, ret_struct, width, label="Structural Net Return (after c)", color="#2ecc71" if np.mean(ret_struct) > 0 else "#e74c3c", alpha=0.85)
     ax2.bar(x + width/2, ret_base, width, label="Fixed ATR Baseline", color="#bdc3c7", alpha=0.85)

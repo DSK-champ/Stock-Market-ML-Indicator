@@ -1,4 +1,4 @@
-year,candles,level_breaks,retests_total,bull_retests,bear_retests,rule_votes_up,rule_votes_down,rule_votes_neutral,trend_state_changes
-2023,15550,15526,2057,1016,1041,3291,2852,9407,1648
-2024,105408,105192,13954,7215,6739,20844,19098,65466,12812
-2025,97977,97836,12768,6505,6263,19074,17740,61163,12074
+year,candles,trend_segments,break_events,retest_events,bull_retests,bear_retests,vote_up_events,vote_down_events
+2023,15550,868,10,1713,859,854,348,297
+2024,105408,6166,93,11772,6089,5683,2114,2034
+2025,97977,5727,64,10788,5472,5316,1926,1886

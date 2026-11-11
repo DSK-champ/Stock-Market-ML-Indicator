@@ -558,3 +558,38 @@ def test_split_tail_invalidation_across_boundaries(N):
         assert down_cnt == 50_663, f"Expected 50,663 Down labels at N=12, got {down_cnt}"
 
 
+# ===========================================================================
+# TEST 12 — 40 Label Columns and 16 Theta Columns Match Config
+# ===========================================================================
+
+def test_label_and_theta_columns_match_config():
+    """Verify that the 40 label columns and 16 theta columns in master match config.py."""
+    from src.column_dictionary import load_master
+    train = load_master("train")
+
+    # Check 40 label columns (10 rules x 4 horizons)
+    expected_rules = set(config.LABEL_RULES.keys())
+    assert len(expected_rules) == 10, f"Expected 10 rules in config, found {len(expected_rules)}"
+
+    label_cols = [c for c in train.columns if c.startswith("target_")]
+    assert len(label_cols) == 40, f"Expected 40 label columns, found {len(label_cols)}"
+
+    for N in config.CANDIDATE_HORIZONS:
+        for rule in expected_rules:
+            col = f"target_{N}_{rule}"
+            assert col in train.columns, f"Missing label column {col}"
+
+    # Check 16 theta columns (2 dynamic rules x 2 sides x 4 horizons)
+    dynamic_rules = [r for r, conf in config.LABEL_RULES.items() if conf.get("type") == "volatility"]
+    assert set(dynamic_rules) == {"V1", "V2"}, f"Dynamic rules must be V1 and V2, found {dynamic_rules}"
+
+    theta_cols = [c for c in train.columns if c.startswith("theta_")]
+    assert len(theta_cols) == 16, f"Expected 16 theta columns, found {len(theta_cols)}"
+    for N in config.CANDIDATE_HORIZONS:
+        for r in dynamic_rules:
+            for side in ["up", "down"]:
+                col = f"theta_{side}_{N}_{r}"
+                assert col in train.columns, f"Missing theta column {col}"
+
+
+
