@@ -1,0 +1,589 @@
+{
+  "file": {
+    "path": "data/processed/targets_base.csv",
+    "size_bytes": 73222810,
+    "sha256": "390aaf80a191227b7eb9285749cd8c8a7ea8a2d699b82acb8f62969610538497",
+    "created_at": "2026-11-11T12:40:09.952417+00:00",
+    "git_commit": "538b007",
+    "step": 2,
+    "module": "src.labels",
+    "description": "Base forward returns, conservative open returns, raw direction signs, and valid target flags."
+  },
+  "shape": {
+    "n_rows": 318240,
+    "n_columns": 16
+  },
+  "index": {
+    "name": "open_time",
+    "dtype": "datetime64[us, UTC]",
+    "timezone": "UTC",
+    "first": "2023-11-01T00:00:00+00:00",
+    "last": "2026-11-09T23:55:00+00:00",
+    "frequency": "5min",
+    "is_monotonic_increasing": true,
+    "n_duplicates": 0
+  },
+  "columns": [
+    {
+      "name": "fwd_ret_2",
+      "dtype": "float64",
+      "position": 0,
+      "description": "Forward close-to-close return over 2 candles (10 min).",
+      "unit": "fraction",
+      "formula": "close[t+2] / close[t] - 1",
+      "group": "targets_base",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close"
+      ],
+      "n_missing": 6,
+      "n_inf": 0,
+      "n_unique": 317875,
+      "stats_train": {
+        "min": -0.09142317859093396,
+        "max": 0.042864331380368714,
+        "mean": 1.0905564593288525e-05,
+        "std": 0.0021432148656124177,
+        "median": 1.6617736664503724e-06
+      },
+      "stats_val": {
+        "min": -0.03270281637685257,
+        "max": 0.0388818430418687,
+        "mean": -4.021726571241741e-06,
+        "std": 0.0020992677792763897,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "fwd_ret_open_2",
+      "dtype": "float64",
+      "position": 1,
+      "description": "Conservative forward return for backtesting over 2 candles (10 min). Entry at open[t+1].",
+      "unit": "fraction",
+      "formula": "close[t+2] / open[t+1] - 1",
+      "group": "targets_base",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close",
+        "open"
+      ],
+      "n_missing": 6,
+      "n_inf": 0,
+      "n_unique": 317860,
+      "stats_train": {
+        "min": -0.09142317859093396,
+        "max": 0.04147613405901329,
+        "mean": 1.0889987542922026e-05,
+        "std": 0.002143033302096062,
+        "median": 1.6617736664503724e-06
+      },
+      "stats_val": {
+        "min": -0.032693499346627575,
+        "max": 0.0388818430418687,
+        "mean": -4.049500976219645e-06,
+        "std": 0.002099247382351016,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "raw_sign_2",
+      "dtype": "float64",
+      "position": 2,
+      "description": "Raw directional sign of fwd_ret_2 (+1, -1, 0).",
+      "unit": "integer {-1, 0, +1}",
+      "formula": "sign(fwd_ret_2)",
+      "group": "targets_base",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_2"
+      ],
+      "n_missing": 6,
+      "n_inf": 0,
+      "n_unique": 4,
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.0030730795515747835,
+        "std": 0.9995991805430843,
+        "median": 1.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.00019009399091773153,
+        "std": 0.9996302785729605,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "has_valid_target_2",
+      "dtype": "int8",
+      "position": 3,
+      "description": "True if row t has a valid forward label for horizon N=2 (no gap crossing, not in boundary).",
+      "unit": "boolean",
+      "formula": "gap_id[t] == gap_id[t+2] AND t not in last 2 rows",
+      "group": "targets_base",
+      "role": "flag",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "gap_id"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 2,
+      "stats_train": {
+        "min": 0.0,
+        "max": 1.0,
+        "mean": 0.9999909483012225,
+        "std": 0.003008597316152045,
+        "median": 1.0
+      },
+      "stats_val": {
+        "min": 0.0,
+        "max": 1.0,
+        "mean": 0.999957758675312,
+        "std": 0.0064992639971263675,
+        "median": 1.0
+      }
+    },
+    {
+      "name": "fwd_ret_3",
+      "dtype": "float64",
+      "position": 4,
+      "description": "Forward close-to-close return over 3 candles (15 min).",
+      "unit": "fraction",
+      "formula": "close[t+3] / close[t] - 1",
+      "group": "targets_base",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close"
+      ],
+      "n_missing": 9,
+      "n_inf": 0,
+      "n_unique": 317966,
+      "stats_train": {
+        "min": -0.0963545656815834,
+        "max": 0.07081444182010221,
+        "mean": 1.6305362726472055e-05,
+        "std": 0.002603751270304315,
+        "median": 5.972430452638733e-06
+      },
+      "stats_val": {
+        "min": -0.04219068362256728,
+        "max": 0.039383863284796705,
+        "mean": -6.10045926713736e-06,
+        "std": 0.0025566571113296178,
+        "median": -8.417099976454345e-07
+      }
+    },
+    {
+      "name": "fwd_ret_open_3",
+      "dtype": "float64",
+      "position": 5,
+      "description": "Conservative forward return for backtesting over 3 candles (15 min). Entry at open[t+1].",
+      "unit": "fraction",
+      "formula": "close[t+3] / open[t+1] - 1",
+      "group": "targets_base",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close",
+        "open"
+      ],
+      "n_missing": 9,
+      "n_inf": 0,
+      "n_unique": 317980,
+      "stats_train": {
+        "min": -0.0963545656815834,
+        "max": 0.06938903901834381,
+        "mean": 1.6289615856348587e-05,
+        "std": 0.002603529669999248,
+        "median": 6.054861782400778e-06
+      },
+      "stats_val": {
+        "min": -0.042190835873607724,
+        "max": 0.039384014980027304,
+        "mean": -6.128218916738942e-06,
+        "std": 0.0025566469365927123,
+        "median": -7.938067156931794e-07
+      }
+    },
+    {
+      "name": "raw_sign_3",
+      "dtype": "float64",
+      "position": 6,
+      "description": "Raw directional sign of fwd_ret_3 (+1, -1, 0).",
+      "unit": "integer {-1, 0, +1}",
+      "formula": "sign(fwd_ret_3)",
+      "group": "targets_base",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_3"
+      ],
+      "n_missing": 9,
+      "n_inf": 0,
+      "n_unique": 4,
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.004023534736365694,
+        "std": 0.9997248377422562,
+        "median": 1.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.0013518080432578573,
+        "std": 0.9997138923272804,
+        "median": -1.0
+      }
+    },
+    {
+      "name": "has_valid_target_3",
+      "dtype": "int8",
+      "position": 7,
+      "description": "True if row t has a valid forward label for horizon N=3 (no gap crossing, not in boundary).",
+      "unit": "boolean",
+      "formula": "gap_id[t] == gap_id[t+3] AND t not in last 3 rows",
+      "group": "targets_base",
+      "role": "flag",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "gap_id"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 2,
+      "stats_train": {
+        "min": 0.0,
+        "max": 1.0,
+        "mean": 0.9999864224518337,
+        "std": 0.0036847557946110554,
+        "median": 1.0
+      },
+      "stats_val": {
+        "min": 0.0,
+        "max": 1.0,
+        "mean": 0.9999366380129681,
+        "std": 0.007959856184700556,
+        "median": 1.0
+      }
+    },
+    {
+      "name": "fwd_ret_6",
+      "dtype": "float64",
+      "position": 8,
+      "description": "Forward close-to-close return over 6 candles (30 min).",
+      "unit": "fraction",
+      "formula": "close[t+6] / close[t] - 1",
+      "group": "targets_base",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close"
+      ],
+      "n_missing": 18,
+      "n_inf": 0,
+      "n_unique": 318064,
+      "stats_train": {
+        "min": -0.11049235696906867,
+        "max": 0.08780117501028628,
+        "mean": 3.2533769569814546e-05,
+        "std": 0.0036540257956494612,
+        "median": 2.713920222396915e-05
+      },
+      "stats_val": {
+        "min": -0.05220737947504739,
+        "max": 0.04646320163164397,
+        "mean": -1.2308206955262392e-05,
+        "std": 0.003582955260003569,
+        "median": 2.8685447674536846e-05
+      }
+    },
+    {
+      "name": "fwd_ret_open_6",
+      "dtype": "float64",
+      "position": 9,
+      "description": "Conservative forward return for backtesting over 6 candles (30 min). Entry at open[t+1].",
+      "unit": "fraction",
+      "formula": "close[t+6] / open[t+1] - 1",
+      "group": "targets_base",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close",
+        "open"
+      ],
+      "n_missing": 18,
+      "n_inf": 0,
+      "n_unique": 318044,
+      "stats_train": {
+        "min": -0.11049235696906867,
+        "max": 0.0863531605065031,
+        "mean": 3.2517944620448425e-05,
+        "std": 0.0036538414981285745,
+        "median": 2.7340495257099917e-05
+      },
+      "stats_val": {
+        "min": -0.05220722996023741,
+        "max": 0.04654907609109071,
+        "mean": -1.2336004841915765e-05,
+        "std": 0.0035829381998579647,
+        "median": 2.8685447674536846e-05
+      }
+    },
+    {
+      "name": "raw_sign_6",
+      "dtype": "float64",
+      "position": 10,
+      "description": "Raw directional sign of fwd_ret_6 (+1, -1, 0).",
+      "unit": "integer {-1, 0, +1}",
+      "formula": "sign(fwd_ret_6)",
+      "group": "targets_base",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_6"
+      ],
+      "n_missing": 18,
+      "n_inf": 0,
+      "n_unique": 4,
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.010699398498282393,
+        "std": 0.9998114896182252,
+        "median": 1.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.011153123085697388,
+        "std": 0.9998532967064434,
+        "median": 1.0
+      }
+    },
+    {
+      "name": "has_valid_target_6",
+      "dtype": "int8",
+      "position": 11,
+      "description": "True if row t has a valid forward label for horizon N=6 (no gap crossing, not in boundary).",
+      "unit": "boolean",
+      "formula": "gap_id[t] == gap_id[t+6] AND t not in last 6 rows",
+      "group": "targets_base",
+      "role": "flag",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "gap_id"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 2,
+      "stats_train": {
+        "min": 0.0,
+        "max": 1.0,
+        "mean": 0.9999728449036673,
+        "std": 0.005210996241654987,
+        "median": 1.0
+      },
+      "stats_val": {
+        "min": 0.0,
+        "max": 1.0,
+        "mean": 0.9998732760259361,
+        "std": 0.011256579911759991,
+        "median": 1.0
+      }
+    },
+    {
+      "name": "fwd_ret_12",
+      "dtype": "float64",
+      "position": 12,
+      "description": "Forward close-to-close return over 12 candles (60 min).",
+      "unit": "fraction",
+      "formula": "close[t+12] / close[t] - 1",
+      "group": "targets_base",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close"
+      ],
+      "n_missing": 36,
+      "n_inf": 0,
+      "n_unique": 318091,
+      "stats_train": {
+        "min": -0.1095873248370608,
+        "max": 0.08885305985289205,
+        "mean": 6.495965993836887e-05,
+        "std": 0.0051315138851528485,
+        "median": 5.922619418696762e-05
+      },
+      "stats_val": {
+        "min": -0.06697731473223134,
+        "max": 0.06753740105699624,
+        "mean": -2.4785423956103094e-05,
+        "std": 0.0050192146989091425,
+        "median": 1.5606962646463884e-05
+      }
+    },
+    {
+      "name": "fwd_ret_open_12",
+      "dtype": "float64",
+      "position": 13,
+      "description": "Conservative forward return for backtesting over 12 candles (60 min). Entry at open[t+1].",
+      "unit": "fraction",
+      "formula": "close[t+12] / open[t+1] - 1",
+      "group": "targets_base",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close",
+        "open"
+      ],
+      "n_missing": 36,
+      "n_inf": 0,
+      "n_unique": 318084,
+      "stats_train": {
+        "min": -0.1095873248370608,
+        "max": 0.08740364514423393,
+        "mean": 6.494369949455435e-05,
+        "std": 0.005131355955766778,
+        "median": 5.9218308995578894e-05
+      },
+      "stats_val": {
+        "min": -0.06697731473223134,
+        "max": 0.06753740105699624,
+        "mean": -2.4813318599284996e-05,
+        "std": 0.005019213364800234,
+        "median": 1.5607584304966338e-05
+      }
+    },
+    {
+      "name": "raw_sign_12",
+      "dtype": "float64",
+      "position": 14,
+      "description": "Raw directional sign of fwd_ret_12 (+1, -1, 0).",
+      "unit": "integer {-1, 0, +1}",
+      "formula": "sign(fwd_ret_12)",
+      "group": "targets_base",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_12"
+      ],
+      "n_missing": 36,
+      "n_inf": 0,
+      "n_unique": 4,
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.016710343485364872,
+        "std": 0.9997562512108255,
+        "median": 1.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.00424632935460019,
+        "std": 0.9999804207298595,
+        "median": 1.0
+      }
+    },
+    {
+      "name": "has_valid_target_12",
+      "dtype": "int8",
+      "position": 15,
+      "description": "True if row t has a valid forward label for horizon N=12 (no gap crossing, not in boundary).",
+      "unit": "boolean",
+      "formula": "gap_id[t] == gap_id[t+12] AND t not in last 12 rows",
+      "group": "targets_base",
+      "role": "flag",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "gap_id"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 2,
+      "stats_train": {
+        "min": 0.0,
+        "max": 1.0,
+        "mean": 0.9999456898073346,
+        "std": 0.007369361495807922,
+        "median": 1.0
+      },
+      "stats_val": {
+        "min": 0.0,
+        "max": 1.0,
+        "mean": 0.9997465520518724,
+        "std": 0.015918199144693022,
+        "median": 1.0
+      }
+    }
+  ],
+  "row_counts_by_split": {
+    "train": 220953,
+    "val": 47347,
+    "test": {
+      "n_rows": 49940,
+      "first": "2026-05-20T14:20:00+00:00",
+      "last": "2026-11-09T23:55:00+00:00",
+      "note": "Test split is LOCKED — no value statistics computed."
+    }
+  },
+  "parameters": {
+    "horizons": [
+      2,
+      3,
+      6,
+      12
+    ],
+    "roundtrip_cost_c": 0.0023
+  },
+  "checks": {
+    "labels_cross_gaps": 0,
+    "last_N_rows_unlabeled": true,
+    "dtypes_valid": true
+  },
+  "warnings": [
+    "Test split statistics are withheld (count and timestamps only)."
+  ],
+  "valid_rows": {
+    "N_2": {
+      "train": 220951,
+      "val": 47345
+    },
+    "N_3": {
+      "train": 220950,
+      "val": 47344
+    },
+    "N_6": {
+      "train": 220947,
+      "val": 47341
+    },
+    "N_12": {
+      "train": 220941,
+      "val": 47335
+    }
+  }
+}

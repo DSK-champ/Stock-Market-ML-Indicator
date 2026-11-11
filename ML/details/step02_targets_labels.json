@@ -1,0 +1,4167 @@
+{
+  "file": {
+    "path": "data/processed/targets_labels.csv",
+    "size_bytes": 263579605,
+    "sha256": "d3df020d97f36c033449404d3e831b61b24a02b71934cdb76e45c3fbda831ba3",
+    "created_at": "2026-11-11T12:41:12.526886+00:00",
+    "git_commit": "538b007",
+    "step": 2,
+    "module": "src.labels",
+    "description": "Classification labels, dynamic thetas, and big move binary targets across 4 horizons and 10 rules."
+  },
+  "shape": {
+    "n_rows": 318240,
+    "n_columns": 124
+  },
+  "index": {
+    "name": "open_time",
+    "dtype": "datetime64[us, UTC]",
+    "timezone": "UTC",
+    "first": "2023-11-01T00:00:00+00:00",
+    "last": "2026-11-09T23:55:00+00:00",
+    "frequency": "5min",
+    "is_monotonic_increasing": true,
+    "n_duplicates": 0
+  },
+  "columns": [
+    {
+      "name": "target_2_S1",
+      "dtype": "float64",
+      "position": 0,
+      "description": "3-class label for horizon N=2 (10 min), rule S1 (+1 Up, -1 Down, 0 Neutral). Symmetric cost-floor threshold: theta_up = theta_down = c (0.23%).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule S1 evaluated against forward return fwd_ret_2",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_2"
+      ],
+      "n_missing": 6,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 2,
+      "theta_rule": "S1",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.003512090916085467,
+        "std": 0.40983206324160326,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.0014573872637026085,
+        "std": 0.3969749652313366,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "theta_up_2_S1",
+      "dtype": "float64",
+      "position": 1,
+      "description": "Up threshold for horizon N=2, rule S1. Symmetric cost-floor threshold: theta_up = theta_down = c (0.23%).",
+      "unit": "fraction",
+      "formula": "Rule S1 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 2,
+      "theta_rule": "S1",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "theta_down_2_S1",
+      "dtype": "float64",
+      "position": 2,
+      "description": "Down threshold for horizon N=2, rule S1. Symmetric cost-floor threshold: theta_up = theta_down = c (0.23%).",
+      "unit": "fraction",
+      "formula": "Rule S1 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 2,
+      "theta_rule": "S1",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "target_2_S2",
+      "dtype": "float64",
+      "position": 3,
+      "description": "3-class label for horizon N=2 (10 min), rule S2 (+1 Up, -1 Down, 0 Neutral). Symmetric fixed threshold: theta_up = theta_down = 0.30%.",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule S2 evaluated against forward return fwd_ret_2",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_2"
+      ],
+      "n_missing": 6,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 2,
+      "theta_rule": "S2",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.0011541020407239615,
+        "std": 0.32023629050431046,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.0018375752455380716,
+        "std": 0.31295261682890857,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "theta_up_2_S2",
+      "dtype": "float64",
+      "position": 4,
+      "description": "Up threshold for horizon N=2, rule S2. Symmetric fixed threshold: theta_up = theta_down = 0.30%.",
+      "unit": "fraction",
+      "formula": "Rule S2 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 2,
+      "theta_rule": "S2",
+      "stats_train": {
+        "min": 0.003,
+        "max": 0.003,
+        "mean": 0.0030000000000000005,
+        "std": 4.336818503846809e-19,
+        "median": 0.003
+      },
+      "stats_val": {
+        "min": 0.003,
+        "max": 0.003,
+        "mean": 0.003,
+        "std": 0.0,
+        "median": 0.003
+      }
+    },
+    {
+      "name": "theta_down_2_S2",
+      "dtype": "float64",
+      "position": 5,
+      "description": "Down threshold for horizon N=2, rule S2. Symmetric fixed threshold: theta_up = theta_down = 0.30%.",
+      "unit": "fraction",
+      "formula": "Rule S2 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 2,
+      "theta_rule": "S2",
+      "stats_train": {
+        "min": 0.003,
+        "max": 0.003,
+        "mean": 0.0030000000000000005,
+        "std": 4.336818503846809e-19,
+        "median": 0.003
+      },
+      "stats_val": {
+        "min": 0.003,
+        "max": 0.003,
+        "mean": 0.003,
+        "std": 0.0,
+        "median": 0.003
+      }
+    },
+    {
+      "name": "target_2_Q1",
+      "dtype": "float64",
+      "position": 6,
+      "description": "3-class label for horizon N=2 (10 min), rule Q1 (+1 Up, -1 Down, 0 Neutral). Symmetric quantile threshold: theta = max(c, median |ret|). Floor binds (Q1 == S1).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule Q1 evaluated against forward return fwd_ret_2",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_2"
+      ],
+      "n_missing": 6,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 2,
+      "theta_rule": "Q1",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.003512090916085467,
+        "std": 0.40983206324160326,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.0014573872637026085,
+        "std": 0.3969749652313366,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "theta_up_2_Q1",
+      "dtype": "float64",
+      "position": 7,
+      "description": "Up threshold for horizon N=2, rule Q1. Symmetric quantile threshold: theta = max(c, median |ret|). Floor binds (Q1 == S1).",
+      "unit": "fraction",
+      "formula": "Rule Q1 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 2,
+      "theta_rule": "Q1",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "theta_down_2_Q1",
+      "dtype": "float64",
+      "position": 8,
+      "description": "Down threshold for horizon N=2, rule Q1. Symmetric quantile threshold: theta = max(c, median |ret|). Floor binds (Q1 == S1).",
+      "unit": "fraction",
+      "formula": "Rule Q1 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 2,
+      "theta_rule": "Q1",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "target_2_V1",
+      "dtype": "float64",
+      "position": 9,
+      "description": "3-class label for horizon N=2 (10 min), rule V1 (+1 Up, -1 Down, 0 Neutral). Volatility-adjusted threshold (half-sigma): theta = max(c, 0.5 * sigma * sqrt(N)).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule V1 evaluated against forward return fwd_ret_2",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_2"
+      ],
+      "n_missing": 6,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 2,
+      "theta_rule": "V1",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.0034442025607487633,
+        "std": 0.4082005005100571,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.001710845918259584,
+        "std": 0.3958016573456965,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "theta_up_2_V1",
+      "dtype": "float64",
+      "position": 10,
+      "description": "Up threshold for horizon N=2, rule V1. Volatility-adjusted threshold (half-sigma): theta = max(c, 0.5 * sigma * sqrt(N)).",
+      "unit": "fraction",
+      "formula": "Rule V1 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 3875,
+      "horizon": 2,
+      "theta_rule": "V1",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.004787356266327362,
+        "mean": 0.002309899266695916,
+        "std": 0.00011551420200904628,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.003638085381875995,
+        "mean": 0.0023078652194494604,
+        "std": 9.416570965102988e-05,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "theta_down_2_V1",
+      "dtype": "float64",
+      "position": 11,
+      "description": "Down threshold for horizon N=2, rule V1. Volatility-adjusted threshold (half-sigma): theta = max(c, 0.5 * sigma * sqrt(N)).",
+      "unit": "fraction",
+      "formula": "Rule V1 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 3875,
+      "horizon": 2,
+      "theta_rule": "V1",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.004787356266327362,
+        "mean": 0.002309899266695916,
+        "std": 0.00011551420200904628,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.003638085381875995,
+        "mean": 0.0023078652194494604,
+        "std": 9.416570965102988e-05,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "target_2_V2",
+      "dtype": "float64",
+      "position": 12,
+      "description": "3-class label for horizon N=2 (10 min), rule V2 (+1 Up, -1 Down, 0 Neutral). Volatility-adjusted threshold (one-sigma): theta = max(c, 1.0 * sigma * sqrt(N)).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule V2 evaluated against forward return fwd_ret_2",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_2"
+      ],
+      "n_missing": 6,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 2,
+      "theta_rule": "V2",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.0025978610642178584,
+        "std": 0.37617739328486716,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.0022811278910127787,
+        "std": 0.36806427248631995,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "theta_up_2_V2",
+      "dtype": "float64",
+      "position": 13,
+      "description": "Up threshold for horizon N=2, rule V2. Volatility-adjusted threshold (one-sigma): theta = max(c, 1.0 * sigma * sqrt(N)).",
+      "unit": "fraction",
+      "formula": "Rule V2 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 72167,
+      "horizon": 2,
+      "theta_rule": "V2",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.009574712532654723,
+        "mean": 0.0025128167725693407,
+        "std": 0.0006080260146359468,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.00727617076375199,
+        "mean": 0.0024735001639610405,
+        "std": 0.0005129107810513917,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "theta_down_2_V2",
+      "dtype": "float64",
+      "position": 14,
+      "description": "Down threshold for horizon N=2, rule V2. Volatility-adjusted threshold (one-sigma): theta = max(c, 1.0 * sigma * sqrt(N)).",
+      "unit": "fraction",
+      "formula": "Rule V2 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 72167,
+      "horizon": 2,
+      "theta_rule": "V2",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.009574712532654723,
+        "mean": 0.0025128167725693407,
+        "std": 0.0006080260146359468,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.00727617076375199,
+        "mean": 0.0024735001639610405,
+        "std": 0.0005129107810513917,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "target_2_A1",
+      "dtype": "float64",
+      "position": 15,
+      "description": "3-class label for horizon N=2 (10 min), rule A1 (+1 Up, -1 Down, 0 Neutral). Asymmetric threshold: theta_up = 0.23%, theta_down = 0.30%.",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule A1 evaluated against forward return fwd_ret_2",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_2"
+      ],
+      "n_missing": 6,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 2,
+      "theta_rule": "A1",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.03504396902480641,
+        "std": 0.3677153093861031,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.028176153764917097,
+        "std": 0.3565994499224277,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "theta_up_2_A1",
+      "dtype": "float64",
+      "position": 16,
+      "description": "Up threshold for horizon N=2, rule A1. Asymmetric threshold: theta_up = 0.23%, theta_down = 0.30%.",
+      "unit": "fraction",
+      "formula": "Rule A1 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 2,
+      "theta_rule": "A1",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "theta_down_2_A1",
+      "dtype": "float64",
+      "position": 17,
+      "description": "Down threshold for horizon N=2, rule A1. Asymmetric threshold: theta_up = 0.23%, theta_down = 0.30%.",
+      "unit": "fraction",
+      "formula": "Rule A1 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 2,
+      "theta_rule": "A1",
+      "stats_train": {
+        "min": 0.003,
+        "max": 0.003,
+        "mean": 0.0030000000000000005,
+        "std": 4.336818503846809e-19,
+        "median": 0.003
+      },
+      "stats_val": {
+        "min": 0.003,
+        "max": 0.003,
+        "mean": 0.003,
+        "std": 0.0,
+        "median": 0.003
+      }
+    },
+    {
+      "name": "target_2_A2",
+      "dtype": "float64",
+      "position": 18,
+      "description": "3-class label for horizon N=2 (10 min), rule A2 (+1 Up, -1 Down, 0 Neutral). Asymmetric threshold: theta_up = 0.30%, theta_down = 0.23%.",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule A2 evaluated against forward return fwd_ret_2",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_2"
+      ],
+      "n_missing": 6,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 2,
+      "theta_rule": "A2",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.03037777606799698,
+        "std": 0.3649134432674546,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.03147111627415778,
+        "std": 0.3557898705739543,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "theta_up_2_A2",
+      "dtype": "float64",
+      "position": 19,
+      "description": "Up threshold for horizon N=2, rule A2. Asymmetric threshold: theta_up = 0.30%, theta_down = 0.23%.",
+      "unit": "fraction",
+      "formula": "Rule A2 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 2,
+      "theta_rule": "A2",
+      "stats_train": {
+        "min": 0.003,
+        "max": 0.003,
+        "mean": 0.0030000000000000005,
+        "std": 4.336818503846809e-19,
+        "median": 0.003
+      },
+      "stats_val": {
+        "min": 0.003,
+        "max": 0.003,
+        "mean": 0.003,
+        "std": 0.0,
+        "median": 0.003
+      }
+    },
+    {
+      "name": "theta_down_2_A2",
+      "dtype": "float64",
+      "position": 20,
+      "description": "Down threshold for horizon N=2, rule A2. Asymmetric threshold: theta_up = 0.30%, theta_down = 0.23%.",
+      "unit": "fraction",
+      "formula": "Rule A2 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 2,
+      "theta_rule": "A2",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "target_2_F05",
+      "dtype": "float64",
+      "position": 21,
+      "description": "3-class label for horizon N=2 (10 min), rule F05 (+1 Up, -1 Down, 0 Neutral). Research sub-cost threshold: theta_up = theta_down = 0.05% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule F05 evaluated against forward return fwd_ret_2",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_2"
+      ],
+      "n_missing": 6,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 2,
+      "theta_rule": "F05",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.003919421048105689,
+        "std": 0.8379130255767565,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.0017953321364452424,
+        "std": 0.8182044904161899,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "theta_up_2_F05",
+      "dtype": "float64",
+      "position": 22,
+      "description": "Up threshold for horizon N=2, rule F05. Research sub-cost threshold: theta_up = theta_down = 0.05% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "fraction",
+      "formula": "Rule F05 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 2,
+      "theta_rule": "F05",
+      "stats_train": {
+        "min": 0.0005,
+        "max": 0.0005,
+        "mean": 0.0005000000000000002,
+        "std": 2.1684092519234047e-19,
+        "median": 0.0005
+      },
+      "stats_val": {
+        "min": 0.0005,
+        "max": 0.0005,
+        "mean": 0.0005000000000000001,
+        "std": 1.0842136222008726e-19,
+        "median": 0.0005
+      }
+    },
+    {
+      "name": "theta_down_2_F05",
+      "dtype": "float64",
+      "position": 23,
+      "description": "Down threshold for horizon N=2, rule F05. Research sub-cost threshold: theta_up = theta_down = 0.05% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "fraction",
+      "formula": "Rule F05 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 2,
+      "theta_rule": "F05",
+      "stats_train": {
+        "min": 0.0005,
+        "max": 0.0005,
+        "mean": 0.0005000000000000002,
+        "std": 2.1684092519234047e-19,
+        "median": 0.0005
+      },
+      "stats_val": {
+        "min": 0.0005,
+        "max": 0.0005,
+        "mean": 0.0005000000000000001,
+        "std": 1.0842136222008726e-19,
+        "median": 0.0005
+      }
+    },
+    {
+      "name": "target_2_F10",
+      "dtype": "float64",
+      "position": 24,
+      "description": "3-class label for horizon N=2 (10 min), rule F10 (+1 Up, -1 Down, 0 Neutral). Research sub-cost threshold: theta_up = theta_down = 0.10% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule F10 evaluated against forward return fwd_ret_2",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_2"
+      ],
+      "n_missing": 6,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 2,
+      "theta_rule": "F10",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.0066349552615738334,
+        "std": 0.6844348850075382,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.0007603759636709261,
+        "std": 0.6602387990458368,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "theta_up_2_F10",
+      "dtype": "float64",
+      "position": 25,
+      "description": "Up threshold for horizon N=2, rule F10. Research sub-cost threshold: theta_up = theta_down = 0.10% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "fraction",
+      "formula": "Rule F10 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 2,
+      "theta_rule": "F10",
+      "stats_train": {
+        "min": 0.001,
+        "max": 0.001,
+        "mean": 0.0010000000000000005,
+        "std": 4.336818503846809e-19,
+        "median": 0.001
+      },
+      "stats_val": {
+        "min": 0.001,
+        "max": 0.001,
+        "mean": 0.0010000000000000002,
+        "std": 2.1684272444017453e-19,
+        "median": 0.001
+      }
+    },
+    {
+      "name": "theta_down_2_F10",
+      "dtype": "float64",
+      "position": 26,
+      "description": "Down threshold for horizon N=2, rule F10. Research sub-cost threshold: theta_up = theta_down = 0.10% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "fraction",
+      "formula": "Rule F10 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 2,
+      "theta_rule": "F10",
+      "stats_train": {
+        "min": 0.001,
+        "max": 0.001,
+        "mean": 0.0010000000000000005,
+        "std": 4.336818503846809e-19,
+        "median": 0.001
+      },
+      "stats_val": {
+        "min": 0.001,
+        "max": 0.001,
+        "mean": 0.0010000000000000002,
+        "std": 2.1684272444017453e-19,
+        "median": 0.001
+      }
+    },
+    {
+      "name": "target_2_F15",
+      "dtype": "float64",
+      "position": 27,
+      "description": "3-class label for horizon N=2 (10 min), rule F15 (+1 Up, -1 Down, 0 Neutral). Research sub-cost threshold: theta_up = theta_down = 0.15% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule F15 evaluated against forward return fwd_ret_2",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_2"
+      ],
+      "n_missing": 6,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 2,
+      "theta_rule": "F15",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.005345076510176464,
+        "std": 0.5589271698470364,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.001816453690991657,
+        "std": 0.5372615393485752,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "theta_up_2_F15",
+      "dtype": "float64",
+      "position": 28,
+      "description": "Up threshold for horizon N=2, rule F15. Research sub-cost threshold: theta_up = theta_down = 0.15% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "fraction",
+      "formula": "Rule F15 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 2,
+      "theta_rule": "F15",
+      "stats_train": {
+        "min": 0.0015,
+        "max": 0.0015,
+        "mean": 0.0015000000000000002,
+        "std": 2.1684092519234047e-19,
+        "median": 0.0015
+      },
+      "stats_val": {
+        "min": 0.0015,
+        "max": 0.0015,
+        "mean": 0.0015,
+        "std": 0.0,
+        "median": 0.0015
+      }
+    },
+    {
+      "name": "theta_down_2_F15",
+      "dtype": "float64",
+      "position": 29,
+      "description": "Down threshold for horizon N=2, rule F15. Research sub-cost threshold: theta_up = theta_down = 0.15% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "fraction",
+      "formula": "Rule F15 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 2,
+      "theta_rule": "F15",
+      "stats_train": {
+        "min": 0.0015,
+        "max": 0.0015,
+        "mean": 0.0015000000000000002,
+        "std": 2.1684092519234047e-19,
+        "median": 0.0015
+      },
+      "stats_val": {
+        "min": 0.0015,
+        "max": 0.0015,
+        "mean": 0.0015,
+        "std": 0.0,
+        "median": 0.0015
+      }
+    },
+    {
+      "name": "big_move_2",
+      "dtype": "float64",
+      "position": 30,
+      "description": "1 if |forward return over 2 candles| exceeds the round-trip cost c (0.23%), else 0; basis for the worth-it model",
+      "unit": "binary {0, 1} or NaN",
+      "formula": "1.0 if target_2_S1 != 0 else 0.0 (NaN if invalid)",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "target_2_S1"
+      ],
+      "n_missing": 6,
+      "n_inf": 0,
+      "n_unique": 3,
+      "horizon": 2,
+      "stats_train": {
+        "min": 0.0,
+        "max": 1.0,
+        "mean": 0.16797389466442786,
+        "std": 0.37384394860817277,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": 0.0,
+        "max": 1.0,
+        "mean": 0.15758791847079945,
+        "std": 0.364358025096482,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "target_3_S1",
+      "dtype": "float64",
+      "position": 31,
+      "description": "3-class label for horizon N=3 (15 min), rule S1 (+1 Up, -1 Down, 0 Neutral). Symmetric cost-floor threshold: theta_up = theta_down = c (0.23%).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule S1 evaluated against forward return fwd_ret_3",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_3"
+      ],
+      "n_missing": 9,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 3,
+      "theta_rule": "S1",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.0037927132835483142,
+        "std": 0.4758339619830168,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.0024712740790807704,
+        "std": 0.4630419531622255,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "theta_up_3_S1",
+      "dtype": "float64",
+      "position": 32,
+      "description": "Up threshold for horizon N=3, rule S1. Symmetric cost-floor threshold: theta_up = theta_down = c (0.23%).",
+      "unit": "fraction",
+      "formula": "Rule S1 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 3,
+      "theta_rule": "S1",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "theta_down_3_S1",
+      "dtype": "float64",
+      "position": 33,
+      "description": "Down threshold for horizon N=3, rule S1. Symmetric cost-floor threshold: theta_up = theta_down = c (0.23%).",
+      "unit": "fraction",
+      "formula": "Rule S1 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 3,
+      "theta_rule": "S1",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "target_3_S2",
+      "dtype": "float64",
+      "position": 34,
+      "description": "3-class label for horizon N=3 (15 min), rule S2 (+1 Up, -1 Down, 0 Neutral). Symmetric fixed threshold: theta_up = theta_down = 0.30%.",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule S2 evaluated against forward return fwd_ret_3",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_3"
+      ],
+      "n_missing": 9,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 3,
+      "theta_rule": "S2",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.002240325865580448,
+        "std": 0.3843512784527382,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.001964346062859074,
+        "std": 0.377056137514033,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "theta_up_3_S2",
+      "dtype": "float64",
+      "position": 35,
+      "description": "Up threshold for horizon N=3, rule S2. Symmetric fixed threshold: theta_up = theta_down = 0.30%.",
+      "unit": "fraction",
+      "formula": "Rule S2 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 3,
+      "theta_rule": "S2",
+      "stats_train": {
+        "min": 0.003,
+        "max": 0.003,
+        "mean": 0.0030000000000000005,
+        "std": 4.336818503846809e-19,
+        "median": 0.003
+      },
+      "stats_val": {
+        "min": 0.003,
+        "max": 0.003,
+        "mean": 0.003,
+        "std": 0.0,
+        "median": 0.003
+      }
+    },
+    {
+      "name": "theta_down_3_S2",
+      "dtype": "float64",
+      "position": 36,
+      "description": "Down threshold for horizon N=3, rule S2. Symmetric fixed threshold: theta_up = theta_down = 0.30%.",
+      "unit": "fraction",
+      "formula": "Rule S2 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 3,
+      "theta_rule": "S2",
+      "stats_train": {
+        "min": 0.003,
+        "max": 0.003,
+        "mean": 0.0030000000000000005,
+        "std": 4.336818503846809e-19,
+        "median": 0.003
+      },
+      "stats_val": {
+        "min": 0.003,
+        "max": 0.003,
+        "mean": 0.003,
+        "std": 0.0,
+        "median": 0.003
+      }
+    },
+    {
+      "name": "target_3_Q1",
+      "dtype": "float64",
+      "position": 37,
+      "description": "3-class label for horizon N=3 (15 min), rule Q1 (+1 Up, -1 Down, 0 Neutral). Symmetric quantile threshold: theta = max(c, median |ret|). Floor binds (Q1 == S1).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule Q1 evaluated against forward return fwd_ret_3",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_3"
+      ],
+      "n_missing": 9,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 3,
+      "theta_rule": "Q1",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.0037927132835483142,
+        "std": 0.4758339619830168,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.0024712740790807704,
+        "std": 0.4630419531622255,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "theta_up_3_Q1",
+      "dtype": "float64",
+      "position": 38,
+      "description": "Up threshold for horizon N=3, rule Q1. Symmetric quantile threshold: theta = max(c, median |ret|). Floor binds (Q1 == S1).",
+      "unit": "fraction",
+      "formula": "Rule Q1 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 3,
+      "theta_rule": "Q1",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "theta_down_3_Q1",
+      "dtype": "float64",
+      "position": 39,
+      "description": "Down threshold for horizon N=3, rule Q1. Symmetric quantile threshold: theta = max(c, median |ret|). Floor binds (Q1 == S1).",
+      "unit": "fraction",
+      "formula": "Rule Q1 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 3,
+      "theta_rule": "Q1",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "target_3_V1",
+      "dtype": "float64",
+      "position": 40,
+      "description": "3-class label for horizon N=3 (15 min), rule V1 (+1 Up, -1 Down, 0 Neutral). Volatility-adjusted threshold (half-sigma): theta = max(c, 0.5 * sigma * sqrt(N)).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule V1 evaluated against forward return fwd_ret_3",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_3"
+      ],
+      "n_missing": 9,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 3,
+      "theta_rule": "V1",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.0036886173342385157,
+        "std": 0.4720579694055485,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.0023234200743494425,
+        "std": 0.4601369454535423,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "theta_up_3_V1",
+      "dtype": "float64",
+      "position": 41,
+      "description": "Up threshold for horizon N=3, rule V1. Volatility-adjusted threshold (half-sigma): theta = max(c, 0.5 * sigma * sqrt(N)).",
+      "unit": "fraction",
+      "formula": "Rule V1 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 12551,
+      "horizon": 3,
+      "theta_rule": "V1",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.005863290034708821,
+        "mean": 0.0023277018427132843,
+        "std": 0.00019609753297177327,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.004455726413137335,
+        "mean": 0.0023190064487856963,
+        "std": 0.00016398636245059859,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "theta_down_3_V1",
+      "dtype": "float64",
+      "position": 42,
+      "description": "Down threshold for horizon N=3, rule V1. Volatility-adjusted threshold (half-sigma): theta = max(c, 0.5 * sigma * sqrt(N)).",
+      "unit": "fraction",
+      "formula": "Rule V1 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 12551,
+      "horizon": 3,
+      "theta_rule": "V1",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.005863290034708821,
+        "mean": 0.0023277018427132843,
+        "std": 0.00019609753297177327,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.004455726413137335,
+        "mean": 0.0023190064487856963,
+        "std": 0.00016398636245059859,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "target_3_V2",
+      "dtype": "float64",
+      "position": 43,
+      "description": "3-class label for horizon N=3 (15 min), rule V2 (+1 Up, -1 Down, 0 Neutral). Volatility-adjusted threshold (one-sigma): theta = max(c, 1.0 * sigma * sqrt(N)).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule V2 evaluated against forward return fwd_ret_3",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_3"
+      ],
+      "n_missing": 9,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 3,
+      "theta_rule": "V2",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.002643131930300973,
+        "std": 0.4162496469806875,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.0025980060831361945,
+        "std": 0.40659395164605017,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "theta_up_3_V2",
+      "dtype": "float64",
+      "position": 44,
+      "description": "Up threshold for horizon N=3, rule V2. Volatility-adjusted threshold (one-sigma): theta = max(c, 1.0 * sigma * sqrt(N)).",
+      "unit": "fraction",
+      "formula": "Rule V2 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 131541,
+      "horizon": 3,
+      "theta_rule": "V2",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.011726580069417642,
+        "mean": 0.0027379597640251555,
+        "std": 0.000884725277365679,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.00891145282627467,
+        "mean": 0.0026948562578306707,
+        "std": 0.0007671731440977901,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "theta_down_3_V2",
+      "dtype": "float64",
+      "position": 45,
+      "description": "Down threshold for horizon N=3, rule V2. Volatility-adjusted threshold (one-sigma): theta = max(c, 1.0 * sigma * sqrt(N)).",
+      "unit": "fraction",
+      "formula": "Rule V2 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 131541,
+      "horizon": 3,
+      "theta_rule": "V2",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.011726580069417642,
+        "mean": 0.0027379597640251555,
+        "std": 0.000884725277365679,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.00891145282627467,
+        "mean": 0.0026948562578306707,
+        "std": 0.0007671731440977901,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "target_3_A1",
+      "dtype": "float64",
+      "position": 46,
+      "description": "3-class label for horizon N=3 (15 min), rule A1 (+1 Up, -1 Down, 0 Neutral). Asymmetric threshold: theta_up = 0.23%, theta_down = 0.30%.",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule A1 evaluated against forward return fwd_ret_3",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_3"
+      ],
+      "n_missing": 9,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 3,
+      "theta_rule": "A1",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.04236705136908803,
+        "std": 0.4313500391557385,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.033900811084825955,
+        "std": 0.4205850865330608,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "theta_up_3_A1",
+      "dtype": "float64",
+      "position": 47,
+      "description": "Up threshold for horizon N=3, rule A1. Asymmetric threshold: theta_up = 0.23%, theta_down = 0.30%.",
+      "unit": "fraction",
+      "formula": "Rule A1 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 3,
+      "theta_rule": "A1",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "theta_down_3_A1",
+      "dtype": "float64",
+      "position": 48,
+      "description": "Down threshold for horizon N=3, rule A1. Asymmetric threshold: theta_up = 0.23%, theta_down = 0.30%.",
+      "unit": "fraction",
+      "formula": "Rule A1 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 3,
+      "theta_rule": "A1",
+      "stats_train": {
+        "min": 0.003,
+        "max": 0.003,
+        "mean": 0.0030000000000000005,
+        "std": 4.336818503846809e-19,
+        "median": 0.003
+      },
+      "stats_val": {
+        "min": 0.003,
+        "max": 0.003,
+        "mean": 0.003,
+        "std": 0.0,
+        "median": 0.003
+      }
+    },
+    {
+      "name": "target_3_A2",
+      "dtype": "float64",
+      "position": 49,
+      "description": "3-class label for horizon N=3 (15 min), rule A2 (+1 Up, -1 Down, 0 Neutral). Asymmetric threshold: theta_up = 0.30%, theta_down = 0.23%.",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule A2 evaluated against forward return fwd_ret_3",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_3"
+      ],
+      "n_missing": 9,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 3,
+      "theta_rule": "A2",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.036334012219959265,
+        "std": 0.4300991404110723,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.0383364312267658,
+        "std": 0.4208067608805948,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "theta_up_3_A2",
+      "dtype": "float64",
+      "position": 50,
+      "description": "Up threshold for horizon N=3, rule A2. Asymmetric threshold: theta_up = 0.30%, theta_down = 0.23%.",
+      "unit": "fraction",
+      "formula": "Rule A2 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 3,
+      "theta_rule": "A2",
+      "stats_train": {
+        "min": 0.003,
+        "max": 0.003,
+        "mean": 0.0030000000000000005,
+        "std": 4.336818503846809e-19,
+        "median": 0.003
+      },
+      "stats_val": {
+        "min": 0.003,
+        "max": 0.003,
+        "mean": 0.003,
+        "std": 0.0,
+        "median": 0.003
+      }
+    },
+    {
+      "name": "theta_down_3_A2",
+      "dtype": "float64",
+      "position": 51,
+      "description": "Down threshold for horizon N=3, rule A2. Asymmetric threshold: theta_up = 0.30%, theta_down = 0.23%.",
+      "unit": "fraction",
+      "formula": "Rule A2 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 3,
+      "theta_rule": "A2",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "target_3_F05",
+      "dtype": "float64",
+      "position": 52,
+      "description": "3-class label for horizon N=3 (15 min), rule F05 (+1 Up, -1 Down, 0 Neutral). Research sub-cost threshold: theta_up = theta_down = 0.05% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule F05 evaluated against forward return fwd_ret_3",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_3"
+      ],
+      "n_missing": 9,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 3,
+      "theta_rule": "F05",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.0061642905634759,
+        "std": 0.866505690487268,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.0035907401149036836,
+        "std": 0.8516394104102065,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "theta_up_3_F05",
+      "dtype": "float64",
+      "position": 53,
+      "description": "Up threshold for horizon N=3, rule F05. Research sub-cost threshold: theta_up = theta_down = 0.05% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "fraction",
+      "formula": "Rule F05 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 3,
+      "theta_rule": "F05",
+      "stats_train": {
+        "min": 0.0005,
+        "max": 0.0005,
+        "mean": 0.0005000000000000002,
+        "std": 2.1684092519234047e-19,
+        "median": 0.0005
+      },
+      "stats_val": {
+        "min": 0.0005,
+        "max": 0.0005,
+        "mean": 0.0005000000000000001,
+        "std": 1.0842136222008726e-19,
+        "median": 0.0005
+      }
+    },
+    {
+      "name": "theta_down_3_F05",
+      "dtype": "float64",
+      "position": 54,
+      "description": "Down threshold for horizon N=3, rule F05. Research sub-cost threshold: theta_up = theta_down = 0.05% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "fraction",
+      "formula": "Rule F05 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 3,
+      "theta_rule": "F05",
+      "stats_train": {
+        "min": 0.0005,
+        "max": 0.0005,
+        "mean": 0.0005000000000000002,
+        "std": 2.1684092519234047e-19,
+        "median": 0.0005
+      },
+      "stats_val": {
+        "min": 0.0005,
+        "max": 0.0005,
+        "mean": 0.0005000000000000001,
+        "std": 1.0842136222008726e-19,
+        "median": 0.0005
+      }
+    },
+    {
+      "name": "target_3_F10",
+      "dtype": "float64",
+      "position": 55,
+      "description": "3-class label for horizon N=3 (15 min), rule F10 (+1 Up, -1 Down, 0 Neutral). Research sub-cost threshold: theta_up = theta_down = 0.10% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule F10 evaluated against forward return fwd_ret_3",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_3"
+      ],
+      "n_missing": 9,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 3,
+      "theta_rule": "F10",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.007336501470921023,
+        "std": 0.7357598836258474,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.0024923960797566744,
+        "std": 0.7158087055163447,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "theta_up_3_F10",
+      "dtype": "float64",
+      "position": 56,
+      "description": "Up threshold for horizon N=3, rule F10. Research sub-cost threshold: theta_up = theta_down = 0.10% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "fraction",
+      "formula": "Rule F10 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 3,
+      "theta_rule": "F10",
+      "stats_train": {
+        "min": 0.001,
+        "max": 0.001,
+        "mean": 0.0010000000000000005,
+        "std": 4.336818503846809e-19,
+        "median": 0.001
+      },
+      "stats_val": {
+        "min": 0.001,
+        "max": 0.001,
+        "mean": 0.0010000000000000002,
+        "std": 2.1684272444017453e-19,
+        "median": 0.001
+      }
+    },
+    {
+      "name": "theta_down_3_F10",
+      "dtype": "float64",
+      "position": 57,
+      "description": "Down threshold for horizon N=3, rule F10. Research sub-cost threshold: theta_up = theta_down = 0.10% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "fraction",
+      "formula": "Rule F10 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 3,
+      "theta_rule": "F10",
+      "stats_train": {
+        "min": 0.001,
+        "max": 0.001,
+        "mean": 0.0010000000000000005,
+        "std": 4.336818503846809e-19,
+        "median": 0.001
+      },
+      "stats_val": {
+        "min": 0.001,
+        "max": 0.001,
+        "mean": 0.0010000000000000002,
+        "std": 2.1684272444017453e-19,
+        "median": 0.001
+      }
+    },
+    {
+      "name": "target_3_F15",
+      "dtype": "float64",
+      "position": 58,
+      "description": "3-class label for horizon N=3 (15 min), rule F15 (+1 Up, -1 Down, 0 Neutral). Research sub-cost threshold: theta_up = theta_down = 0.15% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule F15 evaluated against forward return fwd_ret_3",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_3"
+      ],
+      "n_missing": 9,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 3,
+      "theta_rule": "F15",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.0068386512785698125,
+        "std": 0.6206561726824733,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.0002957080094626563,
+        "std": 0.6004665518117599,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "theta_up_3_F15",
+      "dtype": "float64",
+      "position": 59,
+      "description": "Up threshold for horizon N=3, rule F15. Research sub-cost threshold: theta_up = theta_down = 0.15% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "fraction",
+      "formula": "Rule F15 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 3,
+      "theta_rule": "F15",
+      "stats_train": {
+        "min": 0.0015,
+        "max": 0.0015,
+        "mean": 0.0015000000000000002,
+        "std": 2.1684092519234047e-19,
+        "median": 0.0015
+      },
+      "stats_val": {
+        "min": 0.0015,
+        "max": 0.0015,
+        "mean": 0.0015,
+        "std": 0.0,
+        "median": 0.0015
+      }
+    },
+    {
+      "name": "theta_down_3_F15",
+      "dtype": "float64",
+      "position": 60,
+      "description": "Down threshold for horizon N=3, rule F15. Research sub-cost threshold: theta_up = theta_down = 0.15% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "fraction",
+      "formula": "Rule F15 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 3,
+      "theta_rule": "F15",
+      "stats_train": {
+        "min": 0.0015,
+        "max": 0.0015,
+        "mean": 0.0015000000000000002,
+        "std": 2.1684092519234047e-19,
+        "median": 0.0015
+      },
+      "stats_val": {
+        "min": 0.0015,
+        "max": 0.0015,
+        "mean": 0.0015,
+        "std": 0.0,
+        "median": 0.0015
+      }
+    },
+    {
+      "name": "big_move_3",
+      "dtype": "float64",
+      "position": 61,
+      "description": "1 if |forward return over 3 candles| exceeds the round-trip cost c (0.23%), else 0; basis for the worth-it model",
+      "unit": "binary {0, 1} or NaN",
+      "formula": "1.0 if target_3_S1 != 0 else 0.0 (NaN if invalid)",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "target_3_S1"
+      ],
+      "n_missing": 9,
+      "n_inf": 0,
+      "n_unique": 3,
+      "horizon": 3,
+      "stats_train": {
+        "min": 0.0,
+        "max": 1.0,
+        "mean": 0.22643131930300972,
+        "std": 0.4185223646409349,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": 0.0,
+        "max": 1.0,
+        "mean": 0.21440942886110173,
+        "std": 0.4104163538405827,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "target_6_S1",
+      "dtype": "float64",
+      "position": 62,
+      "description": "3-class label for horizon N=6 (30 min), rule S1 (+1 Up, -1 Down, 0 Neutral). Symmetric cost-floor threshold: theta_up = theta_down = c (0.23%).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule S1 evaluated against forward return fwd_ret_6",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_6"
+      ],
+      "n_missing": 18,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 6,
+      "theta_rule": "S1",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.007829932065155898,
+        "std": 0.588314350828656,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.00031685008766185757,
+        "std": 0.57461795039423,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "theta_up_6_S1",
+      "dtype": "float64",
+      "position": 63,
+      "description": "Up threshold for horizon N=6, rule S1. Symmetric cost-floor threshold: theta_up = theta_down = c (0.23%).",
+      "unit": "fraction",
+      "formula": "Rule S1 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 6,
+      "theta_rule": "S1",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "theta_down_6_S1",
+      "dtype": "float64",
+      "position": 64,
+      "description": "Down threshold for horizon N=6, rule S1. Symmetric cost-floor threshold: theta_up = theta_down = c (0.23%).",
+      "unit": "fraction",
+      "formula": "Rule S1 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 6,
+      "theta_rule": "S1",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "target_6_S2",
+      "dtype": "float64",
+      "position": 65,
+      "description": "3-class label for horizon N=6 (30 min), rule S2 (+1 Up, -1 Down, 0 Neutral). Symmetric fixed threshold: theta_up = theta_down = 0.30%.",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule S2 evaluated against forward return fwd_ret_6",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_6"
+      ],
+      "n_missing": 18,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 6,
+      "theta_rule": "S2",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.005426640778105157,
+        "std": 0.4990032584851485,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.0016053737774867451,
+        "std": 0.4883924725648246,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "theta_up_6_S2",
+      "dtype": "float64",
+      "position": 66,
+      "description": "Up threshold for horizon N=6, rule S2. Symmetric fixed threshold: theta_up = theta_down = 0.30%.",
+      "unit": "fraction",
+      "formula": "Rule S2 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 6,
+      "theta_rule": "S2",
+      "stats_train": {
+        "min": 0.003,
+        "max": 0.003,
+        "mean": 0.0030000000000000005,
+        "std": 4.336818503846809e-19,
+        "median": 0.003
+      },
+      "stats_val": {
+        "min": 0.003,
+        "max": 0.003,
+        "mean": 0.003,
+        "std": 0.0,
+        "median": 0.003
+      }
+    },
+    {
+      "name": "theta_down_6_S2",
+      "dtype": "float64",
+      "position": 67,
+      "description": "Down threshold for horizon N=6, rule S2. Symmetric fixed threshold: theta_up = theta_down = 0.30%.",
+      "unit": "fraction",
+      "formula": "Rule S2 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 6,
+      "theta_rule": "S2",
+      "stats_train": {
+        "min": 0.003,
+        "max": 0.003,
+        "mean": 0.0030000000000000005,
+        "std": 4.336818503846809e-19,
+        "median": 0.003
+      },
+      "stats_val": {
+        "min": 0.003,
+        "max": 0.003,
+        "mean": 0.003,
+        "std": 0.0,
+        "median": 0.003
+      }
+    },
+    {
+      "name": "target_6_Q1",
+      "dtype": "float64",
+      "position": 68,
+      "description": "3-class label for horizon N=6 (30 min), rule Q1 (+1 Up, -1 Down, 0 Neutral). Symmetric quantile threshold: theta = max(c, median |ret|). Floor binds (Q1 == S1).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule Q1 evaluated against forward return fwd_ret_6",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_6"
+      ],
+      "n_missing": 18,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 6,
+      "theta_rule": "Q1",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.007829932065155898,
+        "std": 0.588314350828656,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.00031685008766185757,
+        "std": 0.57461795039423,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "theta_up_6_Q1",
+      "dtype": "float64",
+      "position": 69,
+      "description": "Up threshold for horizon N=6, rule Q1. Symmetric quantile threshold: theta = max(c, median |ret|). Floor binds (Q1 == S1).",
+      "unit": "fraction",
+      "formula": "Rule Q1 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 6,
+      "theta_rule": "Q1",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "theta_down_6_Q1",
+      "dtype": "float64",
+      "position": 70,
+      "description": "Down threshold for horizon N=6, rule Q1. Symmetric quantile threshold: theta = max(c, median |ret|). Floor binds (Q1 == S1).",
+      "unit": "fraction",
+      "formula": "Rule Q1 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 6,
+      "theta_rule": "Q1",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "target_6_V1",
+      "dtype": "float64",
+      "position": 71,
+      "description": "3-class label for horizon N=6 (30 min), rule V1 (+1 Up, -1 Down, 0 Neutral). Volatility-adjusted threshold (half-sigma): theta = max(c, 0.5 * sigma * sqrt(N)).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule V1 evaluated against forward return fwd_ret_6",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_6"
+      ],
+      "n_missing": 18,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 6,
+      "theta_rule": "V1",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.007046938858640307,
+        "std": 0.5750226557533407,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.0005914534969688008,
+        "std": 0.5647732371923384,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "theta_up_6_V1",
+      "dtype": "float64",
+      "position": 72,
+      "description": "Up threshold for horizon N=6, rule V1. Volatility-adjusted threshold (half-sigma): theta = max(c, 0.5 * sigma * sqrt(N)).",
+      "unit": "fraction",
+      "formula": "Rule V1 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 43286,
+      "horizon": 6,
+      "theta_rule": "V1",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.00829194428721223,
+        "mean": 0.0024231970251603237,
+        "std": 0.0004503483522760454,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.006301348723682843,
+        "mean": 0.0023889931033326743,
+        "std": 0.00037396839420690846,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "theta_down_6_V1",
+      "dtype": "float64",
+      "position": 73,
+      "description": "Down threshold for horizon N=6, rule V1. Volatility-adjusted threshold (half-sigma): theta = max(c, 0.5 * sigma * sqrt(N)).",
+      "unit": "fraction",
+      "formula": "Rule V1 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 43286,
+      "horizon": 6,
+      "theta_rule": "V1",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.00829194428721223,
+        "mean": 0.0024231970251603237,
+        "std": 0.0004503483522760454,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.006301348723682843,
+        "mean": 0.0023889931033326743,
+        "std": 0.00037396839420690846,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "target_6_V2",
+      "dtype": "float64",
+      "position": 74,
+      "description": "3-class label for horizon N=6 (30 min), rule V2 (+1 Up, -1 Down, 0 Neutral). Volatility-adjusted threshold (one-sigma): theta = max(c, 1.0 * sigma * sqrt(N)).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule V2 evaluated against forward return fwd_ret_6",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_6"
+      ],
+      "n_missing": 18,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 6,
+      "theta_rule": "V2",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.003942121866329935,
+        "std": 0.4553093571613727,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.003696584356055005,
+        "std": 0.44237790015193174,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "theta_up_6_V2",
+      "dtype": "float64",
+      "position": 75,
+      "description": "Up threshold for horizon N=6, rule V2. Volatility-adjusted threshold (one-sigma): theta = max(c, 1.0 * sigma * sqrt(N)).",
+      "unit": "fraction",
+      "formula": "Rule V2 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 238988,
+      "horizon": 6,
+      "theta_rule": "V2",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.01658388857442446,
+        "mean": 0.003502938512648056,
+        "std": 0.0014790208716755837,
+        "median": 0.0030903911515330032
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.012602697447365686,
+        "mean": 0.0034485584288736246,
+        "std": 0.0013217733714022287,
+        "median": 0.0031015863877539604
+      }
+    },
+    {
+      "name": "theta_down_6_V2",
+      "dtype": "float64",
+      "position": 76,
+      "description": "Down threshold for horizon N=6, rule V2. Volatility-adjusted threshold (one-sigma): theta = max(c, 1.0 * sigma * sqrt(N)).",
+      "unit": "fraction",
+      "formula": "Rule V2 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 238988,
+      "horizon": 6,
+      "theta_rule": "V2",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.01658388857442446,
+        "mean": 0.003502938512648056,
+        "std": 0.0014790208716755837,
+        "median": 0.0030903911515330032
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.012602697447365686,
+        "mean": 0.0034485584288736246,
+        "std": 0.0013217733714022287,
+        "median": 0.0031015863877539604
+      }
+    },
+    {
+      "name": "target_6_A1",
+      "dtype": "float64",
+      "position": 77,
+      "description": "3-class label for horizon N=6 (30 min), rule A1 (+1 Up, -1 Down, 0 Neutral). Asymmetric threshold: theta_up = 0.23%, theta_down = 0.30%.",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule A1 evaluated against forward return fwd_ret_6",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_6"
+      ],
+      "n_missing": 18,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 6,
+      "theta_rule": "A1",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.055198758073203076,
+        "std": 0.5438374080756773,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.044865972412919036,
+        "std": 0.5319672117496922,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "theta_up_6_A1",
+      "dtype": "float64",
+      "position": 78,
+      "description": "Up threshold for horizon N=6, rule A1. Asymmetric threshold: theta_up = 0.23%, theta_down = 0.30%.",
+      "unit": "fraction",
+      "formula": "Rule A1 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 6,
+      "theta_rule": "A1",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "theta_down_6_A1",
+      "dtype": "float64",
+      "position": 79,
+      "description": "Down threshold for horizon N=6, rule A1. Asymmetric threshold: theta_up = 0.23%, theta_down = 0.30%.",
+      "unit": "fraction",
+      "formula": "Rule A1 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 6,
+      "theta_rule": "A1",
+      "stats_train": {
+        "min": 0.003,
+        "max": 0.003,
+        "mean": 0.0030000000000000005,
+        "std": 4.336818503846809e-19,
+        "median": 0.003
+      },
+      "stats_val": {
+        "min": 0.003,
+        "max": 0.003,
+        "mean": 0.003,
+        "std": 0.0,
+        "median": 0.003
+      }
+    },
+    {
+      "name": "target_6_A2",
+      "dtype": "float64",
+      "position": 80,
+      "description": "3-class label for horizon N=6 (30 min), rule A2 (+1 Up, -1 Down, 0 Neutral). Asymmetric threshold: theta_up = 0.30%, theta_down = 0.23%.",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule A2 evaluated against forward return fwd_ret_6",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_6"
+      ],
+      "n_missing": 18,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 6,
+      "theta_rule": "A2",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.041942185229942024,
+        "std": 0.5428108197866698,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.046788196278067636,
+        "std": 0.5305887106944851,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "theta_up_6_A2",
+      "dtype": "float64",
+      "position": 81,
+      "description": "Up threshold for horizon N=6, rule A2. Asymmetric threshold: theta_up = 0.30%, theta_down = 0.23%.",
+      "unit": "fraction",
+      "formula": "Rule A2 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 6,
+      "theta_rule": "A2",
+      "stats_train": {
+        "min": 0.003,
+        "max": 0.003,
+        "mean": 0.0030000000000000005,
+        "std": 4.336818503846809e-19,
+        "median": 0.003
+      },
+      "stats_val": {
+        "min": 0.003,
+        "max": 0.003,
+        "mean": 0.003,
+        "std": 0.0,
+        "median": 0.003
+      }
+    },
+    {
+      "name": "theta_down_6_A2",
+      "dtype": "float64",
+      "position": 82,
+      "description": "Down threshold for horizon N=6, rule A2. Asymmetric threshold: theta_up = 0.30%, theta_down = 0.23%.",
+      "unit": "fraction",
+      "formula": "Rule A2 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 6,
+      "theta_rule": "A2",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "target_6_F05",
+      "dtype": "float64",
+      "position": 83,
+      "description": "3-class label for horizon N=6 (30 min), rule F05 (+1 Up, -1 Down, 0 Neutral). Research sub-cost threshold: theta_up = theta_down = 0.05% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule F05 evaluated against forward return fwd_ret_6",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_6"
+      ],
+      "n_missing": 18,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 6,
+      "theta_rule": "F05",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.008812068052519382,
+        "std": 0.9034722387693821,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.008554952366870155,
+        "std": 0.8958611970706188,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "theta_up_6_F05",
+      "dtype": "float64",
+      "position": 84,
+      "description": "Up threshold for horizon N=6, rule F05. Research sub-cost threshold: theta_up = theta_down = 0.05% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "fraction",
+      "formula": "Rule F05 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 6,
+      "theta_rule": "F05",
+      "stats_train": {
+        "min": 0.0005,
+        "max": 0.0005,
+        "mean": 0.0005000000000000002,
+        "std": 2.1684092519234047e-19,
+        "median": 0.0005
+      },
+      "stats_val": {
+        "min": 0.0005,
+        "max": 0.0005,
+        "mean": 0.0005000000000000001,
+        "std": 1.0842136222008726e-19,
+        "median": 0.0005
+      }
+    },
+    {
+      "name": "theta_down_6_F05",
+      "dtype": "float64",
+      "position": 85,
+      "description": "Down threshold for horizon N=6, rule F05. Research sub-cost threshold: theta_up = theta_down = 0.05% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "fraction",
+      "formula": "Rule F05 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 6,
+      "theta_rule": "F05",
+      "stats_train": {
+        "min": 0.0005,
+        "max": 0.0005,
+        "mean": 0.0005000000000000002,
+        "std": 2.1684092519234047e-19,
+        "median": 0.0005
+      },
+      "stats_val": {
+        "min": 0.0005,
+        "max": 0.0005,
+        "mean": 0.0005000000000000001,
+        "std": 1.0842136222008726e-19,
+        "median": 0.0005
+      }
+    },
+    {
+      "name": "target_6_F10",
+      "dtype": "float64",
+      "position": 86,
+      "description": "3-class label for horizon N=6 (30 min), rule F10 (+1 Up, -1 Down, 0 Neutral). Research sub-cost threshold: theta_up = theta_down = 0.10% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule F10 evaluated against forward return fwd_ret_6",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_6"
+      ],
+      "n_missing": 18,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 6,
+      "theta_rule": "F10",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.009816833901342857,
+        "std": 0.8068958049569686,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.004288037853023806,
+        "std": 0.7929522884884641,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "theta_up_6_F10",
+      "dtype": "float64",
+      "position": 87,
+      "description": "Up threshold for horizon N=6, rule F10. Research sub-cost threshold: theta_up = theta_down = 0.10% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "fraction",
+      "formula": "Rule F10 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 6,
+      "theta_rule": "F10",
+      "stats_train": {
+        "min": 0.001,
+        "max": 0.001,
+        "mean": 0.0010000000000000005,
+        "std": 4.336818503846809e-19,
+        "median": 0.001
+      },
+      "stats_val": {
+        "min": 0.001,
+        "max": 0.001,
+        "mean": 0.0010000000000000002,
+        "std": 2.1684272444017453e-19,
+        "median": 0.001
+      }
+    },
+    {
+      "name": "theta_down_6_F10",
+      "dtype": "float64",
+      "position": 88,
+      "description": "Down threshold for horizon N=6, rule F10. Research sub-cost threshold: theta_up = theta_down = 0.10% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "fraction",
+      "formula": "Rule F10 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 6,
+      "theta_rule": "F10",
+      "stats_train": {
+        "min": 0.001,
+        "max": 0.001,
+        "mean": 0.0010000000000000005,
+        "std": 4.336818503846809e-19,
+        "median": 0.001
+      },
+      "stats_val": {
+        "min": 0.001,
+        "max": 0.001,
+        "mean": 0.0010000000000000002,
+        "std": 2.1684272444017453e-19,
+        "median": 0.001
+      }
+    },
+    {
+      "name": "target_6_F15",
+      "dtype": "float64",
+      "position": 89,
+      "description": "3-class label for horizon N=6 (30 min), rule F15 (+1 Up, -1 Down, 0 Neutral). Research sub-cost threshold: theta_up = theta_down = 0.15% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule F15 evaluated against forward return fwd_ret_6",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_6"
+      ],
+      "n_missing": 18,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 6,
+      "theta_rule": "F15",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.00961769112049496,
+        "std": 0.715453859099218,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.0013730170465347162,
+        "std": 0.6989174856526287,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "theta_up_6_F15",
+      "dtype": "float64",
+      "position": 90,
+      "description": "Up threshold for horizon N=6, rule F15. Research sub-cost threshold: theta_up = theta_down = 0.15% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "fraction",
+      "formula": "Rule F15 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 6,
+      "theta_rule": "F15",
+      "stats_train": {
+        "min": 0.0015,
+        "max": 0.0015,
+        "mean": 0.0015000000000000002,
+        "std": 2.1684092519234047e-19,
+        "median": 0.0015
+      },
+      "stats_val": {
+        "min": 0.0015,
+        "max": 0.0015,
+        "mean": 0.0015,
+        "std": 0.0,
+        "median": 0.0015
+      }
+    },
+    {
+      "name": "theta_down_6_F15",
+      "dtype": "float64",
+      "position": 91,
+      "description": "Down threshold for horizon N=6, rule F15. Research sub-cost threshold: theta_up = theta_down = 0.15% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "fraction",
+      "formula": "Rule F15 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 6,
+      "theta_rule": "F15",
+      "stats_train": {
+        "min": 0.0015,
+        "max": 0.0015,
+        "mean": 0.0015000000000000002,
+        "std": 2.1684092519234047e-19,
+        "median": 0.0015
+      },
+      "stats_val": {
+        "min": 0.0015,
+        "max": 0.0015,
+        "mean": 0.0015,
+        "std": 0.0,
+        "median": 0.0015
+      }
+    },
+    {
+      "name": "big_move_6",
+      "dtype": "float64",
+      "position": 92,
+      "description": "1 if |forward return over 6 candles| exceeds the round-trip cost c (0.23%), else 0; basis for the worth-it model",
+      "unit": "binary {0, 1} or NaN",
+      "formula": "1.0 if target_6_S1 != 0 else 0.0 (NaN if invalid)",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "target_6_S1"
+      ],
+      "n_missing": 18,
+      "n_inf": 0,
+      "n_unique": 3,
+      "horizon": 6,
+      "stats_train": {
+        "min": 0.0,
+        "max": 1.0,
+        "mean": 0.3461735167257306,
+        "std": 0.475750394056555,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": 0.0,
+        "max": 1.0,
+        "mean": 0.33017891468283306,
+        "std": 0.4702823308768384,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "target_12_S1",
+      "dtype": "float64",
+      "position": 93,
+      "description": "3-class label for horizon N=12 (60 min), rule S1 (+1 Up, -1 Down, 0 Neutral). Symmetric cost-floor threshold: theta_up = theta_down = c (0.23%).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule S1 evaluated against forward return fwd_ret_12",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_12"
+      ],
+      "n_missing": 36,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 12,
+      "theta_rule": "S1",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.014524239502853703,
+        "std": 0.6876965529262528,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.0013098130347522976,
+        "std": 0.6761783764386832,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "theta_up_12_S1",
+      "dtype": "float64",
+      "position": 94,
+      "description": "Up threshold for horizon N=12, rule S1. Symmetric cost-floor threshold: theta_up = theta_down = c (0.23%).",
+      "unit": "fraction",
+      "formula": "Rule S1 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 12,
+      "theta_rule": "S1",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "theta_down_12_S1",
+      "dtype": "float64",
+      "position": 95,
+      "description": "Down threshold for horizon N=12, rule S1. Symmetric cost-floor threshold: theta_up = theta_down = c (0.23%).",
+      "unit": "fraction",
+      "formula": "Rule S1 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 12,
+      "theta_rule": "S1",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "target_12_S2",
+      "dtype": "float64",
+      "position": 96,
+      "description": "3-class label for horizon N=12 (60 min), rule S2 (+1 Up, -1 Down, 0 Neutral). Symmetric fixed threshold: theta_up = theta_down = 0.30%.",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule S2 evaluated against forward return fwd_ret_12",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_12"
+      ],
+      "n_missing": 36,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 12,
+      "theta_rule": "S2",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.012387922567563285,
+        "std": 0.6092030323648958,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.0008661666842716806,
+        "std": 0.5996253193996601,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "theta_up_12_S2",
+      "dtype": "float64",
+      "position": 97,
+      "description": "Up threshold for horizon N=12, rule S2. Symmetric fixed threshold: theta_up = theta_down = 0.30%.",
+      "unit": "fraction",
+      "formula": "Rule S2 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 12,
+      "theta_rule": "S2",
+      "stats_train": {
+        "min": 0.003,
+        "max": 0.003,
+        "mean": 0.0030000000000000005,
+        "std": 4.336818503846809e-19,
+        "median": 0.003
+      },
+      "stats_val": {
+        "min": 0.003,
+        "max": 0.003,
+        "mean": 0.003,
+        "std": 0.0,
+        "median": 0.003
+      }
+    },
+    {
+      "name": "theta_down_12_S2",
+      "dtype": "float64",
+      "position": 98,
+      "description": "Down threshold for horizon N=12, rule S2. Symmetric fixed threshold: theta_up = theta_down = 0.30%.",
+      "unit": "fraction",
+      "formula": "Rule S2 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 12,
+      "theta_rule": "S2",
+      "stats_train": {
+        "min": 0.003,
+        "max": 0.003,
+        "mean": 0.0030000000000000005,
+        "std": 4.336818503846809e-19,
+        "median": 0.003
+      },
+      "stats_val": {
+        "min": 0.003,
+        "max": 0.003,
+        "mean": 0.003,
+        "std": 0.0,
+        "median": 0.003
+      }
+    },
+    {
+      "name": "target_12_Q1",
+      "dtype": "float64",
+      "position": 99,
+      "description": "3-class label for horizon N=12 (60 min), rule Q1 (+1 Up, -1 Down, 0 Neutral). Symmetric quantile threshold: theta = max(c, median |ret|). Floor binds (Q1 == S1).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule Q1 evaluated against forward return fwd_ret_12",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_12"
+      ],
+      "n_missing": 36,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 12,
+      "theta_rule": "Q1",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.014524239502853703,
+        "std": 0.6876965529262528,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.0013098130347522976,
+        "std": 0.6761783764386832,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "theta_up_12_Q1",
+      "dtype": "float64",
+      "position": 100,
+      "description": "Up threshold for horizon N=12, rule Q1. Symmetric quantile threshold: theta = max(c, median |ret|). Floor binds (Q1 == S1).",
+      "unit": "fraction",
+      "formula": "Rule Q1 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 12,
+      "theta_rule": "Q1",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "theta_down_12_Q1",
+      "dtype": "float64",
+      "position": 101,
+      "description": "Down threshold for horizon N=12, rule Q1. Symmetric quantile threshold: theta = max(c, median |ret|). Floor binds (Q1 == S1).",
+      "unit": "fraction",
+      "formula": "Rule Q1 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 12,
+      "theta_rule": "Q1",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "target_12_V1",
+      "dtype": "float64",
+      "position": 102,
+      "description": "3-class label for horizon N=12 (60 min), rule V1 (+1 Up, -1 Down, 0 Neutral). Volatility-adjusted threshold (half-sigma): theta = max(c, 0.5 * sigma * sqrt(N)).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule V1 evaluated against forward return fwd_ret_12",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_12"
+      ],
+      "n_missing": 36,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 12,
+      "theta_rule": "V1",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.012636857803667042,
+        "std": 0.6496432716758151,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.0012886870180627442,
+        "std": 0.6398500338940784,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "theta_up_12_V1",
+      "dtype": "float64",
+      "position": 103,
+      "description": "Up threshold for horizon N=12, rule V1. Volatility-adjusted threshold (half-sigma): theta = max(c, 0.5 * sigma * sqrt(N)).",
+      "unit": "fraction",
+      "formula": "Rule V1 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 131541,
+      "horizon": 12,
+      "theta_rule": "V1",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.011726580069417642,
+        "mean": 0.0027379597640251555,
+        "std": 0.000884725277365679,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.00891145282627467,
+        "mean": 0.0026948562578306707,
+        "std": 0.0007671731440977901,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "theta_down_12_V1",
+      "dtype": "float64",
+      "position": 104,
+      "description": "Down threshold for horizon N=12, rule V1. Volatility-adjusted threshold (half-sigma): theta = max(c, 0.5 * sigma * sqrt(N)).",
+      "unit": "fraction",
+      "formula": "Rule V1 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 131541,
+      "horizon": 12,
+      "theta_rule": "V1",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.011726580069417642,
+        "mean": 0.0027379597640251555,
+        "std": 0.000884725277365679,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.00891145282627467,
+        "mean": 0.0026948562578306707,
+        "std": 0.0007671731440977901,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "target_12_V2",
+      "dtype": "float64",
+      "position": 105,
+      "description": "3-class label for horizon N=12 (60 min), rule V2 (+1 Up, -1 Down, 0 Neutral). Volatility-adjusted threshold (one-sigma): theta = max(c, 1.0 * sigma * sqrt(N)).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule V2 evaluated against forward return fwd_ret_12",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_12"
+      ],
+      "n_missing": 36,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 12,
+      "theta_rule": "V2",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.005508257860695842,
+        "std": 0.4682085315081553,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.005936410689764445,
+        "std": 0.4564373592588603,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "theta_up_12_V2",
+      "dtype": "float64",
+      "position": 106,
+      "description": "Up threshold for horizon N=12, rule V2. Volatility-adjusted threshold (one-sigma): theta = max(c, 1.0 * sigma * sqrt(N)).",
+      "unit": "fraction",
+      "formula": "Rule V2 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 289957,
+      "horizon": 12,
+      "theta_rule": "V2",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.023453160138835284,
+        "mean": 0.004819508148605025,
+        "std": 0.0022182698988656253,
+        "median": 0.00437047307953578
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.01782290565254934,
+        "mean": 0.0047331734637268835,
+        "std": 0.0020137447105185633,
+        "median": 0.004386305534433428
+      }
+    },
+    {
+      "name": "theta_down_12_V2",
+      "dtype": "float64",
+      "position": 107,
+      "description": "Down threshold for horizon N=12, rule V2. Volatility-adjusted threshold (one-sigma): theta = max(c, 1.0 * sigma * sqrt(N)).",
+      "unit": "fraction",
+      "formula": "Rule V2 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 289957,
+      "horizon": 12,
+      "theta_rule": "V2",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.023453160138835284,
+        "mean": 0.004819508148605025,
+        "std": 0.0022182698988656253,
+        "median": 0.00437047307953578
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.01782290565254934,
+        "mean": 0.0047331734637268835,
+        "std": 0.0020137447105185633,
+        "median": 0.004386305534433428
+      }
+    },
+    {
+      "name": "target_12_A1",
+      "dtype": "float64",
+      "position": 108,
+      "description": "3-class label for horizon N=12 (60 min), rule A1 (+1 Up, -1 Down, 0 Neutral). Asymmetric threshold: theta_up = 0.23%, theta_down = 0.30%.",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule A1 evaluated against forward return fwd_ret_12",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_12"
+      ],
+      "n_missing": 36,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 12,
+      "theta_rule": "A1",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.06438370424683512,
+        "std": 0.6474044584696829,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.0477447977183902,
+        "std": 0.6370899869231911,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "theta_up_12_A1",
+      "dtype": "float64",
+      "position": 109,
+      "description": "Up threshold for horizon N=12, rule A1. Asymmetric threshold: theta_up = 0.23%, theta_down = 0.30%.",
+      "unit": "fraction",
+      "formula": "Rule A1 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 12,
+      "theta_rule": "A1",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "theta_down_12_A1",
+      "dtype": "float64",
+      "position": 110,
+      "description": "Down threshold for horizon N=12, rule A1. Asymmetric threshold: theta_up = 0.23%, theta_down = 0.30%.",
+      "unit": "fraction",
+      "formula": "Rule A1 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 12,
+      "theta_rule": "A1",
+      "stats_train": {
+        "min": 0.003,
+        "max": 0.003,
+        "mean": 0.0030000000000000005,
+        "std": 4.336818503846809e-19,
+        "median": 0.003
+      },
+      "stats_val": {
+        "min": 0.003,
+        "max": 0.003,
+        "mean": 0.003,
+        "std": 0.0,
+        "median": 0.003
+      }
+    },
+    {
+      "name": "target_12_A2",
+      "dtype": "float64",
+      "position": 111,
+      "description": "3-class label for horizon N=12 (60 min), rule A2 (+1 Up, -1 Down, 0 Neutral). Asymmetric threshold: theta_up = 0.30%, theta_down = 0.23%.",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule A2 evaluated against forward return fwd_ret_12",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_12"
+      ],
+      "n_missing": 36,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 12,
+      "theta_rule": "A2",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.03747154217641814,
+        "std": 0.6478714097319924,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.049920777437414174,
+        "std": 0.6372713584968374,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "theta_up_12_A2",
+      "dtype": "float64",
+      "position": 112,
+      "description": "Up threshold for horizon N=12, rule A2. Asymmetric threshold: theta_up = 0.30%, theta_down = 0.23%.",
+      "unit": "fraction",
+      "formula": "Rule A2 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 12,
+      "theta_rule": "A2",
+      "stats_train": {
+        "min": 0.003,
+        "max": 0.003,
+        "mean": 0.0030000000000000005,
+        "std": 4.336818503846809e-19,
+        "median": 0.003
+      },
+      "stats_val": {
+        "min": 0.003,
+        "max": 0.003,
+        "mean": 0.003,
+        "std": 0.0,
+        "median": 0.003
+      }
+    },
+    {
+      "name": "theta_down_12_A2",
+      "dtype": "float64",
+      "position": 113,
+      "description": "Down threshold for horizon N=12, rule A2. Asymmetric threshold: theta_up = 0.30%, theta_down = 0.23%.",
+      "unit": "fraction",
+      "formula": "Rule A2 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 12,
+      "theta_rule": "A2",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.0023,
+        "mean": 0.0023,
+        "std": 0.0,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "target_12_F05",
+      "dtype": "float64",
+      "position": 114,
+      "description": "3-class label for horizon N=12 (60 min), rule F05 (+1 Up, -1 Down, 0 Neutral). Research sub-cost threshold: theta_up = theta_down = 0.05% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule F05 evaluated against forward return fwd_ret_12",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_12"
+      ],
+      "n_missing": 36,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 12,
+      "theta_rule": "F05",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.01631204710759886,
+        "std": 0.930258403803257,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.0057674025562480195,
+        "std": 0.9248774783744442,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "theta_up_12_F05",
+      "dtype": "float64",
+      "position": 115,
+      "description": "Up threshold for horizon N=12, rule F05. Research sub-cost threshold: theta_up = theta_down = 0.05% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "fraction",
+      "formula": "Rule F05 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 12,
+      "theta_rule": "F05",
+      "stats_train": {
+        "min": 0.0005,
+        "max": 0.0005,
+        "mean": 0.0005000000000000002,
+        "std": 2.1684092519234047e-19,
+        "median": 0.0005
+      },
+      "stats_val": {
+        "min": 0.0005,
+        "max": 0.0005,
+        "mean": 0.0005000000000000001,
+        "std": 1.0842136222008726e-19,
+        "median": 0.0005
+      }
+    },
+    {
+      "name": "theta_down_12_F05",
+      "dtype": "float64",
+      "position": 116,
+      "description": "Down threshold for horizon N=12, rule F05. Research sub-cost threshold: theta_up = theta_down = 0.05% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "fraction",
+      "formula": "Rule F05 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 12,
+      "theta_rule": "F05",
+      "stats_train": {
+        "min": 0.0005,
+        "max": 0.0005,
+        "mean": 0.0005000000000000002,
+        "std": 2.1684092519234047e-19,
+        "median": 0.0005
+      },
+      "stats_val": {
+        "min": 0.0005,
+        "max": 0.0005,
+        "mean": 0.0005000000000000001,
+        "std": 1.0842136222008726e-19,
+        "median": 0.0005
+      }
+    },
+    {
+      "name": "target_12_F10",
+      "dtype": "float64",
+      "position": 117,
+      "description": "3-class label for horizon N=12 (60 min), rule F10 (+1 Up, -1 Down, 0 Neutral). Research sub-cost threshold: theta_up = theta_down = 0.10% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule F10 evaluated against forward return fwd_ret_12",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_12"
+      ],
+      "n_missing": 36,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 12,
+      "theta_rule": "F10",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.016642452057336575,
+        "std": 0.8593170793018565,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.00285201225308968,
+        "std": 0.8483804182434548,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "theta_up_12_F10",
+      "dtype": "float64",
+      "position": 118,
+      "description": "Up threshold for horizon N=12, rule F10. Research sub-cost threshold: theta_up = theta_down = 0.10% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "fraction",
+      "formula": "Rule F10 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 12,
+      "theta_rule": "F10",
+      "stats_train": {
+        "min": 0.001,
+        "max": 0.001,
+        "mean": 0.0010000000000000005,
+        "std": 4.336818503846809e-19,
+        "median": 0.001
+      },
+      "stats_val": {
+        "min": 0.001,
+        "max": 0.001,
+        "mean": 0.0010000000000000002,
+        "std": 2.1684272444017453e-19,
+        "median": 0.001
+      }
+    },
+    {
+      "name": "theta_down_12_F10",
+      "dtype": "float64",
+      "position": 119,
+      "description": "Down threshold for horizon N=12, rule F10. Research sub-cost threshold: theta_up = theta_down = 0.10% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "fraction",
+      "formula": "Rule F10 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 12,
+      "theta_rule": "F10",
+      "stats_train": {
+        "min": 0.001,
+        "max": 0.001,
+        "mean": 0.0010000000000000005,
+        "std": 4.336818503846809e-19,
+        "median": 0.001
+      },
+      "stats_val": {
+        "min": 0.001,
+        "max": 0.001,
+        "mean": 0.0010000000000000002,
+        "std": 2.1684272444017453e-19,
+        "median": 0.001
+      }
+    },
+    {
+      "name": "target_12_F15",
+      "dtype": "float64",
+      "position": 120,
+      "description": "3-class label for horizon N=12 (60 min), rule F15 (+1 Up, -1 Down, 0 Neutral). Research sub-cost threshold: theta_up = theta_down = 0.15% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule F15 evaluated against forward return fwd_ret_12",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_12"
+      ],
+      "n_missing": 36,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 12,
+      "theta_rule": "F15",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.015768915683372485,
+        "std": 0.7900928288964244,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.001140804901235872,
+        "std": 0.7769868116260473,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "theta_up_12_F15",
+      "dtype": "float64",
+      "position": 121,
+      "description": "Up threshold for horizon N=12, rule F15. Research sub-cost threshold: theta_up = theta_down = 0.15% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "fraction",
+      "formula": "Rule F15 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 12,
+      "theta_rule": "F15",
+      "stats_train": {
+        "min": 0.0015,
+        "max": 0.0015,
+        "mean": 0.0015000000000000002,
+        "std": 2.1684092519234047e-19,
+        "median": 0.0015
+      },
+      "stats_val": {
+        "min": 0.0015,
+        "max": 0.0015,
+        "mean": 0.0015,
+        "std": 0.0,
+        "median": 0.0015
+      }
+    },
+    {
+      "name": "theta_down_12_F15",
+      "dtype": "float64",
+      "position": 122,
+      "description": "Down threshold for horizon N=12, rule F15. Research sub-cost threshold: theta_up = theta_down = 0.15% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "fraction",
+      "formula": "Rule F15 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "horizon": 12,
+      "theta_rule": "F15",
+      "stats_train": {
+        "min": 0.0015,
+        "max": 0.0015,
+        "mean": 0.0015000000000000002,
+        "std": 2.1684092519234047e-19,
+        "median": 0.0015
+      },
+      "stats_val": {
+        "min": 0.0015,
+        "max": 0.0015,
+        "mean": 0.0015,
+        "std": 0.0,
+        "median": 0.0015
+      }
+    },
+    {
+      "name": "big_move_12",
+      "dtype": "float64",
+      "position": 123,
+      "description": "1 if |forward return over 12 candles| exceeds the round-trip cost c (0.23%), else 0; basis for the worth-it model",
+      "unit": "binary {0, 1} or NaN",
+      "formula": "1.0 if target_12_S1 != 0 else 0.0 (NaN if invalid)",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "target_12_S1"
+      ],
+      "n_missing": 36,
+      "n_inf": 0,
+      "n_unique": 3,
+      "horizon": 12,
+      "stats_train": {
+        "min": 0.0,
+        "max": 1.0,
+        "mean": 0.4731353619292028,
+        "std": 0.4992788994977752,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": 0.0,
+        "max": 1.0,
+        "mean": 0.45720925319531003,
+        "std": 0.4981708491271651,
+        "median": 0.0
+      }
+    }
+  ],
+  "row_counts_by_split": {
+    "train": 220953,
+    "val": 47347,
+    "test": {
+      "n_rows": 49940,
+      "first": "2026-05-20T14:20:00+00:00",
+      "last": "2026-11-09T23:55:00+00:00",
+      "note": "Test split is LOCKED — no value statistics computed."
+    }
+  },
+  "parameters": {
+    "horizons": [
+      2,
+      3,
+      6,
+      12
+    ],
+    "rules": [
+      "S1",
+      "S2",
+      "Q1",
+      "V1",
+      "V2",
+      "A1",
+      "A2",
+      "F05",
+      "F10",
+      "F15"
+    ],
+    "roundtrip_cost_c": 0.0023,
+    "rolling_sigma_window_W": 288,
+    "q1_train_frozen": {
+      "q1_up_2": 0.0023,
+      "q1_down_2": 0.0023,
+      "q1_up_3": 0.0023,
+      "q1_down_3": 0.0023,
+      "q1_up_6": 0.0023,
+      "q1_down_6": 0.0023,
+      "q1_up_12": 0.0023,
+      "q1_down_12": 0.0023
+    }
+  },
+  "checks": {
+    "n_label_columns": 40,
+    "n_big_move_columns": 4,
+    "sub_cost_rules": [
+      "F05",
+      "F10",
+      "F15"
+    ]
+  },
+  "warnings": [
+    "Q1 floor binds at c=0.23% for all candidate horizons; Q1 is identical to S1.",
+    "Test split statistics are withheld."
+  ]
+}

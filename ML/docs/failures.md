@@ -41,4 +41,22 @@ This document tracks all negative results, rejected architectures, discarded fea
   2. *Precision Restoration:* Removed `float_format` override to allow pandas default repr-level precision (full IEEE 754 64-bit double precision). Round-trip test confirmed `max diff: 0.00e+00`.
   3. *Dictionary Summation Fix:* Corrected the validation check in notebook 01 to sum violation counts explicitly (`sum(v for k, v in ohlc_v.items() if k != 'valid')`), correctly displaying `0` violations.
 
+---
+
+## Log Entry 003 — Step 4 Fixes: Boundary Leakage, Uninformative Features, and Lookback Arithmetic
+- **Date:** 2026-11-11
+- **Identified Problems:**
+  1. *Split Boundary Leakage in Forward Targets:* In continuous target computation, the last $N$ candles of the training partition evaluated forward returns using the first $N$ candles of the validation partition. This caused valid train rows to improperly equal 220,953 instead of $220,953 - N$, and shifted the Down count at $N=12$ under rule S1 from 50,663 to 50,668 (5 leaked validation candles).
+  2. *Near-Constant Feature `feat_ret_open_gap`:* Computed as $\ln(\text{open}_t / \text{close}_{t-1})$. On Binance spot BTCUSDT trading 24/7 without market opens/closes, consecutive candle open prices almost perfectly equal previous close. The empirical std was $5.1 \times 10^{-6}$ and over 99% of values were exact zero floating-point noise.
+  3. *Lookback Underestimation ($L=2017$ vs $L=2018$):* The initial assumption of $L=2017$ candles failed on `feat_vol_seasonal_slot_abs_ret_7d`. While 7 days corresponds to $7 \times 288 = 2016$ intervals, computing the 1-candle return at $t-2016$ requires $\text{close}_{t-2017}$. The total candle span from $t-2017$ to $t$ inclusive is $t - (t-2017) + 1 = 2018$ candles.
+  4. *Pandas 2.2 Deprecation Warning:* Accessing `df.index.dayofweek` emitted 50 `Pandas4Warning` deprecations across test suites.
+  5. *Mathematical Identities & Redundant Duplicates:* Implementing HAR multi-horizon realized volatility and semivariance introduced exact duplicates: `feat_vol_har_rv_12` $\equiv$ `feat_vol_sigma_12` (max diff 0.0), `feat_vol_har_rv_288` $\equiv$ `feat_vol_sigma_288` (max diff 0.0), and $\text{semi\_var\_down} \equiv 1.0 - \text{semi\_var\_up}$ (Pearson = -1.0). In addition, MACD exhibited the exact linear identity $hist = line - signal$.
+- **Resolutions:**
+  1. Passed `split_id` to `_build_fwd_ret` in `src/labels.py` to strictly invalidate forward horizons that cross split boundaries (`valid_mask = False`, labels = NaN). Restored exact valid row counts: $N=2$ (220,951), $N=3$ (220,950), $N=6$ (220,947), $N=12$ (220,941), and restored Down count at $N=12$ to 50,663.
+  2. Completely removed `feat_ret_open_gap` from `FEATURE_GROUPS`, `src/features.py`, and `src/column_dictionary.py`.
+  3. Formally corrected `LOOKBACK_CANDLES = 2018` in `src/config.py` and `src/features.py`. Empirical sweep confirmed 0 failing features and max difference $1.45 \times 10^{-10}$ across all 88 features at $L \ge 2018$.
+  4. Updated day-of-week lookups to check `df.index.day_of_week` first, eliminating all 50 deprecation warnings.
+  5. Formally removed the 3 exact duplicates (`feat_vol_har_rv_12`, `feat_vol_har_rv_288`, `feat_vol_realized_semi_var_down_ratio_60`), reducing features from 88 to 85. Retained all 3 MACD components in `master.csv` (172 columns total) but defined `LINEAR_MODEL_EXCLUDE = ["feat_mom_macd_hist"]` in `src/config.py` for linear/logistic models. Replaced heuristic prune list with hierarchical correlation clusters ($|\rho| > 0.95$, complete linkage).
+
+
 

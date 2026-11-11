@@ -1,0 +1,311 @@
+{
+  "file": {
+    "path": "data/processed/clean.csv",
+    "size_bytes": 40329149,
+    "sha256": "659a6295d5551966fb5c6b41c81beb7f3c4c3751118ec9db9749a4c1eafedb05",
+    "created_at": "2026-11-10T07:51:16.175075+00:00",
+    "git_commit": "538b007",
+    "step": 1,
+    "module": "src.preprocessing",
+    "description": "Cleaned, validated 5-minute BTCUSDT dataset with UTC DatetimeIndex and gap tracking."
+  },
+  "shape": {
+    "n_rows": 318240,
+    "n_columns": 11
+  },
+  "index": {
+    "name": "open_time",
+    "dtype": "datetime64[us, UTC]",
+    "timezone": "UTC",
+    "first": "2023-11-01T00:00:00+00:00",
+    "last": "2026-11-09T23:55:00+00:00",
+    "frequency": "5min",
+    "is_monotonic_increasing": true,
+    "n_duplicates": 0
+  },
+  "columns": [
+    {
+      "name": "open",
+      "dtype": "float64",
+      "position": 0,
+      "description": "Candle open price in USDT (Binance kline field 2). First traded price in the 5-minute interval.",
+      "unit": "USDT",
+      "formula": "",
+      "group": "ohlcv",
+      "role": "cleaned",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 280463,
+      "stats_all": {
+        "min": 34130.72,
+        "max": 126011.18,
+        "mean": 78582.0121631473,
+        "std": 21411.911019703777,
+        "median": 76800.0
+      }
+    },
+    {
+      "name": "high",
+      "dtype": "float64",
+      "position": 1,
+      "description": "Highest traded price within the 5-minute candle (Binance kline field 3).",
+      "unit": "USDT",
+      "formula": "",
+      "group": "ohlcv",
+      "role": "cleaned",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 259007,
+      "stats_all": {
+        "min": 34174.19,
+        "max": 126199.63,
+        "mean": 78646.86878478507,
+        "std": 21423.23252994172,
+        "median": 76855.785
+      }
+    },
+    {
+      "name": "low",
+      "dtype": "float64",
+      "position": 2,
+      "description": "Lowest traded price within the 5-minute candle (Binance kline field 4).",
+      "unit": "USDT",
+      "formula": "",
+      "group": "ohlcv",
+      "role": "cleaned",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 260864,
+      "stats_all": {
+        "min": 34097.39,
+        "max": 125868.13,
+        "mean": 78515.9554206888,
+        "std": 21400.42466946543,
+        "median": 76740.35
+      }
+    },
+    {
+      "name": "close",
+      "dtype": "float64",
+      "position": 3,
+      "description": "Candle close price in USDT (Binance kline field 5). Last traded price in the 5-minute interval. Used as the reference price for all labels.",
+      "unit": "USDT",
+      "formula": "",
+      "group": "ohlcv",
+      "role": "cleaned",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 280769,
+      "stats_all": {
+        "min": 34130.73,
+        "max": 126011.18,
+        "mean": 78582.1390883924,
+        "std": 21411.770297644478,
+        "median": 76800.0
+      }
+    },
+    {
+      "name": "volume",
+      "dtype": "float64",
+      "position": 4,
+      "description": "Total traded volume in BTC (base asset) during the candle (Binance kline field 6).",
+      "unit": "BTC",
+      "formula": "",
+      "group": "ohlcv",
+      "role": "cleaned",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 314698,
+      "stats_all": {
+        "min": 0.80312,
+        "max": 5471.43943,
+        "mean": 89.46515577211224,
+        "std": 131.59888603649944,
+        "median": 51.848275
+      }
+    },
+    {
+      "name": "quote_volume",
+      "dtype": "float64",
+      "position": 5,
+      "description": "Total traded volume in USDT (quote asset) during the candle (Binance kline field 8). Equal to sum of (price × qty) for each trade.",
+      "unit": "USDT",
+      "formula": "sum(price_i × qty_i) for all trades in candle",
+      "group": "ohlcv",
+      "role": "cleaned",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 318240,
+      "stats_all": {
+        "min": 50654.1798498,
+        "max": 558851896.0400627,
+        "mean": 6646063.517612641,
+        "std": 9754938.344200086,
+        "median": 3883492.6366867498
+      }
+    },
+    {
+      "name": "number_of_trades",
+      "dtype": "float64",
+      "position": 6,
+      "description": "Count of individual trades executed during the 5-minute candle (Binance kline field 9).",
+      "unit": "count",
+      "formula": "",
+      "group": "ohlcv",
+      "role": "cleaned",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 44274,
+      "stats_all": {
+        "min": 290.0,
+        "max": 711259.0,
+        "mean": 11218.652293866264,
+        "std": 12463.220774633126,
+        "median": 7202.0
+      }
+    },
+    {
+      "name": "taker_buy_base_volume",
+      "dtype": "float64",
+      "position": 7,
+      "description": "Volume in BTC bought by taker (market buy) orders during the candle (Binance kline field 10). Used as an order-flow imbalance proxy.",
+      "unit": "BTC",
+      "formula": "",
+      "group": "ohlcv",
+      "role": "cleaned",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 311069,
+      "stats_all": {
+        "min": 0.1703,
+        "max": 2884.49252,
+        "mean": 44.02759635124748,
+        "std": 67.69518000209376,
+        "median": 24.34176
+      }
+    },
+    {
+      "name": "taker_buy_quote_volume",
+      "dtype": "float64",
+      "position": 8,
+      "description": "Volume in USDT bought by taker orders during the candle (Binance kline field 11).",
+      "unit": "USDT",
+      "formula": "",
+      "group": "ohlcv",
+      "role": "cleaned",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 318240,
+      "stats_all": {
+        "min": 10741.7550413,
+        "max": 266320240.726083,
+        "mean": 3264104.582471754,
+        "std": 5047237.076802264,
+        "median": 1820918.9423662
+      }
+    },
+    {
+      "name": "gap_id",
+      "dtype": "int32",
+      "position": 9,
+      "description": "Contiguous segment identifier. Increments at every gap (non-consecutive 5-minute interval). Rows with the same gap_id form a continuous OHLCV segment with no missing candles. Used to prevent labels and rolling features from crossing data gaps.",
+      "unit": "integer index",
+      "formula": "cumsum(is_gap_boundary)",
+      "group": "metadata",
+      "role": "flag",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "open_time"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "stats_all": {
+        "min": 1.0,
+        "max": 1.0,
+        "mean": 1.0,
+        "std": 0.0,
+        "median": 1.0
+      }
+    },
+    {
+      "name": "is_gap_boundary",
+      "dtype": "bool",
+      "position": 10,
+      "description": "True if this row is the first candle of a new contiguous segment (i.e., the previous candle's timestamp is more than 5 minutes earlier, or this is the very first row of the dataset). Always True for row 0.",
+      "unit": "boolean",
+      "formula": "time_diff(open_time) > 5min OR row == 0",
+      "group": "metadata",
+      "role": "flag",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "open_time"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 2,
+      "stats_all": {
+        "min": 0.0,
+        "max": 1.0,
+        "mean": 3.1422825540472598e-06,
+        "std": 0.0017726484575479881,
+        "median": 0.0
+      }
+    }
+  ],
+  "row_counts_by_split": {
+    "train": 220953,
+    "val": 47347,
+    "test": {
+      "n_rows": 49940,
+      "first": "2026-05-20T14:20:00+00:00",
+      "last": "2026-11-09T23:55:00+00:00",
+      "note": "Test split is LOCKED — no value statistics computed."
+    }
+  },
+  "parameters": {
+    "start": "2023-11-01 00:00:00+00:00",
+    "end": "2026-11-10 00:00:00+00:00",
+    "interval_minutes": 5,
+    "precision": "full IEEE 754 float64 (repr-level)"
+  },
+  "checks": {
+    "gaps": 0,
+    "duplicates": 0,
+    "ohlc_violations": 0,
+    "volume_violations": 0,
+    "is_monotonic_increasing": true
+  },
+  "warnings": [
+    "Overview only, no decisions taken. Test split statistics are full-file aggregate here."
+  ]
+}

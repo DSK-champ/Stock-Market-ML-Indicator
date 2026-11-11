@@ -57,10 +57,14 @@ logger = setup_logger("labels")
 # ---------------------------------------------------------------------------
 COST = config.TOTAL_ROUNDTRIP_COST          # c = 0.0023
 CANDIDATE_HORIZONS: List[int] = config.CANDIDATE_HORIZONS  # [2, 3, 6, 12]
-RULES: List[str] = ["S1", "S2", "Q1", "V1", "V2", "A1", "A2"]
+RULES: List[str] = config.ALL_RULES  # ["S1", "S2", "Q1", "V1", "V2", "A1", "A2", "F05", "F10", "F15"]
+SUB_COST_RULES: List[str] = config.SUB_COST_RULES  # ["F05", "F10", "F15"]
 
 # Fixed absolute thresholds
 _S2_THETA = 0.003    # 0.30%
+_F05_THETA = config.F05_THETA  # 0.05%
+_F10_THETA = config.F10_THETA  # 0.10%
+_F15_THETA = config.F15_THETA  # 0.15%
 _V1_K = 0.5          # half-σ scale factor
 _V2_K = 1.0          # 1-σ scale factor
 _SIGMA_WINDOW = 288  # 24 hours of 5-minute bars [ASSUMPTION — see utils.rolling_sigma]
@@ -75,6 +79,7 @@ def _build_fwd_ret(
     open_next: np.ndarray,
     gap_id: np.ndarray,
     N: int,
+    split_id: Optional[np.ndarray] = None,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Compute forward return arrays for a single horizon N.
 
@@ -94,20 +99,25 @@ def _build_fwd_ret(
     # Rows that can have a label: indices 0 .. n-N-1
     idx = n - N
     same_gap = gap_id[:idx] == gap_id[N:n]   # True where horizon stays in same segment
+    if split_id is not None:
+        same_split = split_id[:idx] == split_id[N:n]
+        is_valid = same_gap & same_split
+    else:
+        is_valid = same_gap
 
     # Forward return using close-to-close
     fr = (close[N:n] / close[:idx]) - 1.0
     # Conservative entry: open of t+1 to close of t+N
     fr_open = (close[N:n] / open_next[:idx]) - 1.0
 
-    fwd_ret[:idx] = np.where(same_gap, fr, np.nan)
-    fwd_ret_open[:idx] = np.where(same_gap, fr_open, np.nan)
-    valid_mask[:idx] = same_gap
+    fwd_ret[:idx] = np.where(is_valid, fr, np.nan)
+    fwd_ret_open[:idx] = np.where(is_valid, fr_open, np.nan)
+    valid_mask[:idx] = is_valid
 
     # raw_sign: +1 / -1 / 0
     with np.errstate(invalid="ignore"):
         rs = np.where(fr > 0.0, 1.0, np.where(fr < 0.0, -1.0, 0.0))
-    raw_sign[:idx] = np.where(same_gap, rs, np.nan)
+    raw_sign[:idx] = np.where(is_valid, rs, np.nan)
 
     return fwd_ret, fwd_ret_open, raw_sign, valid_mask
 
@@ -136,6 +146,28 @@ def _apply_threshold(
         ),
     )
     return label.astype("float64")
+
+
+def compute_big_move_target(target_s1: np.ndarray, valid_mask: np.ndarray) -> np.ndarray:
+    """Compute binary big_move target from target_N_S1 (for the two-stage indicator, Setup D).
+
+    Parameters
+    ----------
+    target_s1 : np.ndarray
+        Array of target_N_S1 labels (+1.0, -1.0, 0.0, or NaN).
+    valid_mask : np.ndarray
+        Boolean array indicating valid target rows.
+
+    Returns
+    -------
+    np.ndarray
+        Float64 array:
+          1.0 if target_N_S1 != 0 (i.e. |fwd_ret_N| > c),
+          0.0 if target_N_S1 == 0 (neutral / move <= c),
+          NaN if row is invalid (~valid_mask).
+        Never 0 on invalid rows.
+    """
+    return np.where(~valid_mask, np.nan, np.where(target_s1 != 0.0, 1.0, 0.0)).astype("float64")
 
 
 # ===========================================================================
@@ -285,45 +317,63 @@ def compute_all_targets(
     if q1_thresholds is None:
         q1_thresholds = compute_q1_thresholds(train_df, horizons=horizons, cost=cost)
 
-    out = pd.DataFrame(index=df.index)
+    # Derive split_id to prevent forward leakage across split boundaries
+    split_id = None
+    if "split" in df.columns:
+        split_map = {"train": 0, "val": 1, "test": 2}
+        split_id = df["split"].map(split_map).fillna(0).to_numpy(dtype=int)
+    elif isinstance(df.index, pd.DatetimeIndex):
+        idx = df.index
+        if idx.tz is None:
+            t_train_end = config.SPLIT_BOUNDARIES["train"]["end"].tz_localize(None)
+            t_val_end = config.SPLIT_BOUNDARIES["val"]["end"].tz_localize(None)
+        else:
+            t_train_end = config.SPLIT_BOUNDARIES["train"]["end"]
+            t_val_end = config.SPLIT_BOUNDARIES["val"]["end"]
+        split_id = np.zeros(n, dtype=int)
+        split_id[idx > t_train_end] = 1
+        split_id[idx > t_val_end] = 2
+
+    out_cols: Dict[str, np.ndarray] = {}
 
     for N in horizons:
         fwd_ret, fwd_ret_open, raw_sign, valid_mask = _build_fwd_ret(
-            close, open_next, gap_id, N
+            close, open_next, gap_id, N, split_id=split_id
         )
 
         # Store base quantities
-        out[f"fwd_ret_{N}"] = fwd_ret
-        out[f"fwd_ret_open_{N}"] = fwd_ret_open
-        out[f"raw_sign_{N}"] = raw_sign
-        out[f"has_valid_target_{N}"] = valid_mask
+        out_cols[f"fwd_ret_{N}"] = fwd_ret
+        out_cols[f"fwd_ret_open_{N}"] = fwd_ret_open
+        out_cols[f"raw_sign_{N}"] = raw_sign
+        out_cols[f"has_valid_target_{N}"] = valid_mask
 
         # -----------------------------------------------------------------
         # S1: θ_up = θ_down = c
         # -----------------------------------------------------------------
         tu_S1 = np.full(n, cost, dtype="float64")
         td_S1 = np.full(n, cost, dtype="float64")
-        out[f"theta_up_{N}_S1"] = tu_S1
-        out[f"theta_down_{N}_S1"] = td_S1
-        out[f"target_{N}_S1"] = _apply_threshold(fwd_ret, tu_S1, td_S1, valid_mask)
+        out_cols[f"theta_up_{N}_S1"] = tu_S1
+        out_cols[f"theta_down_{N}_S1"] = td_S1
+        s1_tgt = _apply_threshold(fwd_ret, tu_S1, td_S1, valid_mask)
+        out_cols[f"target_{N}_S1"] = s1_tgt
 
         # -----------------------------------------------------------------
         # S2: θ_up = θ_down = 0.003
         # -----------------------------------------------------------------
         tu_S2 = np.full(n, _S2_THETA, dtype="float64")
         td_S2 = np.full(n, _S2_THETA, dtype="float64")
-        out[f"theta_up_{N}_S2"] = tu_S2
-        out[f"theta_down_{N}_S2"] = td_S2
-        out[f"target_{N}_S2"] = _apply_threshold(fwd_ret, tu_S2, td_S2, valid_mask)
+        out_cols[f"theta_up_{N}_S2"] = tu_S2
+        out_cols[f"theta_down_{N}_S2"] = td_S2
+        out_cols[f"target_{N}_S2"] = _apply_threshold(fwd_ret, tu_S2, td_S2, valid_mask)
 
         # -----------------------------------------------------------------
         # Q1: 50th pct of pos/neg fwd_ret from TRAIN, floored at c
         # -----------------------------------------------------------------
         tu_Q1 = np.full(n, q1_thresholds[f"q1_up_{N}"], dtype="float64")
         td_Q1 = np.full(n, q1_thresholds[f"q1_down_{N}"], dtype="float64")
-        out[f"theta_up_{N}_Q1"] = tu_Q1
-        out[f"theta_down_{N}_Q1"] = td_Q1
-        out[f"target_{N}_Q1"] = _apply_threshold(fwd_ret, tu_Q1, td_Q1, valid_mask)
+        out_cols[f"theta_up_{N}_Q1"] = tu_Q1
+        out_cols[f"theta_down_{N}_Q1"] = td_Q1
+        out_cols[f"target_{N}_Q1"] = _apply_threshold(fwd_ret, tu_Q1, td_Q1, valid_mask)
 
         # -----------------------------------------------------------------
         # V1: θ_t = max(c, 0.5 · σ_t · √N)   — causal rolling vol
@@ -344,9 +394,9 @@ def compute_all_targets(
                     "%s N=%d: floor binds on %d valid rows (raw_theta < c)",
                     rule, N, floor_binds,
                 )
-            out[f"theta_up_{N}_{rule}"] = theta
-            out[f"theta_down_{N}_{rule}"] = theta
-            out[f"target_{N}_{rule}"] = _apply_threshold(fwd_ret, theta, theta, valid_mask)
+            out_cols[f"theta_up_{N}_{rule}"] = theta
+            out_cols[f"theta_down_{N}_{rule}"] = theta
+            out_cols[f"target_{N}_{rule}"] = _apply_threshold(fwd_ret, theta, theta, valid_mask)
 
         # -----------------------------------------------------------------
         # A1: θ_up = c,     θ_down = 0.003   (easier bar for Up signals)
@@ -354,17 +404,49 @@ def compute_all_targets(
         # -----------------------------------------------------------------
         tu_A1 = np.full(n, cost, dtype="float64")
         td_A1 = np.full(n, _S2_THETA, dtype="float64")
-        out[f"theta_up_{N}_A1"] = tu_A1
-        out[f"theta_down_{N}_A1"] = td_A1
-        out[f"target_{N}_A1"] = _apply_threshold(fwd_ret, tu_A1, td_A1, valid_mask)
+        out_cols[f"theta_up_{N}_A1"] = tu_A1
+        out_cols[f"theta_down_{N}_A1"] = td_A1
+        out_cols[f"target_{N}_A1"] = _apply_threshold(fwd_ret, tu_A1, td_A1, valid_mask)
 
         tu_A2 = np.full(n, _S2_THETA, dtype="float64")
         td_A2 = np.full(n, cost, dtype="float64")
-        out[f"theta_up_{N}_A2"] = tu_A2
-        out[f"theta_down_{N}_A2"] = td_A2
-        out[f"target_{N}_A2"] = _apply_threshold(fwd_ret, tu_A2, td_A2, valid_mask)
+        out_cols[f"theta_up_{N}_A2"] = tu_A2
+        out_cols[f"theta_down_{N}_A2"] = td_A2
+        out_cols[f"target_{N}_A2"] = _apply_threshold(fwd_ret, tu_A2, td_A2, valid_mask)
 
-    return out
+        # -----------------------------------------------------------------
+        # F05: θ_up = θ_down = 0.0005 (0.05%, research sub-cost comparison)
+        # -----------------------------------------------------------------
+        tu_F05 = np.full(n, _F05_THETA, dtype="float64")
+        td_F05 = np.full(n, _F05_THETA, dtype="float64")
+        out_cols[f"theta_up_{N}_F05"] = tu_F05
+        out_cols[f"theta_down_{N}_F05"] = td_F05
+        out_cols[f"target_{N}_F05"] = _apply_threshold(fwd_ret, tu_F05, td_F05, valid_mask)
+
+        # -----------------------------------------------------------------
+        # F10: θ_up = θ_down = 0.0010 (0.10%, research sub-cost comparison)
+        # -----------------------------------------------------------------
+        tu_F10 = np.full(n, _F10_THETA, dtype="float64")
+        td_F10 = np.full(n, _F10_THETA, dtype="float64")
+        out_cols[f"theta_up_{N}_F10"] = tu_F10
+        out_cols[f"theta_down_{N}_F10"] = td_F10
+        out_cols[f"target_{N}_F10"] = _apply_threshold(fwd_ret, tu_F10, td_F10, valid_mask)
+
+        # -----------------------------------------------------------------
+        # F15: θ_up = θ_down = 0.0015 (0.15%, research sub-cost comparison)
+        # -----------------------------------------------------------------
+        tu_F15 = np.full(n, _F15_THETA, dtype="float64")
+        td_F15 = np.full(n, _F15_THETA, dtype="float64")
+        out_cols[f"theta_up_{N}_F15"] = tu_F15
+        out_cols[f"theta_down_{N}_F15"] = td_F15
+        out_cols[f"target_{N}_F15"] = _apply_threshold(fwd_ret, tu_F15, td_F15, valid_mask)
+
+        # -----------------------------------------------------------------
+        # big_move_N: binary target for Setup D (1 if target_N_S1 != 0, else 0)
+        # -----------------------------------------------------------------
+        out_cols[f"big_move_{N}"] = compute_big_move_target(s1_tgt, valid_mask)
+
+    return pd.DataFrame(out_cols, index=df.index)
 
 
 # ===========================================================================

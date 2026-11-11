@@ -108,9 +108,13 @@ def test_label_correctness_all_rules():
         assert tgt[col].iloc[0] == 1.0, f"{rule}: row 0 should be UP"
         # Row 1: -8% — below ALL possible -θ → must be DOWN
         assert tgt[col].iloc[1] == -1.0, f"{rule}: row 1 should be DOWN"
-        # Rows 2,3: tiny moves inside every dead zone → NEUTRAL
-        assert tgt[col].iloc[2] == 0.0, f"{rule}: row 2 should be NEUTRAL"
-        assert tgt[col].iloc[3] == 0.0, f"{rule}: row 3 should be NEUTRAL"
+        # Rows 2,3: tiny moves inside dead zones
+        # Row 2 (+0.0926%): > 0.05% -> UP (+1.0) for F05; <= other θ (>=0.10%) -> NEUTRAL (0.0)
+        expected_row2 = 1.0 if rule == "F05" else 0.0
+        assert tgt[col].iloc[2] == expected_row2, f"{rule}: row 2 expected {expected_row2}, got {tgt[col].iloc[2]}"
+        # Row 3 (-0.1087%): < -0.05% and < -0.10% -> DOWN (-1.0) for F05, F10; >= -θ for others (>=0.15%) -> NEUTRAL (0.0)
+        expected_row3 = -1.0 if rule in ("F05", "F10") else 0.0
+        assert tgt[col].iloc[3] == expected_row3, f"{rule}: row 3 expected {expected_row3}, got {tgt[col].iloc[3]}"
         # Rows 4,5: has_valid_target=False → NaN
         assert np.isnan(tgt[col].iloc[4]), f"{rule}: row 4 should be NaN"
         assert np.isnan(tgt[col].iloc[5]), f"{rule}: row 5 should be NaN"
@@ -263,7 +267,7 @@ def test_no_split_overlap():
 # ===========================================================================
 
 def test_theta_floor_at_cost():
-    """Every theta_up and theta_down value must be ≥ c (round-trip cost)."""
+    """Every theta_up and theta_down value must be ≥ c (round-trip cost), exempting sub_cost rules."""
     n = 50
     prices = np.linspace(100, 200, n).tolist()
     df = _make_df(prices)
@@ -272,12 +276,61 @@ def test_theta_floor_at_cost():
 
     for col in tgt.columns:
         if col.startswith("theta_up_") or col.startswith("theta_down_"):
+            is_sub_cost = any(col.endswith(f"_{r}") for r in config.SUB_COST_RULES)
             arr = tgt[col].to_numpy()
-            # NaN values in theta columns are unexpected; check only non-NaN
             valid = arr[~np.isnan(arr)]
-            assert (valid >= COST - 1e-12).all(), (
-                f"{col}: found theta < c. min={valid.min():.6f}, c={COST:.6f}"
-            )
+            if not is_sub_cost:
+                assert (valid >= COST - 1e-12).all(), (
+                    f"{col}: found theta < c for non-sub_cost rule. min={valid.min():.6f}, c={COST:.6f}"
+                )
+
+
+def test_sub_cost_rules_thetas():
+    """Verify F05, F10, F15 rules have exact thetas and are flagged sub_cost."""
+    n = 50
+    prices = np.linspace(100, 200, n).tolist()
+    df = _make_df(prices)
+    tgt = compute_all_targets(df, train_df=df, horizons=config.CANDIDATE_HORIZONS, cost=COST)
+
+    expected_thetas = {"F05": 0.0005, "F10": 0.0010, "F15": 0.0015}
+    for r, expected_val in expected_thetas.items():
+        assert config.LABEL_RULES[r]["sub_cost"] is True
+        assert config.LABEL_RULES[r]["theta_up"] == expected_val
+        assert config.LABEL_RULES[r]["theta_down"] == expected_val
+
+        for N in config.CANDIDATE_HORIZONS:
+            tu = tgt[f"theta_up_{N}_{r}"].dropna()
+            td = tgt[f"theta_down_{N}_{r}"].dropna()
+            np.testing.assert_allclose(tu.values, expected_val, rtol=1e-12, atol=1e-12)
+            np.testing.assert_allclose(td.values, expected_val, rtol=1e-12, atol=1e-12)
+
+
+def test_big_move_targets_integrity():
+    """Verify big_move_N == (target_N_S1 != 0) on valid rows, NaN on invalid rows, and complement sum."""
+    n = 60
+    prices = np.linspace(100, 200, n).tolist()
+    df = _make_df(prices)
+    tgt = compute_all_targets(df, train_df=df, horizons=config.CANDIDATE_HORIZONS, cost=COST)
+
+    for N in config.CANDIDATE_HORIZONS:
+        bm = tgt[f"big_move_{N}"]
+        s1 = tgt[f"target_{N}_S1"]
+        valid = tgt[f"has_valid_target_{N}"].astype(bool)
+
+        # 1. Invalid rows must be strictly NaN (never 0)
+        assert bm[~valid].isna().all(), f"N={N}: found non-NaN in invalid rows of big_move_{N}"
+        assert (bm[~valid] == 0).sum() == 0, f"N={N}: found 0 in invalid rows of big_move_{N}"
+
+        # 2. Valid rows must strictly equal (target_N_S1 != 0)
+        valid_bm = bm[valid]
+        valid_s1 = s1[valid]
+        expected_bm = (valid_s1 != 0.0).astype(float)
+        np.testing.assert_array_equal(valid_bm.values, expected_bm.values)
+
+        # 3. Sum of big_move=1 and big_move=0 must equal valid count
+        n_ones = int((valid_bm == 1.0).sum())
+        n_zeros = int((valid_bm == 0.0).sum())
+        assert n_ones + n_zeros == int(valid.sum()), f"N={N}: sum of big_move classes does not equal valid count"
 
 
 # ===========================================================================
@@ -382,3 +435,126 @@ def test_v_rule_target_causal():
         assert tgt_base["target_2_V1"].iloc[i] == tgt_alt["target_2_V1"].iloc[i] or (
             np.isnan(tgt_base["target_2_V1"].iloc[i]) and np.isnan(tgt_alt["target_2_V1"].iloc[i])
         ), f"V1 causality: row {i} changed when only row 20 was modified"
+
+
+# ===========================================================================
+# TEST 9 — Saved targets parity & V-rule rolling_sigma equivalence
+# ===========================================================================
+
+def test_targets_disk_parity_and_vrule_recompute():
+    """
+    Verify that:
+      1. Reloading saved targets_base.csv and targets_labels.csv from disk matches
+         a fresh recomputation on a sample slice of clean.csv.
+      2. The saved V-rule thetas (V1, V2) strictly match a fresh recompute via
+         utils.rolling_sigma(log_returns, window=288).
+    """
+    from src.io_utils import (
+        load_clean_market_data_csv,
+        load_targets_base_csv,
+        load_targets_labels_csv,
+        load_theta_frozen_json,
+    )
+    from src.splitting import get_train_data
+
+    # Load frozen metadata
+    theta_meta = load_theta_frozen_json()
+    q1_train = theta_meta["q1_thresholds"]
+
+    # Load saved targets from disk (first 1,000 rows for fast, deterministic unit test)
+    n_sample = 1000
+    df_clean_head = load_clean_market_data_csv().iloc[:n_sample].copy()
+    base_disk = load_targets_base_csv().iloc[:n_sample].copy()
+    labels_disk = load_targets_labels_csv().iloc[:n_sample].copy()
+
+    # Fresh recomputation on this exact slice
+    fresh_targets = compute_all_targets(
+        df_clean_head,
+        train_df=df_clean_head,
+        horizons=config.CANDIDATE_HORIZONS,
+        cost=config.TOTAL_ROUNDTRIP_COST,
+        sigma_window=288,
+        q1_thresholds=q1_train,
+    )
+
+    # 1. Base targets parity check (excluding the last max(N) rows of the slice
+    # where the truncated test slice ends)
+    max_N = max(config.CANDIDATE_HORIZONS)
+    eval_slice = slice(0, n_sample - max_N)
+
+    for N in config.CANDIDATE_HORIZONS:
+        fwd_ret_col = f"fwd_ret_{N}"
+        np.testing.assert_allclose(
+            base_disk[fwd_ret_col].iloc[eval_slice].to_numpy(),
+            fresh_targets[fwd_ret_col].iloc[eval_slice].to_numpy(),
+            rtol=1e-7,
+            atol=1e-7,
+            equal_nan=True,
+            err_msg=f"Discrepancy in {fwd_ret_col} between disk and fresh compute",
+        )
+
+        valid_col = f"has_valid_target_{N}"
+        np.testing.assert_array_equal(
+            base_disk[valid_col].iloc[eval_slice].astype(bool).to_numpy(),
+            fresh_targets[valid_col].iloc[eval_slice].astype(bool).to_numpy(),
+            err_msg=f"Discrepancy in {valid_col} between disk and fresh compute",
+        )
+
+    # 2. V-rule threshold verification via independent rolling_sigma call
+    log_ret = np.log(df_clean_head["close"] / df_clean_head["close"].shift(1))
+    sigma_independent = rolling_sigma(log_ret, window=288).to_numpy()
+
+    for N in config.CANDIDATE_HORIZONS:
+        sqrt_N = np.sqrt(N)
+        for rule, k in [("V1", 0.5), ("V2", 1.0)]:
+            col = f"theta_up_{N}_{rule}"
+            saved_theta = labels_disk[col].iloc[eval_slice].to_numpy()
+
+            raw_sigma = k * sigma_independent * sqrt_N
+            raw_sigma_safe = np.where(np.isnan(raw_sigma), 0.0, raw_sigma)
+            expected_theta = np.maximum(config.TOTAL_ROUNDTRIP_COST, raw_sigma_safe)[eval_slice]
+
+            np.testing.assert_allclose(
+                saved_theta,
+                expected_theta,
+                rtol=1e-7,
+                atol=1e-7,
+                equal_nan=True,
+                err_msg=f"Saved {col} does not match fresh rolling_sigma recompute",
+            )
+
+
+# ===========================================================================
+# TEST 11 — Split tail rows invalidated across boundaries (no leakage)
+# ===========================================================================
+
+@pytest.mark.parametrize("N", [2, 3, 6, 12])
+def test_split_tail_invalidation_across_boundaries(N):
+    """The last N rows of every split must have has_valid_target_N = False and NaN labels.
+
+    Forward returns must not cross the train/val or val/test boundaries.
+    """
+    from src.column_dictionary import load_master
+    train = load_master("train")
+    n_total = len(train)
+    assert n_total == 220_953
+
+    valid_mask = train[f"has_valid_target_{N}"].to_numpy()
+    # Exactly the last N rows of train must be invalid
+    assert not valid_mask[-N:].any(), f"Last {N} rows of train must be invalid for N={N}"
+    assert valid_mask[:-N].all(), f"First {n_total - N} rows of train must be valid for N={N}"
+    assert int(valid_mask.sum()) == 220_953 - N, f"Train valid count must be exactly 220,953 - {N}"
+
+    # Verify that all label columns and big_move are NaN on the invalid tail rows
+    tail_labels = train.iloc[-N:]
+    for rule in config.ALL_RULES:
+        col = f"target_{N}_{rule}"
+        assert tail_labels[col].isna().all(), f"{col} must be NaN on last {N} rows of train"
+    assert tail_labels[f"big_move_{N}"].isna().all(), f"big_move_{N} must be NaN on last {N} rows of train"
+
+    # Specific count check at N=12 for S1 rule
+    if N == 12:
+        down_cnt = int((train["target_12_S1"] == -1.0).sum())
+        assert down_cnt == 50_663, f"Expected 50,663 Down labels at N=12, got {down_cnt}"
+
+

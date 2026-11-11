@@ -1,0 +1,81 @@
+{
+  "files": [
+    {
+      "name": "step01_clean",
+      "path": "details/step01_clean.json",
+      "step": 1,
+      "created_at": "2026-11-10T09:01:27.994251+00:00",
+      "git_commit": "538b007",
+      "size_bytes": 9288,
+      "shape": {
+        "n_rows": 318240,
+        "n_columns": 11
+      }
+    },
+    {
+      "name": "step01_raw",
+      "path": "details/step01_raw.json",
+      "step": 1,
+      "created_at": "2026-11-10T09:01:27.237441+00:00",
+      "git_commit": "538b007",
+      "size_bytes": 9297,
+      "shape": {
+        "n_rows": 318240,
+        "n_columns": 12
+      }
+    },
+    {
+      "name": "step02_split",
+      "path": "details/step02_split.json",
+      "step": 2,
+      "created_at": "2026-11-11T12:41:12.680991+00:00",
+      "git_commit": "538b007",
+      "size_bytes": 1173
+    },
+    {
+      "name": "step02_targets_base",
+      "path": "details/step02_targets_base.json",
+      "step": 2,
+      "created_at": "2026-11-11T12:41:15.039575+00:00",
+      "git_commit": "538b007",
+      "size_bytes": 16556,
+      "shape": {
+        "n_rows": 318240,
+        "n_columns": 16
+      }
+    },
+    {
+      "name": "step02_targets_labels",
+      "path": "details/step02_targets_labels.json",
+      "step": 2,
+      "created_at": "2026-11-11T12:41:27.603128+00:00",
+      "git_commit": "538b007",
+      "size_bytes": 126061,
+      "shape": {
+        "n_rows": 318240,
+        "n_columns": 124
+      }
+    },
+    {
+      "name": "step03_eda",
+      "path": "details/step03_eda.json",
+      "step": 3,
+      "created_at": "2026-11-10T13:20:56.578866+00:00",
+      "git_commit": "538b007",
+      "size_bytes": 5772
+    },
+    {
+      "name": "step_master",
+      "path": "details/step_master.json",
+      "step": 4,
+      "created_at": "2026-11-11T11:51:22.254870+00:00",
+      "git_commit": "538b007",
+      "size_bytes": 166961,
+      "shape": {
+        "n_rows": 318240,
+        "n_columns": 172
+      }
+    }
+  ],
+  "updated_at": "2026-11-11T12:41:27.659796+00:00"
+}

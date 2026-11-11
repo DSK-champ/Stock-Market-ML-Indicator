@@ -1,0 +1,5502 @@
+{
+  "file": {
+    "path": "data/processed/master.csv",
+    "size_bytes": 774568886,
+    "sha256": "c23fbaa9605a2192f275f1a21dce76b3bae9a8d9ec05f6bc098e432178d56af2",
+    "created_at": "2026-11-11T11:50:57.134700+00:00",
+    "git_commit": "538b007",
+    "step": 4,
+    "module": "src.master",
+    "description": "Unified master dataset combining clean market data, 85 engineered features, base targets, labels, dynamic thetas, and big move flags."
+  },
+  "shape": {
+    "n_rows": 318240,
+    "n_columns": 172
+  },
+  "index": {
+    "name": "open_time",
+    "dtype": "datetime64[us, UTC]",
+    "timezone": "UTC",
+    "first": "2023-11-01T00:00:00+00:00",
+    "last": "2026-11-09T23:55:00+00:00",
+    "frequency": "5min",
+    "is_monotonic_increasing": true,
+    "n_duplicates": 0
+  },
+  "columns": [
+    {
+      "name": "open",
+      "dtype": "float64",
+      "position": 0,
+      "description": "Candle open price in USDT (Binance kline field 2). First traded price in the 5-minute interval.",
+      "unit": "USDT",
+      "formula": "",
+      "group": "market",
+      "role": "market",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 280463,
+      "stats_train": {
+        "min": 34130.72,
+        "max": 126011.18,
+        "mean": 80060.4275458129,
+        "std": 24782.84624235142,
+        "median": 81834.1
+      },
+      "stats_val": {
+        "min": 60076.81,
+        "max": 97744.45,
+        "mean": 78267.72841785118,
+        "std": 9340.037768399376,
+        "median": 77078.34
+      }
+    },
+    {
+      "name": "high",
+      "dtype": "float64",
+      "position": 1,
+      "description": "Highest traded price within the 5-minute candle (Binance kline field 3).",
+      "unit": "USDT",
+      "formula": "",
+      "group": "market",
+      "role": "market",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 259007,
+      "stats_train": {
+        "min": 34174.19,
+        "max": 126199.63,
+        "mean": 80128.81388788564,
+        "std": 24796.0561321466,
+        "median": 81946.29
+      },
+      "stats_val": {
+        "min": 61060.22,
+        "max": 97924.49,
+        "mean": 78333.54467717068,
+        "std": 9334.228111319435,
+        "median": 77134.55
+      }
+    },
+    {
+      "name": "low",
+      "dtype": "float64",
+      "position": 2,
+      "description": "Lowest traded price within the 5-minute candle (Binance kline field 4).",
+      "unit": "USDT",
+      "formula": "",
+      "group": "market",
+      "role": "market",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 260864,
+      "stats_train": {
+        "min": 34097.39,
+        "max": 125868.13,
+        "mean": 79990.45097323865,
+        "std": 24769.541458651118,
+        "median": 81722.98
+      },
+      "stats_val": {
+        "min": 60000.0,
+        "max": 97612.6,
+        "mean": 78201.76896001858,
+        "std": 9345.473956090891,
+        "median": 77024.35
+      }
+    },
+    {
+      "name": "close",
+      "dtype": "float64",
+      "position": 3,
+      "description": "Candle close price in USDT (Binance kline field 5). Last traded price in the 5-minute interval. Used as reference for all labels.",
+      "unit": "USDT",
+      "formula": "",
+      "group": "market",
+      "role": "market",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 280769,
+      "stats_train": {
+        "min": 34130.73,
+        "max": 126011.18,
+        "mean": 80060.67513131752,
+        "std": 24782.66630148649,
+        "median": 81834.71
+      },
+      "stats_val": {
+        "min": 60081.74,
+        "max": 97744.45,
+        "mean": 78267.4707491499,
+        "std": 9339.895309395755,
+        "median": 77078.34
+      }
+    },
+    {
+      "name": "volume",
+      "dtype": "float64",
+      "position": 4,
+      "description": "Total traded volume in BTC (base asset) during the candle (Binance kline field 6).",
+      "unit": "BTC",
+      "formula": "",
+      "group": "market",
+      "role": "market",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 314698,
+      "stats_train": {
+        "min": 0.90958,
+        "max": 5471.43943,
+        "mean": 102.008223018909,
+        "std": 144.02869529894053,
+        "median": 60.77397
+      },
+      "stats_val": {
+        "min": 1.17029,
+        "max": 4240.74218,
+        "mean": 66.34887354446955,
+        "std": 102.94101861613797,
+        "median": 37.90667
+      }
+    },
+    {
+      "name": "quote_volume",
+      "dtype": "float64",
+      "position": 5,
+      "description": "Total traded volume in USDT (quote asset) during the candle (Binance kline field 8).",
+      "unit": "USDT",
+      "formula": "sum(price_i × qty_i) for all trades in candle",
+      "group": "market",
+      "role": "market",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 318240,
+      "stats_train": {
+        "min": 96784.8491647,
+        "max": 558851896.0400627,
+        "mean": 7579706.794254259,
+        "std": 10712844.359513493,
+        "median": 4526382.3648522
+      },
+      "stats_val": {
+        "min": 111545.9877414,
+        "max": 284693820.0184901,
+        "mean": 5060145.058914677,
+        "std": 7562478.059038913,
+        "median": 2924389.5788268
+      }
+    },
+    {
+      "name": "number_of_trades",
+      "dtype": "float64",
+      "position": 6,
+      "description": "Count of individual trades executed during the 5-minute candle (Binance kline field 9).",
+      "unit": "count",
+      "formula": "",
+      "group": "market",
+      "role": "market",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 44274,
+      "stats_train": {
+        "min": 408.0,
+        "max": 711259.0,
+        "mean": 10661.642086778636,
+        "std": 12179.4744933664,
+        "median": 6633.0
+      },
+      "stats_val": {
+        "min": 422.0,
+        "max": 223213.0,
+        "mean": 14585.127399835259,
+        "std": 14970.71442918765,
+        "median": 9741.0
+      }
+    },
+    {
+      "name": "taker_buy_base_volume",
+      "dtype": "float64",
+      "position": 7,
+      "description": "Volume in BTC bought by taker orders during candle (Binance kline field 10).",
+      "unit": "BTC",
+      "formula": "",
+      "group": "market",
+      "role": "market",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 311069,
+      "stats_train": {
+        "min": 0.26005,
+        "max": 2884.49252,
+        "mean": 50.16981158857766,
+        "std": 74.52697440939546,
+        "median": 28.57935
+      },
+      "stats_val": {
+        "min": 0.2947,
+        "max": 1555.04461,
+        "mean": 32.54107291612985,
+        "std": 50.47657435503717,
+        "median": 17.71972
+      }
+    },
+    {
+      "name": "taker_buy_quote_volume",
+      "dtype": "float64",
+      "position": 8,
+      "description": "Volume in USDT bought by taker orders during candle (Binance kline field 11).",
+      "unit": "USDT",
+      "formula": "",
+      "group": "market",
+      "role": "market",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 318240,
+      "stats_train": {
+        "min": 27905.2766502,
+        "max": 266320240.726083,
+        "mean": 3718246.2929207743,
+        "std": 5574082.136418137,
+        "median": 2123341.4512051
+      },
+      "stats_val": {
+        "min": 26695.1861629,
+        "max": 115373869.0337252,
+        "mean": 2482192.658101296,
+        "std": 3751711.9914717195,
+        "median": 1374940.5194829
+      }
+    },
+    {
+      "name": "gap_id",
+      "dtype": "int32",
+      "position": 9,
+      "description": "Contiguous segment identifier. Increments at every non-consecutive 5m gap. Rows with same gap_id form a continuous OHLCV segment.",
+      "unit": "integer index",
+      "formula": "cumsum(is_gap_boundary)",
+      "group": "metadata",
+      "role": "flag",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "open_time"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 1,
+      "stats_train": {
+        "min": 1.0,
+        "max": 1.0,
+        "mean": 1.0,
+        "std": 0.0,
+        "median": 1.0
+      },
+      "stats_val": {
+        "min": 1.0,
+        "max": 1.0,
+        "mean": 1.0,
+        "std": 0.0,
+        "median": 1.0
+      }
+    },
+    {
+      "name": "is_gap_boundary",
+      "dtype": "bool",
+      "position": 10,
+      "description": "True if row is the first candle of a new contiguous segment.",
+      "unit": "boolean",
+      "formula": "time_diff(open_time) > 5min OR row == 0",
+      "group": "metadata",
+      "role": "flag",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "open_time"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 2,
+      "stats_train": {
+        "min": 0.0,
+        "max": 1.0,
+        "mean": 4.52584938878404e-06,
+        "std": 0.002127404378293896,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": 0.0,
+        "max": 0.0,
+        "mean": 0.0,
+        "std": 0.0,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "feat_ret_1",
+      "dtype": "float64",
+      "position": 11,
+      "description": "Log return over 1 candle (5m)",
+      "unit": "fraction",
+      "formula": "ln(close[t] / close[t-1])",
+      "group": "returns",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 1,
+      "n_inf": 0,
+      "n_unique": 317262,
+      "stats_train": {
+        "min": -0.07621342584207424,
+        "max": 0.040004704750242336,
+        "mean": 4.304382418107781e-06,
+        "std": 0.0015277572400833918,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -0.01920608518009758,
+        "max": 0.037808065313792626,
+        "mean": -3.066581478568127e-06,
+        "std": 0.0014788967331345717,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "feat_ret_3",
+      "dtype": "float64",
+      "position": 12,
+      "description": "Log return over 3 candles (15m)",
+      "unit": "fraction",
+      "formula": "ln(close[t] / close[t-3])",
+      "group": "returns",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 3,
+      "n_inf": 0,
+      "n_unique": 317972,
+      "stats_train": {
+        "min": -0.10131821420214103,
+        "max": 0.06841951951754852,
+        "mean": 1.2912394393866545e-05,
+        "std": 0.0026056013668491625,
+        "median": 5.972412617741427e-06
+      },
+      "stats_val": {
+        "min": -0.0431065642704087,
+        "max": 0.03862809844263153,
+        "mean": -9.36333331555819e-06,
+        "std": 0.002556446370533312,
+        "median": -7.773332726708143e-07
+      }
+    },
+    {
+      "name": "feat_ret_6",
+      "dtype": "float64",
+      "position": 13,
+      "description": "Log return over 6 candles (30m)",
+      "unit": "fraction",
+      "formula": "ln(close[t] / close[t-6])",
+      "group": "returns",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 6,
+      "n_inf": 0,
+      "n_unique": 318076,
+      "stats_train": {
+        "min": -0.11708717941071024,
+        "max": 0.08415838817739042,
+        "mean": 2.5851286378069998e-05,
+        "std": 0.0036566588955753315,
+        "median": 2.713883396248334e-05
+      },
+      "stats_val": {
+        "min": -0.05361955537793322,
+        "max": 0.045416099009653835,
+        "mean": -1.884825685864267e-05,
+        "std": 0.0035838779173946933,
+        "median": 2.8511852515308617e-05
+      }
+    },
+    {
+      "name": "feat_ret_12",
+      "dtype": "float64",
+      "position": 14,
+      "description": "Log return over 12 candles (60m / 1h)",
+      "unit": "fraction",
+      "formula": "ln(close[t] / close[t-12])",
+      "group": "returns",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 13,
+      "n_inf": 0,
+      "n_unique": 318114,
+      "stats_train": {
+        "min": -0.11607024376392606,
+        "max": 0.08512490358221944,
+        "mean": 5.179185682494088e-05,
+        "std": 0.005135380139148272,
+        "median": 5.925532234972246e-05
+      },
+      "stats_val": {
+        "min": -0.06932576410265538,
+        "max": 0.06535450162585811,
+        "mean": -3.783733394659721e-05,
+        "std": 0.005021649620506298,
+        "median": 1.5107543045555671e-05
+      }
+    },
+    {
+      "name": "feat_ret_24",
+      "dtype": "float64",
+      "position": 15,
+      "description": "Log return over 24 candles (120m / 2h)",
+      "unit": "fraction",
+      "formula": "ln(close[t] / close[t-24])",
+      "group": "returns",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 24,
+      "n_inf": 0,
+      "n_unique": 318130,
+      "stats_train": {
+        "min": -0.11443992898234666,
+        "max": 0.0875825530356992,
+        "mean": 0.00010359513050664871,
+        "std": 0.007202340372485316,
+        "median": 0.0001571956035710906
+      },
+      "stats_val": {
+        "min": -0.05342550544732539,
+        "max": 0.0753503754792828,
+        "mean": -7.45049650572025e-05,
+        "std": 0.007001348573453188,
+        "median": 2.3907814027160427e-05
+      }
+    },
+    {
+      "name": "feat_vol_sigma_288",
+      "dtype": "float64",
+      "position": 16,
+      "description": "Causal rolling return std over 288 candles (24h)",
+      "unit": "fraction",
+      "formula": "rolling_sigma(ret_1, 288)",
+      "group": "volatility",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 287,
+      "n_inf": 0,
+      "n_unique": 317945,
+      "stats_train": {
+        "min": 0.000271010706474101,
+        "max": 0.006770344159751977,
+        "mean": 0.0013823501686549729,
+        "std": 0.0006525620601456577,
+        "median": 0.0012622876787142879
+      },
+      "stats_val": {
+        "min": 0.0002923430804099227,
+        "max": 0.005145029688120332,
+        "mean": 0.0013507249574479794,
+        "std": 0.0006025629354918858,
+        "median": 0.0012662173405265425
+      }
+    },
+    {
+      "name": "feat_vol_sigma_60",
+      "dtype": "float64",
+      "position": 17,
+      "description": "Causal rolling return std over 60 candles (5h)",
+      "unit": "fraction",
+      "formula": "rolling_sigma(ret_1, 60)",
+      "group": "volatility",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 71,
+      "n_inf": 0,
+      "n_unique": 318148,
+      "stats_train": {
+        "min": 0.00016142950975100965,
+        "max": 0.012887302661497983,
+        "mean": 0.0013091275558069274,
+        "std": 0.0007899624391953842,
+        "median": 0.0011227359262333558
+      },
+      "stats_val": {
+        "min": 0.0001572825422751658,
+        "max": 0.008362364003901541,
+        "mean": 0.0012740810833615814,
+        "std": 0.0007521309552030286,
+        "median": 0.0011004159325928454
+      }
+    },
+    {
+      "name": "feat_vol_sigma_12",
+      "dtype": "float64",
+      "position": 18,
+      "description": "Causal rolling return std over 12 candles (1h)",
+      "unit": "fraction",
+      "formula": "rolling_sigma(ret_1, 12)",
+      "group": "volatility",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 13,
+      "n_inf": 0,
+      "n_unique": 318202,
+      "stats_train": {
+        "min": 5.5401482906331175e-05,
+        "max": 0.02891521402623349,
+        "mean": 0.001237022848707199,
+        "std": 0.0009035000414636617,
+        "median": 0.0010108171681450394
+      },
+      "stats_val": {
+        "min": 6.20207706472186e-05,
+        "max": 0.012340597342202487,
+        "mean": 0.0011994606227998786,
+        "std": 0.0008693277534987431,
+        "median": 0.0009706104397805785
+      }
+    },
+    {
+      "name": "feat_vol_ratio_60_288",
+      "dtype": "float64",
+      "position": 19,
+      "description": "Volatility ratio: 5h sigma / 24h sigma",
+      "unit": "ratio",
+      "formula": "sigma_60 / sigma_288",
+      "group": "volatility",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 287,
+      "n_inf": 0,
+      "n_unique": 317953,
+      "stats_train": {
+        "min": 0.13914337078729938,
+        "max": 2.1591782855313197,
+        "mean": 0.9587015350450228,
+        "std": 0.3201442646145744,
+        "median": 0.9225677209124576
+      },
+      "stats_val": {
+        "min": 0.134155319784955,
+        "max": 1.9957244446987874,
+        "mean": 0.9519431746346222,
+        "std": 0.34343817738676957,
+        "median": 0.8960859847444602
+      }
+    },
+    {
+      "name": "feat_vol_ratio_12_60",
+      "dtype": "float64",
+      "position": 20,
+      "description": "Volatility ratio: 1h sigma / 5h sigma",
+      "unit": "ratio",
+      "formula": "sigma_12 / sigma_60",
+      "group": "volatility",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 71,
+      "n_inf": 0,
+      "n_unique": 318168,
+      "stats_train": {
+        "min": 0.13448127566957768,
+        "max": 2.294631690501793,
+        "mean": 0.9585646555041547,
+        "std": 0.3267017342499126,
+        "median": 0.9109694515833425
+      },
+      "stats_val": {
+        "min": 0.15532853207565742,
+        "max": 2.224983962315336,
+        "mean": 0.9528819173723304,
+        "std": 0.3451259016524633,
+        "median": 0.898950316921907
+      }
+    },
+    {
+      "name": "feat_vol_natr_14",
+      "dtype": "float64",
+      "position": 21,
+      "description": "Normalized Average True Range over 14 candles",
+      "unit": "ratio",
+      "formula": "ATR(14) / close",
+      "group": "volatility",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 13,
+      "n_inf": 0,
+      "n_unique": 318228,
+      "stats_train": {
+        "min": 8.799581548131983e-05,
+        "max": 0.019502071801317133,
+        "mean": 0.0017773495540038295,
+        "std": 0.001143506489938537,
+        "median": 0.0015027235715146495
+      },
+      "stats_val": {
+        "min": 0.00011617359181191286,
+        "max": 0.01280084113299714,
+        "mean": 0.0017251930397940052,
+        "std": 0.001106510026088566,
+        "median": 0.0014803928444057175
+      }
+    },
+    {
+      "name": "feat_vol_bb_pct_20",
+      "dtype": "float64",
+      "position": 22,
+      "description": "Bollinger Bands %B (20-period, 2 sigma)",
+      "unit": "ratio in [0, 1]",
+      "formula": "(close - lower) / (upper - lower)",
+      "group": "volatility",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 23,
+      "n_inf": 0,
+      "n_unique": 318218,
+      "stats_train": {
+        "min": -0.5401823447276314,
+        "max": 1.5394142127046793,
+        "mean": 0.5057315950428891,
+        "std": 0.31990073262747776,
+        "median": 0.513927176028885
+      },
+      "stats_val": {
+        "min": -0.5341583970443852,
+        "max": 1.5274417896135148,
+        "mean": 0.5008316666979497,
+        "std": 0.3204968145702648,
+        "median": 0.5036596566697649
+      }
+    },
+    {
+      "name": "feat_vol_bb_width_20",
+      "dtype": "float64",
+      "position": 23,
+      "description": "Bollinger Bands bandwidth normalized by SMA",
+      "unit": "ratio",
+      "formula": "(upper - lower) / SMA(20)",
+      "group": "volatility",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 23,
+      "n_inf": 0,
+      "n_unique": 318181,
+      "stats_train": {
+        "min": 0.000462968537593944,
+        "max": 0.13916484739224255,
+        "mean": 0.008405929139234452,
+        "std": 0.007292316779799983,
+        "median": 0.006365281241557065
+      },
+      "stats_val": {
+        "min": 0.0004636199272001558,
+        "max": 0.09668865594415783,
+        "mean": 0.008169670580434277,
+        "std": 0.007193478413594187,
+        "median": 0.006118369383025677
+      }
+    },
+    {
+      "name": "feat_vol_range_12",
+      "dtype": "float64",
+      "position": 24,
+      "description": "Normalized 12-candle high-low range",
+      "unit": "ratio",
+      "formula": "(max(H_12) - min(L_12)) / close",
+      "group": "volatility",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 13,
+      "n_inf": 0,
+      "n_unique": 317527,
+      "stats_train": {
+        "min": 0.0003286937319457391,
+        "max": 0.14059110463700117,
+        "mean": 0.0068510696873532425,
+        "std": 0.005583207525584221,
+        "median": 0.005367983478854478
+      },
+      "stats_val": {
+        "min": 0.000216000644204571,
+        "max": 0.07678815181646863,
+        "mean": 0.0066790273043734125,
+        "std": 0.005274648509378133,
+        "median": 0.005247399225728284
+      }
+    },
+    {
+      "name": "feat_shape_body_pct",
+      "dtype": "float64",
+      "position": 25,
+      "description": "Candle real body size relative to close price",
+      "unit": "fraction",
+      "formula": "|close - open| / close",
+      "group": "candle_shape",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 1,
+      "n_inf": 0,
+      "n_unique": 317241,
+      "stats_train": {
+        "min": 0.0,
+        "max": 0.07919287722867926,
+        "mean": 0.0009790107911775354,
+        "std": 0.0011739830665060402,
+        "median": 0.0006495913982758921
+      },
+      "stats_val": {
+        "min": 0.0,
+        "max": 0.03710226336879391,
+        "mean": 0.0009247722297596833,
+        "std": 0.0011533639224051869,
+        "median": 0.0005747097912621828
+      }
+    },
+    {
+      "name": "feat_shape_body_to_range",
+      "dtype": "float64",
+      "position": 26,
+      "description": "Candle body size relative to full range [0, 1]",
+      "unit": "ratio",
+      "formula": "|close - open| / (high - low)",
+      "group": "candle_shape",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 1,
+      "n_inf": 0,
+      "n_unique": 307148,
+      "stats_train": {
+        "min": 0.0,
+        "max": 1.0,
+        "mean": 0.5413065016758516,
+        "std": 0.2912398143324095,
+        "median": 0.5520358713154778
+      },
+      "stats_val": {
+        "min": 0.0,
+        "max": 1.0,
+        "mean": 0.5184980794366039,
+        "std": 0.2922223455534838,
+        "median": 0.5212517934003097
+      }
+    },
+    {
+      "name": "feat_shape_upper_wick_pct",
+      "dtype": "float64",
+      "position": 27,
+      "description": "Upper wick length relative to close price",
+      "unit": "fraction",
+      "formula": "(high - max(open, close)) / close",
+      "group": "candle_shape",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 1,
+      "n_inf": 0,
+      "n_unique": 270540,
+      "stats_train": {
+        "min": 0.0,
+        "max": 0.021211373554437432,
+        "mean": 0.0003862692916653629,
+        "std": 0.0005621401536610896,
+        "median": 0.0002071147076802423
+      },
+      "stats_val": {
+        "min": 0.0,
+        "max": 0.01616614299119834,
+        "mean": 0.0004013058403290805,
+        "std": 0.0005746411406591918,
+        "median": 0.00021754724302971152
+      }
+    },
+    {
+      "name": "feat_shape_lower_wick_pct",
+      "dtype": "float64",
+      "position": 28,
+      "description": "Lower wick length relative to close price",
+      "unit": "fraction",
+      "formula": "(min(open, close) - low) / close",
+      "group": "candle_shape",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 1,
+      "n_inf": 0,
+      "n_unique": 275313,
+      "stats_train": {
+        "min": 0.0,
+        "max": 0.0384196506647654,
+        "mean": 0.0004122183374734277,
+        "std": 0.0006553575556878027,
+        "median": 0.00021953618664581967
+      },
+      "stats_val": {
+        "min": 0.0,
+        "max": 0.023476572434352888,
+        "mean": 0.0003993742693313588,
+        "std": 0.0005763272564407242,
+        "median": 0.00021787689612827105
+      }
+    },
+    {
+      "name": "feat_shape_close_pos",
+      "dtype": "float64",
+      "position": 29,
+      "description": "Close position within candle range [0, 1]",
+      "unit": "ratio",
+      "formula": "(close - low) / (high - low)",
+      "group": "candle_shape",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 1,
+      "n_inf": 0,
+      "n_unique": 274540,
+      "stats_train": {
+        "min": 0.0,
+        "max": 1.0,
+        "mean": 0.5065283873267067,
+        "std": 0.3510226479619659,
+        "median": 0.5100227104415437
+      },
+      "stats_val": {
+        "min": 0.0,
+        "max": 1.0,
+        "mean": 0.49995006924130125,
+        "std": 0.3472992268275909,
+        "median": 0.4988205560235632
+      }
+    },
+    {
+      "name": "feat_shape_candle_dir",
+      "dtype": "float64",
+      "position": 30,
+      "description": "Directional sign of candle body (+1 bullish, -1 bearish, 0 doji)",
+      "unit": "integer {-1,0,1}",
+      "formula": "sign(close - open)",
+      "group": "candle_shape",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 1,
+      "n_inf": 0,
+      "n_unique": 4,
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.0022674608059669067,
+        "std": 0.9987973451655047,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.0020275835850212262,
+        "std": 0.9987087230963845,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "feat_mom_sma_ratio_10",
+      "dtype": "float64",
+      "position": 31,
+      "description": "Distance of close from 10-candle SMA",
+      "unit": "ratio",
+      "formula": "close / SMA(10) - 1.0",
+      "group": "momentum",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 13,
+      "n_inf": 0,
+      "n_unique": 318225,
+      "stats_train": {
+        "min": -0.09039165192371433,
+        "max": 0.04305647921706177,
+        "mean": 2.07423162176155e-05,
+        "std": 0.0025165609530605456,
+        "median": 2.2883655442544706e-05
+      },
+      "stats_val": {
+        "min": -0.041822490415386424,
+        "max": 0.03611819192422282,
+        "mean": -1.2876915147937599e-05,
+        "std": 0.0024636658654613535,
+        "median": 1.2437379761772828e-05
+      }
+    },
+    {
+      "name": "feat_mom_sma_ratio_20",
+      "dtype": "float64",
+      "position": 32,
+      "description": "Distance of close from 20-candle SMA",
+      "unit": "ratio",
+      "formula": "close / SMA(20) - 1.0",
+      "group": "momentum",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 23,
+      "n_inf": 0,
+      "n_unique": 318218,
+      "stats_train": {
+        "min": -0.10046234605789284,
+        "max": 0.05481287062441084,
+        "mean": 4.41153178428345e-05,
+        "std": 0.0036743436225241616,
+        "median": 6.80153075289198e-05
+      },
+      "stats_val": {
+        "min": -0.05218099091029276,
+        "max": 0.03923712647423033,
+        "mean": -2.6881130215739035e-05,
+        "std": 0.0035913520807197563,
+        "median": 1.4553418071880086e-05
+      }
+    },
+    {
+      "name": "feat_mom_sma_ratio_50",
+      "dtype": "float64",
+      "position": 33,
+      "description": "Distance of close from 50-candle SMA",
+      "unit": "ratio",
+      "formula": "close / SMA(50) - 1.0",
+      "group": "momentum",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 1,
+      "n_inf": 0,
+      "n_unique": 318240,
+      "stats_train": {
+        "min": -0.10888437884333092,
+        "max": 0.07440511409747305,
+        "mean": 0.00011399024526814016,
+        "std": 0.005898048746144991,
+        "median": 0.00017247154151063234
+      },
+      "stats_val": {
+        "min": -0.05468139088037265,
+        "max": 0.045689074164214416,
+        "mean": -6.788308691840805e-05,
+        "std": 0.00572511153265697,
+        "median": 4.284517583234974e-05
+      }
+    },
+    {
+      "name": "feat_mom_ema_ratio_10",
+      "dtype": "float64",
+      "position": 34,
+      "description": "Distance of close from 10-candle EMA",
+      "unit": "ratio",
+      "formula": "close / EMA(10) - 1.0",
+      "group": "momentum",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 13,
+      "n_inf": 0,
+      "n_unique": 318228,
+      "stats_train": {
+        "min": -0.08031277516768487,
+        "max": 0.03645031106627216,
+        "mean": 1.892095324271533e-05,
+        "std": 0.002119076053341413,
+        "median": 3.127246255439494e-05
+      },
+      "stats_val": {
+        "min": -0.035866188671600754,
+        "max": 0.03254728227630072,
+        "mean": -1.4580364082349585e-05,
+        "std": 0.0020722912494182113,
+        "median": 1.566082428285399e-05
+      }
+    },
+    {
+      "name": "feat_mom_ema_ratio_20",
+      "dtype": "float64",
+      "position": 35,
+      "description": "Distance of close from 20-candle EMA",
+      "unit": "ratio",
+      "formula": "close / EMA(20) - 1.0",
+      "group": "momentum",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 23,
+      "n_inf": 0,
+      "n_unique": 318218,
+      "stats_train": {
+        "min": -0.09359214327091261,
+        "max": 0.04565982702592083,
+        "mean": 4.048471726913427e-05,
+        "std": 0.0031404756924888,
+        "median": 7.118904610893737e-05
+      },
+      "stats_val": {
+        "min": -0.0452929610934907,
+        "max": 0.036741127273462466,
+        "mean": -3.0123743744044825e-05,
+        "std": 0.003062944947835959,
+        "median": 2.7029578775234555e-05
+      }
+    },
+    {
+      "name": "feat_mom_ema_ratio_50",
+      "dtype": "float64",
+      "position": 36,
+      "description": "Distance of close from 50-candle EMA",
+      "unit": "ratio",
+      "formula": "close / EMA(50) - 1.0",
+      "group": "momentum",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 49,
+      "n_inf": 0,
+      "n_unique": 318192,
+      "stats_train": {
+        "min": -0.10695302824582793,
+        "max": 0.06156368992682733,
+        "mean": 0.00010529606805166016,
+        "std": 0.0050879908222914655,
+        "median": 0.00017458284472871683
+      },
+      "stats_val": {
+        "min": -0.057547957952436266,
+        "max": 0.04066971409934158,
+        "mean": -7.605161184738388e-05,
+        "std": 0.004945484637302525,
+        "median": 1.825798392309948e-05
+      }
+    },
+    {
+      "name": "feat_mom_sma_ratio_10_50",
+      "dtype": "float64",
+      "position": 37,
+      "description": "Spread between short and medium SMA",
+      "unit": "ratio",
+      "formula": "SMA(10) / SMA(50) - 1.0",
+      "group": "momentum",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 13,
+      "n_inf": 0,
+      "n_unique": 318228,
+      "stats_train": {
+        "min": -0.056164914640181536,
+        "max": 0.053738840712547684,
+        "mean": 9.051441705598366e-05,
+        "std": 0.004785852859232483,
+        "median": 0.00013694104409295185
+      },
+      "stats_val": {
+        "min": -0.031270513416585814,
+        "max": 0.036266430244429125,
+        "mean": -5.762123550086704e-05,
+        "std": 0.004636163731200208,
+        "median": 2.281059719817882e-05
+      }
+    },
+    {
+      "name": "feat_mom_rsi_7",
+      "dtype": "float64",
+      "position": 38,
+      "description": "Relative Strength Index over 7 candles [0, 1]",
+      "unit": "oscillator",
+      "formula": "RSI(7) / 100.0",
+      "group": "momentum",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 7,
+      "n_inf": 0,
+      "n_unique": 317443,
+      "stats_train": {
+        "min": 0.013587609000856133,
+        "max": 0.9895322316333807,
+        "mean": 0.5040639162381153,
+        "std": 0.15718755610735344,
+        "median": 0.5050469786099587
+      },
+      "stats_val": {
+        "min": 0.02013470691461521,
+        "max": 0.9751337272184546,
+        "mean": 0.5008413713258121,
+        "std": 0.15849773194918157,
+        "median": 0.5027701397887285
+      }
+    },
+    {
+      "name": "feat_mom_rsi_14",
+      "dtype": "float64",
+      "position": 39,
+      "description": "Relative Strength Index over 14 candles [0, 1]",
+      "unit": "oscillator",
+      "formula": "RSI(14) / 100.0",
+      "group": "momentum",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 14,
+      "n_inf": 0,
+      "n_unique": 317431,
+      "stats_train": {
+        "min": 0.04414268145455594,
+        "max": 0.9579611263735015,
+        "mean": 0.5041497179393883,
+        "std": 0.1103217849433556,
+        "median": 0.5053724826420464
+      },
+      "stats_val": {
+        "min": 0.05036902060909057,
+        "max": 0.898162374081225,
+        "mean": 0.5002919730702103,
+        "std": 0.11141287690649637,
+        "median": 0.5013566501801702
+      }
+    },
+    {
+      "name": "feat_mom_macd_line",
+      "dtype": "float64",
+      "position": 40,
+      "description": "MACD line normalized by close price",
+      "unit": "ratio",
+      "formula": "(EMA(12) - EMA(26)) / close",
+      "group": "momentum",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 25,
+      "n_inf": 0,
+      "n_unique": 318216,
+      "stats_train": {
+        "min": -0.02154383739871752,
+        "max": 0.01760111609997085,
+        "mean": 2.2647591299364857e-05,
+        "std": 0.0016695710265425775,
+        "median": 5.012257850753326e-05
+      },
+      "stats_val": {
+        "min": -0.013470529463041758,
+        "max": 0.012802651810962585,
+        "mean": -2.8748007398747e-05,
+        "std": 0.0016218052866000122,
+        "median": 8.895764503773445e-06
+      }
+    },
+    {
+      "name": "feat_mom_macd_signal",
+      "dtype": "float64",
+      "position": 41,
+      "description": "MACD 9-period signal line normalized by close",
+      "unit": "ratio",
+      "formula": "EMA(macd_line, 9) / close",
+      "group": "momentum",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 33,
+      "n_inf": 0,
+      "n_unique": 318208,
+      "stats_train": {
+        "min": -0.01905419397283682,
+        "max": 0.016449273930990292,
+        "mean": 2.2686652928507853e-05,
+        "std": 0.001572451289459092,
+        "median": 4.8478044887098574e-05
+      },
+      "stats_val": {
+        "min": -0.010542233150706402,
+        "max": 0.011568906775593172,
+        "mean": -2.857033501493559e-05,
+        "std": 0.0015263327386433499,
+        "median": 6.4018728108145e-06
+      }
+    },
+    {
+      "name": "feat_mom_macd_hist",
+      "dtype": "float64",
+      "position": 42,
+      "description": "MACD histogram normalized by close",
+      "unit": "ratio",
+      "formula": "(macd_line - macd_signal) / close",
+      "group": "momentum",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 33,
+      "n_inf": 0,
+      "n_unique": 318208,
+      "stats_train": {
+        "min": -0.00943121736589439,
+        "max": 0.006515587104128042,
+        "mean": -1.4097184494475479e-08,
+        "std": 0.0005008867937150681,
+        "median": -3.852909849501892e-06
+      },
+      "stats_val": {
+        "min": -0.006977288194172616,
+        "max": 0.005214781285466316,
+        "mean": -1.7767238381140745e-07,
+        "std": 0.0004900156523228625,
+        "median": 2.4294096152481377e-06
+      }
+    },
+    {
+      "name": "feat_mom_adx_14",
+      "dtype": "float64",
+      "position": 43,
+      "description": "Average Directional Index over 14 candles [0, 1]",
+      "unit": "oscillator",
+      "formula": "ADX(14) / 100.0",
+      "group": "momentum",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 27,
+      "n_inf": 0,
+      "n_unique": 318214,
+      "stats_train": {
+        "min": 0.05498392555193729,
+        "max": 0.7586203298359138,
+        "mean": 0.2470398769500113,
+        "std": 0.10237050586862134,
+        "median": 0.22441363239707485
+      },
+      "stats_val": {
+        "min": 0.05649326627137685,
+        "max": 0.7542542890539063,
+        "mean": 0.25297592608749175,
+        "std": 0.10644772409403243,
+        "median": 0.23023065755606884
+      }
+    },
+    {
+      "name": "feat_volume_log",
+      "dtype": "float64",
+      "position": 44,
+      "description": "Log volume",
+      "unit": "log volume",
+      "formula": "ln(1 + volume)",
+      "group": "volume",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 1,
+      "n_inf": 0,
+      "n_unique": 314698,
+      "stats_train": {
+        "min": 0.6468833225900668,
+        "max": 8.607479761268156,
+        "mean": 4.161706112511229,
+        "std": 0.9359356494882367,
+        "median": 4.1234813498614
+      },
+      "stats_val": {
+        "min": 0.7748607991762604,
+        "max": 8.352729355342637,
+        "mean": 3.71576128926782,
+        "std": 0.9445193298190543,
+        "median": 3.661165701221537
+      }
+    },
+    {
+      "name": "feat_volume_zscore_60",
+      "dtype": "float64",
+      "position": 45,
+      "description": "Rolling volume Z-score over 60 candles",
+      "unit": "z-score",
+      "formula": "zscore(volume, 60)",
+      "group": "volume",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 71,
+      "n_inf": 0,
+      "n_unique": 318170,
+      "stats_train": {
+        "min": -2.4478709022229084,
+        "max": 7.587296282330603,
+        "mean": 0.015756015791774776,
+        "std": 1.1188828200140957,
+        "median": -0.31250454019278084
+      },
+      "stats_val": {
+        "min": -1.8653964697738683,
+        "max": 7.553515331709848,
+        "mean": 0.01319603332986612,
+        "std": 1.101859918466547,
+        "median": -0.3180617491525691
+      }
+    },
+    {
+      "name": "feat_volume_zscore_12",
+      "dtype": "float64",
+      "position": 46,
+      "description": "Rolling volume Z-score over 12 candles",
+      "unit": "z-score",
+      "formula": "zscore(volume, 12)",
+      "group": "volume",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 13,
+      "n_inf": 0,
+      "n_unique": 318228,
+      "stats_train": {
+        "min": -3.0562429786048715,
+        "max": 3.174852647712869,
+        "mean": -0.016235134633726885,
+        "std": 1.02729569448652,
+        "median": -0.2990588102798254
+      },
+      "stats_val": {
+        "min": -2.476792482223273,
+        "max": 3.174999625309024,
+        "mean": -0.012821857697767215,
+        "std": 1.0172450599753229,
+        "median": -0.32243057679153275
+      }
+    },
+    {
+      "name": "feat_volume_change_1",
+      "dtype": "float64",
+      "position": 47,
+      "description": "1-candle fractional volume change",
+      "unit": "ratio",
+      "formula": "volume[t] / volume[t-1] - 1.0",
+      "group": "volume",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 1,
+      "n_inf": 0,
+      "n_unique": 318240,
+      "stats_train": {
+        "min": -0.9709662920604282,
+        "max": 70.23431213299058,
+        "mean": 0.23140852177372695,
+        "std": 1.1269842805211892,
+        "median": -0.026797580496620566
+      },
+      "stats_val": {
+        "min": -0.9827312508103995,
+        "max": 72.50445267611425,
+        "mean": 0.3634647891037733,
+        "std": 1.6703650324035924,
+        "median": -0.025499327639876168
+      }
+    },
+    {
+      "name": "feat_volume_ratio_12_60",
+      "dtype": "float64",
+      "position": 48,
+      "description": "Volume trend ratio: short / medium volume SMA",
+      "unit": "ratio",
+      "formula": "SMA(volume, 12) / SMA(volume, 60)",
+      "group": "volume",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 71,
+      "n_inf": 0,
+      "n_unique": 318170,
+      "stats_train": {
+        "min": 0.12568822006798847,
+        "max": 3.9504180952363273,
+        "mean": 1.0156848906560219,
+        "std": 0.4779309866039146,
+        "median": 0.9072932247178531
+      },
+      "stats_val": {
+        "min": 0.177509542811287,
+        "max": 4.179384697930428,
+        "mean": 1.017004081085127,
+        "std": 0.49767039445767935,
+        "median": 0.909523536032524
+      }
+    },
+    {
+      "name": "feat_of_taker_buy_ratio",
+      "dtype": "float64",
+      "position": 49,
+      "description": "Taker buy volume fraction in [0, 1]",
+      "unit": "ratio",
+      "formula": "taker_buy_base_volume / volume",
+      "group": "order_flow",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 1,
+      "n_inf": 0,
+      "n_unique": 318240,
+      "stats_train": {
+        "min": 0.014275694663576454,
+        "max": 0.9825325633549425,
+        "mean": 0.48450922418190967,
+        "std": 0.1452468333471019,
+        "median": 0.4847365391461858
+      },
+      "stats_val": {
+        "min": 0.02194239771047712,
+        "max": 0.9748269256371472,
+        "mean": 0.4931206484923689,
+        "std": 0.1664981434518221,
+        "median": 0.49283479162099136
+      }
+    },
+    {
+      "name": "feat_of_taker_buy_zscore_60",
+      "dtype": "float64",
+      "position": 50,
+      "description": "Rolling Z-score of taker buy ratio over 60 candles",
+      "unit": "z-score",
+      "formula": "zscore(taker_buy_ratio, 60)",
+      "group": "order_flow",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 71,
+      "n_inf": 0,
+      "n_unique": 318170,
+      "stats_train": {
+        "min": -3.877087301235483,
+        "max": 4.404850276751549,
+        "mean": -0.0006233994698726275,
+        "std": 1.0073714493138977,
+        "median": -0.013879085933812676
+      },
+      "stats_val": {
+        "min": -3.85667091904962,
+        "max": 3.5987586966638743,
+        "mean": -0.001098013302820259,
+        "std": 1.011420064221821,
+        "median": -0.005210005075390096
+      }
+    },
+    {
+      "name": "feat_of_trades_zscore_60",
+      "dtype": "float64",
+      "position": 51,
+      "description": "Rolling Z-score of number of trades over 60 candles",
+      "unit": "z-score",
+      "formula": "zscore(number_of_trades, 60)",
+      "group": "order_flow",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 71,
+      "n_inf": 0,
+      "n_unique": 318170,
+      "stats_train": {
+        "min": -3.0807783351448497,
+        "max": 7.545350481393531,
+        "mean": 0.006564648735936974,
+        "std": 1.1537150908100906,
+        "median": -0.2876982014392553
+      },
+      "stats_val": {
+        "min": -2.399544702016481,
+        "max": 7.495561909711782,
+        "mean": -0.012259836406331166,
+        "std": 1.1697218228712414,
+        "median": -0.29932098317958544
+      }
+    },
+    {
+      "name": "feat_of_trades_zscore_12",
+      "dtype": "float64",
+      "position": 52,
+      "description": "Rolling Z-score of number of trades over 12 candles",
+      "unit": "z-score",
+      "formula": "zscore(number_of_trades, 12)",
+      "group": "order_flow",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 13,
+      "n_inf": 0,
+      "n_unique": 318226,
+      "stats_train": {
+        "min": -2.9440651508147835,
+        "max": 3.1744144328775894,
+        "mean": -0.035307913936207254,
+        "std": 1.0406280990942436,
+        "median": -0.2629675497876841
+      },
+      "stats_val": {
+        "min": -2.7316074724042596,
+        "max": 3.166119464564287,
+        "mean": -0.04737906981812872,
+        "std": 1.0322736048184507,
+        "median": -0.2648739250756692
+      }
+    },
+    {
+      "name": "feat_of_avg_trade_size",
+      "dtype": "float64",
+      "position": 53,
+      "description": "Average trade size in BTC",
+      "unit": "BTC / trade",
+      "formula": "volume / number_of_trades",
+      "group": "order_flow",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 1,
+      "n_inf": 0,
+      "n_unique": 318236,
+      "stats_train": {
+        "min": 0.0006714776618294472,
+        "max": 0.1018679816649416,
+        "mean": 0.0118600776355601,
+        "std": 0.009322428824112328,
+        "median": 0.008107649062279409
+      },
+      "stats_val": {
+        "min": 0.0005105267501031495,
+        "max": 0.0668743314849045,
+        "mean": 0.004673202167578044,
+        "std": 0.0033743939801654677,
+        "median": 0.003798014256619145
+      }
+    },
+    {
+      "name": "feat_of_avg_trade_size_zscore_60",
+      "dtype": "float64",
+      "position": 54,
+      "description": "Rolling Z-score of average trade size over 60 candles",
+      "unit": "z-score",
+      "formula": "zscore(avg_trade_size, 60)",
+      "group": "order_flow",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 71,
+      "n_inf": 0,
+      "n_unique": 318170,
+      "stats_train": {
+        "min": -3.3854507379194274,
+        "max": 7.342675114417135,
+        "mean": 0.006616357745392813,
+        "std": 1.0455432886548501,
+        "median": -0.2008858911681845
+      },
+      "stats_val": {
+        "min": -2.208387226904456,
+        "max": 7.186939039896114,
+        "mean": 0.008650409386720315,
+        "std": 1.0497240024277659,
+        "median": -0.26292038234007636
+      }
+    },
+    {
+      "name": "feat_time_sin_hour",
+      "dtype": "float64",
+      "position": 55,
+      "description": "Sine transform of UTC hour of day",
+      "unit": "coordinate in [-1, 1]",
+      "formula": "sin(2 * pi * hour / 24)",
+      "group": "time",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 1,
+      "n_inf": 0,
+      "n_unique": 22,
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.00011489073893663448,
+        "std": 0.7070717401469073,
+        "median": 1.2246467991473532e-16
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.001281134649754841,
+        "std": 0.7071093542985072,
+        "median": 1.2246467991473532e-16
+      }
+    },
+    {
+      "name": "feat_time_cos_hour",
+      "dtype": "float64",
+      "position": 56,
+      "description": "Cosine transform of UTC hour of day",
+      "unit": "coordinate in [-1, 1]",
+      "formula": "cos(2 * pi * hour / 24)",
+      "group": "time",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 1,
+      "n_inf": 0,
+      "n_unique": 23,
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.00020804833690171747,
+        "std": 0.7071449806735053,
+        "median": 6.123233995736766e-17
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.0013099860110615323,
+        "std": 0.7071167688096023,
+        "median": -1.8369701987210297e-16
+      }
+    },
+    {
+      "name": "feat_time_sin_weekday",
+      "dtype": "float64",
+      "position": 57,
+      "description": "Sine transform of day of week (Monday=0)",
+      "unit": "coordinate in [-1, 1]",
+      "formula": "sin(2 * pi * weekday / 7)",
+      "group": "time",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 1,
+      "n_inf": 0,
+      "n_unique": 8,
+      "stats_train": {
+        "min": -0.9749279121818236,
+        "max": 0.9749279121818236,
+        "mean": -0.0002061050473082969,
+        "std": 0.7073828991400057,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -0.9749279121818236,
+        "max": 0.9749279121818236,
+        "mean": 0.004482902726591983,
+        "std": 0.7069690084401032,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "feat_time_cos_weekday",
+      "dtype": "float64",
+      "position": 58,
+      "description": "Cosine transform of day of week (Monday=0)",
+      "unit": "coordinate in [-1, 1]",
+      "formula": "cos(2 * pi * weekday / 7)",
+      "group": "time",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 1,
+      "n_inf": 0,
+      "n_unique": 8,
+      "stats_train": {
+        "min": -0.9009688679024191,
+        "max": 1.0,
+        "mean": -0.0027669751178117153,
+        "std": 0.7068283109986471,
+        "median": -0.22252093395631434
+      },
+      "stats_val": {
+        "min": -0.9009688679024191,
+        "max": 1.0,
+        "mean": 0.012108847583251202,
+        "std": 0.7071415827722751,
+        "median": -0.22252093395631434
+      }
+    },
+    {
+      "name": "feat_mtf_1h_ret",
+      "dtype": "float64",
+      "position": 59,
+      "description": "Log return of last COMPLETED 1h candle",
+      "unit": "fraction",
+      "formula": "ln(close_1h / open_1h) shifted 1h",
+      "group": "mtf_1h",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 12,
+      "n_inf": 0,
+      "n_unique": 26516,
+      "stats_train": {
+        "min": -0.050194422912412245,
+        "max": 0.04904670493138723,
+        "mean": 5.167449996115468e-05,
+        "std": 0.0051562302788497804,
+        "median": 5.9928012156200206e-05
+      },
+      "stats_val": {
+        "min": -0.036881356938876377,
+        "max": 0.03413867480562216,
+        "mean": -3.7117014050848806e-05,
+        "std": 0.004873472647539701,
+        "median": -3.1039012314669534e-07
+      }
+    },
+    {
+      "name": "feat_mtf_1h_range",
+      "dtype": "float64",
+      "position": 60,
+      "description": "High-low range of last COMPLETED 1h candle normalized by close",
+      "unit": "ratio",
+      "formula": "(high_1h - low_1h) / close_1h shifted 1h",
+      "group": "mtf_1h",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 12,
+      "n_inf": 0,
+      "n_unique": 26520,
+      "stats_train": {
+        "min": 0.0003802245556114236,
+        "max": 0.11557933029921238,
+        "mean": 0.006924017180116241,
+        "std": 0.005547017277773808,
+        "median": 0.005427525376711177
+      },
+      "stats_val": {
+        "min": 0.0005205172285913785,
+        "max": 0.06080785849147666,
+        "mean": 0.006704143665784962,
+        "std": 0.005231425826463173,
+        "median": 0.005233802363541361
+      }
+    },
+    {
+      "name": "feat_mtf_1h_vol_ratio",
+      "dtype": "float64",
+      "position": 61,
+      "description": "Volume of last COMPLETED 1h candle vs 24h rolling mean",
+      "unit": "ratio",
+      "formula": "vol_1h / SMA(vol_1h, 24) shifted 1h",
+      "group": "mtf_1h",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 12,
+      "n_inf": 0,
+      "n_unique": 26520,
+      "stats_train": {
+        "min": 0.09424438797254936,
+        "max": 10.790985469018374,
+        "mean": 1.0306773397446112,
+        "std": 0.7901379631251981,
+        "median": 0.7957138178799673
+      },
+      "stats_val": {
+        "min": 0.0840211905922411,
+        "max": 11.192648445344048,
+        "mean": 1.0302574605332975,
+        "std": 0.8258146011720475,
+        "median": 0.7950236263154491
+      }
+    },
+    {
+      "name": "feat_mtf_1h_close_vs_sma_6",
+      "dtype": "float64",
+      "position": 62,
+      "description": "Distance of last completed 1h close from 6h SMA",
+      "unit": "ratio",
+      "formula": "(close_1h - SMA(close_1h, 6)) / SMA shifted 1h",
+      "group": "mtf_1h",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 24,
+      "n_inf": 0,
+      "n_unique": 26519,
+      "stats_train": {
+        "min": -0.06244552256051669,
+        "max": 0.06616541603287686,
+        "mean": 0.00013655969064830148,
+        "std": 0.006276373616562857,
+        "median": 0.00018462473702191435
+      },
+      "stats_val": {
+        "min": -0.042230657451740865,
+        "max": 0.035951286903129126,
+        "mean": -8.461504937667829e-05,
+        "std": 0.006095636763026718,
+        "median": 4.4513630773840345e-05
+      }
+    },
+    {
+      "name": "feat_mtf_1h_rsi_6",
+      "dtype": "float64",
+      "position": 63,
+      "description": "RSI(6) of completed 1h candles [0, 1]",
+      "unit": "oscillator",
+      "formula": "RSI(close_1h, 6) / 100.0 shifted 1h",
+      "group": "mtf_1h",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 84,
+      "n_inf": 0,
+      "n_unique": 26512,
+      "stats_train": {
+        "min": 0.030257430089121157,
+        "max": 0.9800571786697748,
+        "mean": 0.511752227926786,
+        "std": 0.1732542115232171,
+        "median": 0.5148625529667332
+      },
+      "stats_val": {
+        "min": 0.015267537404955647,
+        "max": 0.9640183356761165,
+        "mean": 0.4962581188216849,
+        "std": 0.17733560243319157,
+        "median": 0.499999286188499
+      }
+    },
+    {
+      "name": "feat_vol_parkinson_12",
+      "dtype": "float64",
+      "position": 64,
+      "description": "Parkinson volatility over 12 candles (1h)",
+      "unit": "fraction",
+      "formula": "sqrt(1/(4 ln 2 * 12) * sum(ln(H/L)^2))",
+      "group": "vol_range",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 13,
+      "n_inf": 0,
+      "n_unique": 318228,
+      "stats_train": {
+        "min": 3.637985544265301e-05,
+        "max": 0.023221830425821637,
+        "mean": 0.0011739810227541175,
+        "std": 0.0008699994316691329,
+        "median": 0.0009569315123845455
+      },
+      "stats_val": {
+        "min": 4.136854738316095e-05,
+        "max": 0.01033028372467969,
+        "mean": 0.0011497841392707194,
+        "std": 0.0008078078871815332,
+        "median": 0.0009486188465190249
+      }
+    },
+    {
+      "name": "feat_vol_parkinson_60",
+      "dtype": "float64",
+      "position": 65,
+      "description": "Parkinson volatility over 60 candles (5h)",
+      "unit": "fraction",
+      "formula": "sqrt(1/(4 ln 2 * 60) * sum(ln(H/L)^2))",
+      "group": "vol_range",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 71,
+      "n_inf": 0,
+      "n_unique": 318170,
+      "stats_train": {
+        "min": 0.00010511640512103482,
+        "max": 0.01097329301565729,
+        "mean": 0.0012348596570755457,
+        "std": 0.0007814960476448908,
+        "median": 0.001050365009273945
+      },
+      "stats_val": {
+        "min": 0.00013628864207585853,
+        "max": 0.007668394798559761,
+        "mean": 0.0012068068671843213,
+        "std": 0.0007196950418469224,
+        "median": 0.0010571332061802491
+      }
+    },
+    {
+      "name": "feat_vol_parkinson_288",
+      "dtype": "float64",
+      "position": 66,
+      "description": "Parkinson volatility over 288 candles (24h)",
+      "unit": "fraction",
+      "formula": "sqrt(1/(4 ln 2 * 288) * sum(ln(H/L)^2))",
+      "group": "vol_range",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 287,
+      "n_inf": 0,
+      "n_unique": 317954,
+      "stats_train": {
+        "min": 0.00019494680580299463,
+        "max": 0.006520963935202612,
+        "mean": 0.0013087085277823395,
+        "std": 0.0006510841913728449,
+        "median": 0.0011876023606741083
+      },
+      "stats_val": {
+        "min": 0.00022820501841498282,
+        "max": 0.005010404193984804,
+        "mean": 0.0012783583554673349,
+        "std": 0.0005834851272857954,
+        "median": 0.0012026885027238367
+      }
+    },
+    {
+      "name": "feat_vol_gk_12",
+      "dtype": "float64",
+      "position": 67,
+      "description": "Garman-Klass volatility over 12 candles (1h)",
+      "unit": "fraction",
+      "formula": "sqrt(1/12 * sum(0.5 ln(H/L)^2 - (2 ln 2 - 1) ln(C/O)^2))",
+      "group": "vol_range",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 13,
+      "n_inf": 0,
+      "n_unique": 318228,
+      "stats_train": {
+        "min": 2.0504411058948848e-05,
+        "max": 0.021493563834506613,
+        "mean": 0.0011414275121844216,
+        "std": 0.0008692787247743035,
+        "median": 0.000925300773411278
+      },
+      "stats_val": {
+        "min": 3.176882150368745e-05,
+        "max": 0.00967952417760195,
+        "mean": 0.0011228332780726935,
+        "std": 0.0007949121273263456,
+        "median": 0.0009292571972059127
+      }
+    },
+    {
+      "name": "feat_vol_gk_60",
+      "dtype": "float64",
+      "position": 68,
+      "description": "Garman-Klass volatility over 60 candles (5h)",
+      "unit": "fraction",
+      "formula": "sqrt(1/60 * sum(0.5 ln(H/L)^2 - (2 ln 2 - 1) ln(C/O)^2))",
+      "group": "vol_range",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 71,
+      "n_inf": 0,
+      "n_unique": 318170,
+      "stats_train": {
+        "min": 7.355554712773787e-05,
+        "max": 0.01020950077364461,
+        "mean": 0.0012020131012358834,
+        "std": 0.0007836649111924182,
+        "median": 0.0010185551976288052
+      },
+      "stats_val": {
+        "min": 0.00011851212672603659,
+        "max": 0.007453054517582294,
+        "mean": 0.0011772939634236582,
+        "std": 0.0007116038359354271,
+        "median": 0.0010436733748422932
+      }
+    },
+    {
+      "name": "feat_vol_gk_288",
+      "dtype": "float64",
+      "position": 69,
+      "description": "Garman-Klass volatility over 288 candles (24h)",
+      "unit": "fraction",
+      "formula": "sqrt(1/288 * sum(0.5 ln(H/L)^2 - (2 ln 2 - 1) ln(C/O)^2))",
+      "group": "vol_range",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 287,
+      "n_inf": 0,
+      "n_unique": 317954,
+      "stats_train": {
+        "min": 0.00015202657322634206,
+        "max": 0.0064278495757367805,
+        "mean": 0.0012774908849285992,
+        "std": 0.000654157471634223,
+        "median": 0.001153805209941214
+      },
+      "stats_val": {
+        "min": 0.0001976391582542972,
+        "max": 0.0049581924217130015,
+        "mean": 0.0012481627453741905,
+        "std": 0.0005787005064611893,
+        "median": 0.0011791275432128637
+      }
+    },
+    {
+      "name": "feat_vol_realized_abs_sum_6",
+      "dtype": "float64",
+      "position": 70,
+      "description": "Realized absolute variation over 6 candles (30m)",
+      "unit": "fraction",
+      "formula": "sum(|r_5m|, W=6)",
+      "group": "vol_realized",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 5,
+      "n_inf": 0,
+      "n_unique": 318198,
+      "stats_train": {
+        "min": 2.8247292524006953e-05,
+        "max": 0.16973773371968964,
+        "mean": 0.005874049989634483,
+        "std": 0.004589093550232999,
+        "median": 0.004688051528139779
+      },
+      "stats_val": {
+        "min": 8.76221627637557e-05,
+        "max": 0.0731037287598203,
+        "mean": 0.005548449026281102,
+        "std": 0.004413713346733597,
+        "median": 0.004364292836731822
+      }
+    },
+    {
+      "name": "feat_vol_realized_abs_sum_12",
+      "dtype": "float64",
+      "position": 71,
+      "description": "Realized absolute variation over 12 candles (1h)",
+      "unit": "fraction",
+      "formula": "sum(|r_5m|, W=12)",
+      "group": "vol_realized",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 13,
+      "n_inf": 0,
+      "n_unique": 318203,
+      "stats_train": {
+        "min": 0.00045903944622146934,
+        "max": 0.22574803771678523,
+        "mean": 0.011748268413480763,
+        "std": 0.008240938944619787,
+        "median": 0.009655115724738435
+      },
+      "stats_val": {
+        "min": 0.0004781457500838284,
+        "max": 0.12525303198769208,
+        "mean": 0.011096594085548181,
+        "std": 0.007934256757804134,
+        "median": 0.009017292622633228
+      }
+    },
+    {
+      "name": "feat_vol_realized_abs_sum_36",
+      "dtype": "float64",
+      "position": 72,
+      "description": "Realized absolute variation over 36 candles (3h)",
+      "unit": "fraction",
+      "formula": "sum(|r_5m|, W=36)",
+      "group": "vol_realized",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 35,
+      "n_inf": 0,
+      "n_unique": 318180,
+      "stats_train": {
+        "min": 0.002678316286560064,
+        "max": 0.2992919338714995,
+        "mean": 0.03524680473398574,
+        "std": 0.021292773753583988,
+        "median": 0.030059032235198083
+      },
+      "stats_val": {
+        "min": 0.0038815485772804087,
+        "max": 0.24329716999114703,
+        "mean": 0.03328780240449901,
+        "std": 0.020749524438383373,
+        "median": 0.028154907980462864
+      }
+    },
+    {
+      "name": "feat_vol_realized_max_abs_12",
+      "dtype": "float64",
+      "position": 73,
+      "description": "Maximum single-candle absolute return over 12 candles (1h)",
+      "unit": "fraction",
+      "formula": "max(|r_5m|, W=12)",
+      "group": "vol_realized",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 13,
+      "n_inf": 0,
+      "n_unique": 51453,
+      "stats_train": {
+        "min": 0.00011706106285621364,
+        "max": 0.07621342584207424,
+        "mean": 0.0026070494131294384,
+        "std": 0.0021772861326759827,
+        "median": 0.0020511431060513466
+      },
+      "stats_val": {
+        "min": 0.00011805764253496916,
+        "max": 0.037808065313792626,
+        "mean": 0.002617438028096215,
+        "std": 0.002124221354554706,
+        "median": 0.002041645812662909
+      }
+    },
+    {
+      "name": "feat_vol_realized_max_abs_60",
+      "dtype": "float64",
+      "position": 74,
+      "description": "Maximum single-candle absolute return over 60 candles (5h)",
+      "unit": "fraction",
+      "formula": "max(|r_5m|, W=60)",
+      "group": "vol_realized",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 71,
+      "n_inf": 0,
+      "n_unique": 13141,
+      "stats_train": {
+        "min": 0.0004585966061943804,
+        "max": 0.07621342584207424,
+        "mean": 0.00428251270452016,
+        "std": 0.0034726037124242146,
+        "median": 0.003425299645426811
+      },
+      "stats_val": {
+        "min": 0.0004467751811037509,
+        "max": 0.037808065313792626,
+        "mean": 0.004362947888117832,
+        "std": 0.0031453068604222222,
+        "median": 0.003523988308474564
+      }
+    },
+    {
+      "name": "feat_vol_realized_semi_var_up_ratio_60",
+      "dtype": "float64",
+      "position": 75,
+      "description": "Upside semivariance share over 60 candles",
+      "unit": "fraction [0, 1]",
+      "formula": "SV^+ / (SV^+ + SV^-)",
+      "group": "vol_realized",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 71,
+      "n_inf": 0,
+      "n_unique": 318148,
+      "stats_train": {
+        "min": 0.016055690421990062,
+        "max": 0.9707800117660651,
+        "mean": 0.5062592135855875,
+        "std": 0.1319094152355039,
+        "median": 0.5037771309113885
+      },
+      "stats_val": {
+        "min": 0.01293535702640674,
+        "max": 0.9493176622976134,
+        "mean": 0.49833384460534685,
+        "std": 0.1484502428149733,
+        "median": 0.4930988605535757
+      }
+    },
+    {
+      "name": "feat_vol_seasonal_slot_abs_ret_7d",
+      "dtype": "float64",
+      "position": 76,
+      "description": "Same 5m time slot mean absolute return over prior 7 days",
+      "unit": "fraction",
+      "formula": "mean(|r_5m|[t - 288*k]) for k=1..7",
+      "group": "vol_seasonal",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 2017,
+      "n_inf": 0,
+      "n_unique": 316205,
+      "stats_train": {
+        "min": 6.078462842466012e-05,
+        "max": 0.01175476533570859,
+        "mean": 0.0009796954985727344,
+        "std": 0.0005564390652791182,
+        "median": 0.0008527036811053477
+      },
+      "stats_val": {
+        "min": 8.342100256309905e-05,
+        "max": 0.006282888367642216,
+        "mean": 0.0009330653317474997,
+        "std": 0.0005816460627857862,
+        "median": 0.0007805120293242545
+      }
+    },
+    {
+      "name": "feat_vol_seasonal_vol_ratio_12",
+      "dtype": "float64",
+      "position": 77,
+      "description": "Ratio of 1h mean absolute return to 7-day seasonal slot baseline",
+      "unit": "ratio",
+      "formula": "mean(|r_5m|, 12) / slot_abs_ret_7d",
+      "group": "vol_seasonal",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 2015,
+      "n_inf": 0,
+      "n_unique": 316225,
+      "stats_train": {
+        "min": 0.043204507815141506,
+        "max": 36.78818474408116,
+        "mean": 1.1761228203038423,
+        "std": 0.925256909371406,
+        "median": 0.9507628720067989
+      },
+      "stats_val": {
+        "min": 0.055278168472742785,
+        "max": 26.63108755931072,
+        "mean": 1.1822400230842396,
+        "std": 0.8901022931315649,
+        "median": 0.965657270903582
+      }
+    },
+    {
+      "name": "feat_vol_seasonal_volume_ratio_7d",
+      "dtype": "float64",
+      "position": 78,
+      "description": "Ratio of current volume to 7-day same-slot mean volume",
+      "unit": "ratio",
+      "formula": "vol[t] / mean(vol[t - 288*k]) for k=1..7",
+      "group": "vol_seasonal",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 2015,
+      "n_inf": 0,
+      "n_unique": 316226,
+      "stats_train": {
+        "min": 0.011536908227649606,
+        "max": 156.33195044173115,
+        "mean": 1.1718260832587477,
+        "std": 1.8287855366098507,
+        "median": 0.7353988541702887
+      },
+      "stats_val": {
+        "min": 0.018006937554169506,
+        "max": 95.3205642254438,
+        "mean": 1.1734434839081347,
+        "std": 1.7612398649950889,
+        "median": 0.7186629132775783
+      }
+    },
+    {
+      "name": "feat_vol_seasonal_trades_ratio_7d",
+      "dtype": "float64",
+      "position": 79,
+      "description": "Ratio of current trades to 7-day same-slot mean trades",
+      "unit": "ratio",
+      "formula": "trades[t] / mean(trades[t - 288*k]) for k=1..7",
+      "group": "vol_seasonal",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 2015,
+      "n_inf": 0,
+      "n_unique": 315978,
+      "stats_train": {
+        "min": 0.03354406967750614,
+        "max": 69.98809356462087,
+        "mean": 1.0998273851109568,
+        "std": 1.1196514697902495,
+        "median": 0.8389906365030162
+      },
+      "stats_val": {
+        "min": 0.024008485618599442,
+        "max": 23.733368034093495,
+        "mean": 1.0570737103576104,
+        "std": 0.926640498732946,
+        "median": 0.8460070737155622
+      }
+    },
+    {
+      "name": "feat_vol_har_rv_72",
+      "dtype": "float64",
+      "position": 80,
+      "description": "Realized volatility over 6h (72 candles)",
+      "unit": "fraction",
+      "formula": "rolling_sigma(r_5m, 72)",
+      "group": "vol_har",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 71,
+      "n_inf": 0,
+      "n_unique": 318150,
+      "stats_train": {
+        "min": 0.00018681407982525732,
+        "max": 0.011806915629153224,
+        "mean": 0.0013173034668032874,
+        "std": 0.0007759374914008348,
+        "median": 0.0011382507191394315
+      },
+      "stats_val": {
+        "min": 0.00016364109346667108,
+        "max": 0.007834932482704438,
+        "mean": 0.0012829407255737701,
+        "std": 0.000736781445300875,
+        "median": 0.001120870679541152
+      }
+    },
+    {
+      "name": "feat_vol_har_rv_2016",
+      "dtype": "float64",
+      "position": 81,
+      "description": "Realized volatility over 7 days (2016 candles)",
+      "unit": "fraction",
+      "formula": "rolling_sigma(r_5m, 2016)",
+      "group": "vol_har",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 2015,
+      "n_inf": 0,
+      "n_unique": 316207,
+      "stats_train": {
+        "min": 0.0006920238834355398,
+        "max": 0.0033743261304545785,
+        "mean": 0.001453102029968079,
+        "std": 0.00047719899512443394,
+        "median": 0.0013352955898000849
+      },
+      "stats_val": {
+        "min": 0.0008103328074485808,
+        "max": 0.003169434887055726,
+        "mean": 0.0014134001319908284,
+        "std": 0.0004653198207904521,
+        "median": 0.0013210530730005836
+      }
+    },
+    {
+      "name": "feat_vol_har_ratio_12_288",
+      "dtype": "float64",
+      "position": 82,
+      "description": "HAR volatility ratio: 1h RV / 24h RV",
+      "unit": "ratio",
+      "formula": "rv_12 / rv_288",
+      "group": "vol_har",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 287,
+      "n_inf": 0,
+      "n_unique": 317952,
+      "stats_train": {
+        "min": 0.0683157538814826,
+        "max": 4.953185390463192,
+        "mean": 0.9156611843264596,
+        "std": 0.4660266746650945,
+        "median": 0.808413179287562
+      },
+      "stats_val": {
+        "min": 0.05290107979644934,
+        "max": 4.349096570165222,
+        "mean": 0.903994364951151,
+        "std": 0.4949475815338325,
+        "median": 0.77444859946471
+      }
+    },
+    {
+      "name": "feat_vol_har_ratio_288_2016",
+      "dtype": "float64",
+      "position": 83,
+      "description": "HAR volatility ratio: 24h RV / 7d RV",
+      "unit": "ratio",
+      "formula": "rv_288 / rv_2016",
+      "group": "vol_har",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 2015,
+      "n_inf": 0,
+      "n_unique": 316225,
+      "stats_train": {
+        "min": 0.2179098256508686,
+        "max": 2.43153649114257,
+        "mean": 0.9597595078912916,
+        "std": 0.3074424050359715,
+        "median": 0.952226447038505
+      },
+      "stats_val": {
+        "min": 0.27122218076952653,
+        "max": 1.7253366114645272,
+        "mean": 0.957776861720641,
+        "std": 0.28094369700318433,
+        "median": 0.9711686056251562
+      }
+    },
+    {
+      "name": "feat_flow_window_net_6",
+      "dtype": "float64",
+      "position": 84,
+      "description": "Normalized taker net flow over 6 candles (30m)",
+      "unit": "fraction [-1, 1]",
+      "formula": "sum(2*taker_buy - vol) / sum(vol)",
+      "group": "flow_window",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 5,
+      "n_inf": 0,
+      "n_unique": 318236,
+      "stats_train": {
+        "min": -0.796187302106562,
+        "max": 0.7610552320779825,
+        "mean": -0.028897896458496043,
+        "std": 0.17259670762994264,
+        "median": -0.02764558122215586
+      },
+      "stats_val": {
+        "min": -0.8201538209487622,
+        "max": 0.7410323516623805,
+        "mean": -0.01535404384654768,
+        "std": 0.20875863115320722,
+        "median": -0.014854394873342643
+      }
+    },
+    {
+      "name": "feat_flow_window_net_12",
+      "dtype": "float64",
+      "position": 85,
+      "description": "Normalized taker net flow over 12 candles (1h)",
+      "unit": "fraction [-1, 1]",
+      "formula": "sum(2*taker_buy - vol) / sum(vol)",
+      "group": "flow_window",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 13,
+      "n_inf": 0,
+      "n_unique": 318228,
+      "stats_train": {
+        "min": -0.7737183060202082,
+        "max": 0.6284280844890004,
+        "mean": -0.027870923290005237,
+        "std": 0.14106188740911232,
+        "median": -0.02622849105634533
+      },
+      "stats_val": {
+        "min": -0.6525380704703875,
+        "max": 0.6730746823059789,
+        "mean": -0.016054292533060757,
+        "std": 0.17030074293247008,
+        "median": -0.014107013197949131
+      }
+    },
+    {
+      "name": "feat_flow_window_net_36",
+      "dtype": "float64",
+      "position": 86,
+      "description": "Normalized taker net flow over 36 candles (3h)",
+      "unit": "fraction [-1, 1]",
+      "formula": "sum(2*taker_buy - vol) / sum(vol)",
+      "group": "flow_window",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 35,
+      "n_inf": 0,
+      "n_unique": 318206,
+      "stats_train": {
+        "min": -0.5984222285533375,
+        "max": 0.472367668049988,
+        "mean": -0.02624384409167968,
+        "std": 0.10085218788772299,
+        "median": -0.024057269301323347
+      },
+      "stats_val": {
+        "min": -0.49901228160151406,
+        "max": 0.4378761750082369,
+        "mean": -0.017203146800291245,
+        "std": 0.1203983977868212,
+        "median": -0.016135509647616907
+      }
+    },
+    {
+      "name": "feat_flow_window_signed_flow_6",
+      "dtype": "float64",
+      "position": 87,
+      "description": "Price-signed net flow over 6 candles",
+      "unit": "fraction [-1, 1]",
+      "formula": "net_flow_6 * sign(ret_1)",
+      "group": "flow_window",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 5,
+      "n_inf": 0,
+      "n_unique": 317327,
+      "stats_train": {
+        "min": -0.7941460382702037,
+        "max": 0.796187302106562,
+        "mean": 0.021909153722530914,
+        "std": 0.1733179604361175,
+        "median": 0.020615046611621262
+      },
+      "stats_val": {
+        "min": -0.7410323516623805,
+        "max": 0.8201538209487622,
+        "mean": 0.02047625456880408,
+        "std": 0.2078415406260736,
+        "median": 0.018674577543138046
+      }
+    },
+    {
+      "name": "feat_flow_window_signed_flow_12",
+      "dtype": "float64",
+      "position": 88,
+      "description": "Price-signed net flow over 12 candles",
+      "unit": "fraction [-1, 1]",
+      "formula": "net_flow_12 * sign(ret_1)",
+      "group": "flow_window",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 13,
+      "n_inf": 0,
+      "n_unique": 317319,
+      "stats_train": {
+        "min": -0.7587141253968299,
+        "max": 0.7737183060202082,
+        "mean": 0.010023816416750134,
+        "std": 0.14319522230704343,
+        "median": 0.008907628725768443
+      },
+      "stats_val": {
+        "min": -0.6445543319982353,
+        "max": 0.6730746823059789,
+        "mean": 0.00968780311842715,
+        "std": 0.17038686885209856,
+        "median": 0.007315718775389105
+      }
+    },
+    {
+      "name": "feat_flow_window_signed_flow_36",
+      "dtype": "float64",
+      "position": 89,
+      "description": "Price-signed net flow over 36 candles",
+      "unit": "fraction [-1, 1]",
+      "formula": "net_flow_36 * sign(ret_1)",
+      "group": "flow_window",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 35,
+      "n_inf": 0,
+      "n_unique": 317297,
+      "stats_train": {
+        "min": -0.5944318605948172,
+        "max": 0.5984222285533375,
+        "mean": 0.002774371814311452,
+        "std": 0.10397574506370443,
+        "median": 0.002314967909688725
+      },
+      "stats_val": {
+        "min": -0.4923408776366707,
+        "max": 0.49901228160151406,
+        "mean": 0.0029698981198841034,
+        "std": 0.1213574122902569,
+        "median": 0.0024830931522589507
+      }
+    },
+    {
+      "name": "feat_loc_position_288",
+      "dtype": "float64",
+      "position": 90,
+      "description": "Position of close within 24h high-low channel",
+      "unit": "fraction [0, 1]",
+      "formula": "(close - min(L_288)) / (max(H_288) - min(L_288))",
+      "group": "location",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 287,
+      "n_inf": 0,
+      "n_unique": 314820,
+      "stats_train": {
+        "min": 0.0,
+        "max": 1.0,
+        "mean": 0.5333065579167313,
+        "std": 0.2709904738125928,
+        "median": 0.5500538556302987
+      },
+      "stats_val": {
+        "min": 0.0,
+        "max": 1.0,
+        "mean": 0.4974472045454599,
+        "std": 0.2737333355205198,
+        "median": 0.4984861635347072
+      }
+    },
+    {
+      "name": "feat_loc_dist_high_288",
+      "dtype": "float64",
+      "position": 91,
+      "description": "Fractional distance of close below 24h high",
+      "unit": "fraction",
+      "formula": "(max(H_288) - close) / close",
+      "group": "location",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 287,
+      "n_inf": 0,
+      "n_unique": 313755,
+      "stats_train": {
+        "min": 0.0,
+        "max": 0.23833441193680643,
+        "mean": 0.017410486073064346,
+        "std": 0.016494596283539414,
+        "median": 0.012275874080833794
+      },
+      "stats_val": {
+        "min": 0.0,
+        "max": 0.22069001330520713,
+        "mean": 0.018389237056110872,
+        "std": 0.016268293074850525,
+        "median": 0.014046249072840843
+      }
+    },
+    {
+      "name": "feat_loc_dist_low_288",
+      "dtype": "float64",
+      "position": 92,
+      "description": "Fractional distance of close above 24h low",
+      "unit": "fraction",
+      "formula": "(close - min(L_288)) / close",
+      "group": "location",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 287,
+      "n_inf": 0,
+      "n_unique": 313973,
+      "stats_train": {
+        "min": 0.0,
+        "max": 0.1284183122514324,
+        "mean": 0.019954244761485218,
+        "std": 0.016990954033298773,
+        "median": 0.014982686584055854
+      },
+      "stats_val": {
+        "min": 0.0,
+        "max": 0.16260962661181944,
+        "mean": 0.017732143163763592,
+        "std": 0.015887184759574017,
+        "median": 0.013087271315350707
+      }
+    },
+    {
+      "name": "feat_time_is_weekend",
+      "dtype": "float64",
+      "position": 93,
+      "description": "Weekend indicator (Saturday or Sunday UTC)",
+      "unit": "binary {0, 1}",
+      "formula": "1.0 if weekday >= 5 else 0.0",
+      "group": "time_weekend",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 1,
+      "n_inf": 0,
+      "n_unique": 3,
+      "stats_train": {
+        "min": 0.0,
+        "max": 1.0,
+        "mean": 0.2857136391614468,
+        "std": 0.45175466705769435,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": 0.0,
+        "max": 1.0,
+        "mean": 0.28468540773438655,
+        "std": 0.4512692405339885,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "feat_time_sin_week",
+      "dtype": "float64",
+      "position": 94,
+      "description": "Sine transform of 168-hour weekly cycle",
+      "unit": "coordinate in [-1, 1]",
+      "formula": "sin(2 * pi * (weekday*24 + hour + min/60) / 168)",
+      "group": "time_weekend",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 1,
+      "n_inf": 0,
+      "n_unique": 1803,
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.001415634997410483,
+        "std": 0.7072494634957033,
+        "median": -0.00311665433291738
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.00975126635464382,
+        "std": 0.7070550947871072,
+        "median": 0.015582666194723475
+      }
+    },
+    {
+      "name": "feat_time_cos_week",
+      "dtype": "float64",
+      "position": 95,
+      "description": "Cosine transform of 168-hour weekly cycle",
+      "unit": "coordinate in [-1, 1]",
+      "formula": "cos(2 * pi * (weekday*24 + hour + min/60) / 168)",
+      "group": "time_weekend",
+      "role": "feature",
+      "is_future_looking": false,
+      "allowed_as_model_input": true,
+      "source_columns": [],
+      "n_missing": 1,
+      "n_inf": 0,
+      "n_unique": 1837,
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.002374413279706645,
+        "std": 0.7069618662841304,
+        "median": -0.006233278392033544
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.009393223496149468,
+        "std": 0.7070437683262222,
+        "median": 0.015582666194723168
+      }
+    },
+    {
+      "name": "fwd_ret_2",
+      "dtype": "float64",
+      "position": 96,
+      "description": "Forward close-to-close return over 2 candles (10 min).",
+      "unit": "fraction",
+      "formula": "close[t+2] / close[t] - 1",
+      "group": "targets_base",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close"
+      ],
+      "n_missing": 6,
+      "n_inf": 0,
+      "n_unique": 317875,
+      "stats_train": {
+        "min": -0.09142317859093396,
+        "max": 0.042864331380368714,
+        "mean": 1.0905564593288525e-05,
+        "std": 0.0021432148656124177,
+        "median": 1.6617736664503724e-06
+      },
+      "stats_val": {
+        "min": -0.03270281637685257,
+        "max": 0.0388818430418687,
+        "mean": -4.021726571241741e-06,
+        "std": 0.0020992677792763897,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "fwd_ret_open_2",
+      "dtype": "float64",
+      "position": 97,
+      "description": "Conservative forward return for backtesting over 2 candles (10 min). Entry at open[t+1].",
+      "unit": "fraction",
+      "formula": "close[t+2] / open[t+1] - 1",
+      "group": "targets_base",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close",
+        "open"
+      ],
+      "n_missing": 6,
+      "n_inf": 0,
+      "n_unique": 317860,
+      "stats_train": {
+        "min": -0.09142317859093396,
+        "max": 0.04147613405901329,
+        "mean": 1.0889987542922026e-05,
+        "std": 0.002143033302096062,
+        "median": 1.6617736664503724e-06
+      },
+      "stats_val": {
+        "min": -0.032693499346627575,
+        "max": 0.0388818430418687,
+        "mean": -4.049500976219645e-06,
+        "std": 0.002099247382351016,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "raw_sign_2",
+      "dtype": "float64",
+      "position": 98,
+      "description": "Raw directional sign of fwd_ret_2 (+1, -1, 0).",
+      "unit": "integer {-1, 0, +1}",
+      "formula": "sign(fwd_ret_2)",
+      "group": "targets_base",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_2"
+      ],
+      "n_missing": 6,
+      "n_inf": 0,
+      "n_unique": 4,
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.0030730795515747835,
+        "std": 0.9995991805430843,
+        "median": 1.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.00019009399091773153,
+        "std": 0.9996302785729605,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "has_valid_target_2",
+      "dtype": "bool",
+      "position": 99,
+      "description": "True if row t has a valid forward label for horizon N=2 (no gap crossing, not in boundary).",
+      "unit": "boolean",
+      "formula": "gap_id[t] == gap_id[t+2] AND t not in last 2 rows",
+      "group": "targets_base",
+      "role": "flag",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "gap_id"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 2,
+      "stats_train": {
+        "min": 0.0,
+        "max": 1.0,
+        "mean": 0.9999909483012225,
+        "std": 0.003008597316152045,
+        "median": 1.0
+      },
+      "stats_val": {
+        "min": 0.0,
+        "max": 1.0,
+        "mean": 0.999957758675312,
+        "std": 0.0064992639971263675,
+        "median": 1.0
+      }
+    },
+    {
+      "name": "fwd_ret_3",
+      "dtype": "float64",
+      "position": 100,
+      "description": "Forward close-to-close return over 3 candles (15 min).",
+      "unit": "fraction",
+      "formula": "close[t+3] / close[t] - 1",
+      "group": "targets_base",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close"
+      ],
+      "n_missing": 9,
+      "n_inf": 0,
+      "n_unique": 317966,
+      "stats_train": {
+        "min": -0.0963545656815834,
+        "max": 0.07081444182010221,
+        "mean": 1.6305362726472055e-05,
+        "std": 0.002603751270304315,
+        "median": 5.972430452638733e-06
+      },
+      "stats_val": {
+        "min": -0.04219068362256728,
+        "max": 0.039383863284796705,
+        "mean": -6.10045926713736e-06,
+        "std": 0.0025566571113296178,
+        "median": -8.417099976454345e-07
+      }
+    },
+    {
+      "name": "fwd_ret_open_3",
+      "dtype": "float64",
+      "position": 101,
+      "description": "Conservative forward return for backtesting over 3 candles (15 min). Entry at open[t+1].",
+      "unit": "fraction",
+      "formula": "close[t+3] / open[t+1] - 1",
+      "group": "targets_base",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close",
+        "open"
+      ],
+      "n_missing": 9,
+      "n_inf": 0,
+      "n_unique": 317980,
+      "stats_train": {
+        "min": -0.0963545656815834,
+        "max": 0.06938903901834381,
+        "mean": 1.6289615856348587e-05,
+        "std": 0.002603529669999248,
+        "median": 6.054861782400778e-06
+      },
+      "stats_val": {
+        "min": -0.042190835873607724,
+        "max": 0.039384014980027304,
+        "mean": -6.128218916738942e-06,
+        "std": 0.0025566469365927123,
+        "median": -7.938067156931794e-07
+      }
+    },
+    {
+      "name": "raw_sign_3",
+      "dtype": "float64",
+      "position": 102,
+      "description": "Raw directional sign of fwd_ret_3 (+1, -1, 0).",
+      "unit": "integer {-1, 0, +1}",
+      "formula": "sign(fwd_ret_3)",
+      "group": "targets_base",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_3"
+      ],
+      "n_missing": 9,
+      "n_inf": 0,
+      "n_unique": 4,
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.004023534736365694,
+        "std": 0.9997248377422562,
+        "median": 1.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.0013518080432578573,
+        "std": 0.9997138923272804,
+        "median": -1.0
+      }
+    },
+    {
+      "name": "has_valid_target_3",
+      "dtype": "bool",
+      "position": 103,
+      "description": "True if row t has a valid forward label for horizon N=3 (no gap crossing, not in boundary).",
+      "unit": "boolean",
+      "formula": "gap_id[t] == gap_id[t+3] AND t not in last 3 rows",
+      "group": "targets_base",
+      "role": "flag",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "gap_id"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 2,
+      "stats_train": {
+        "min": 0.0,
+        "max": 1.0,
+        "mean": 0.9999864224518337,
+        "std": 0.0036847557946110554,
+        "median": 1.0
+      },
+      "stats_val": {
+        "min": 0.0,
+        "max": 1.0,
+        "mean": 0.9999366380129681,
+        "std": 0.007959856184700556,
+        "median": 1.0
+      }
+    },
+    {
+      "name": "fwd_ret_6",
+      "dtype": "float64",
+      "position": 104,
+      "description": "Forward close-to-close return over 6 candles (30 min).",
+      "unit": "fraction",
+      "formula": "close[t+6] / close[t] - 1",
+      "group": "targets_base",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close"
+      ],
+      "n_missing": 18,
+      "n_inf": 0,
+      "n_unique": 318064,
+      "stats_train": {
+        "min": -0.11049235696906867,
+        "max": 0.08780117501028628,
+        "mean": 3.2533769569814546e-05,
+        "std": 0.0036540257956494612,
+        "median": 2.713920222396915e-05
+      },
+      "stats_val": {
+        "min": -0.05220737947504739,
+        "max": 0.04646320163164397,
+        "mean": -1.2308206955262392e-05,
+        "std": 0.003582955260003569,
+        "median": 2.8685447674536846e-05
+      }
+    },
+    {
+      "name": "fwd_ret_open_6",
+      "dtype": "float64",
+      "position": 105,
+      "description": "Conservative forward return for backtesting over 6 candles (30 min). Entry at open[t+1].",
+      "unit": "fraction",
+      "formula": "close[t+6] / open[t+1] - 1",
+      "group": "targets_base",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close",
+        "open"
+      ],
+      "n_missing": 18,
+      "n_inf": 0,
+      "n_unique": 318044,
+      "stats_train": {
+        "min": -0.11049235696906867,
+        "max": 0.0863531605065031,
+        "mean": 3.2517944620448425e-05,
+        "std": 0.0036538414981285745,
+        "median": 2.7340495257099917e-05
+      },
+      "stats_val": {
+        "min": -0.05220722996023741,
+        "max": 0.04654907609109071,
+        "mean": -1.2336004841915765e-05,
+        "std": 0.0035829381998579647,
+        "median": 2.8685447674536846e-05
+      }
+    },
+    {
+      "name": "raw_sign_6",
+      "dtype": "float64",
+      "position": 106,
+      "description": "Raw directional sign of fwd_ret_6 (+1, -1, 0).",
+      "unit": "integer {-1, 0, +1}",
+      "formula": "sign(fwd_ret_6)",
+      "group": "targets_base",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_6"
+      ],
+      "n_missing": 18,
+      "n_inf": 0,
+      "n_unique": 4,
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.010699398498282393,
+        "std": 0.9998114896182252,
+        "median": 1.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.011153123085697388,
+        "std": 0.9998532967064434,
+        "median": 1.0
+      }
+    },
+    {
+      "name": "has_valid_target_6",
+      "dtype": "bool",
+      "position": 107,
+      "description": "True if row t has a valid forward label for horizon N=6 (no gap crossing, not in boundary).",
+      "unit": "boolean",
+      "formula": "gap_id[t] == gap_id[t+6] AND t not in last 6 rows",
+      "group": "targets_base",
+      "role": "flag",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "gap_id"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 2,
+      "stats_train": {
+        "min": 0.0,
+        "max": 1.0,
+        "mean": 0.9999728449036673,
+        "std": 0.005210996241654987,
+        "median": 1.0
+      },
+      "stats_val": {
+        "min": 0.0,
+        "max": 1.0,
+        "mean": 0.9998732760259361,
+        "std": 0.011256579911759991,
+        "median": 1.0
+      }
+    },
+    {
+      "name": "fwd_ret_12",
+      "dtype": "float64",
+      "position": 108,
+      "description": "Forward close-to-close return over 12 candles (60 min).",
+      "unit": "fraction",
+      "formula": "close[t+12] / close[t] - 1",
+      "group": "targets_base",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close"
+      ],
+      "n_missing": 36,
+      "n_inf": 0,
+      "n_unique": 318091,
+      "stats_train": {
+        "min": -0.1095873248370608,
+        "max": 0.08885305985289205,
+        "mean": 6.495965993836887e-05,
+        "std": 0.0051315138851528485,
+        "median": 5.922619418696762e-05
+      },
+      "stats_val": {
+        "min": -0.06697731473223134,
+        "max": 0.06753740105699624,
+        "mean": -2.4785423956103094e-05,
+        "std": 0.0050192146989091425,
+        "median": 1.5606962646463884e-05
+      }
+    },
+    {
+      "name": "fwd_ret_open_12",
+      "dtype": "float64",
+      "position": 109,
+      "description": "Conservative forward return for backtesting over 12 candles (60 min). Entry at open[t+1].",
+      "unit": "fraction",
+      "formula": "close[t+12] / open[t+1] - 1",
+      "group": "targets_base",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close",
+        "open"
+      ],
+      "n_missing": 36,
+      "n_inf": 0,
+      "n_unique": 318084,
+      "stats_train": {
+        "min": -0.1095873248370608,
+        "max": 0.08740364514423393,
+        "mean": 6.494369949455435e-05,
+        "std": 0.005131355955766778,
+        "median": 5.9218308995578894e-05
+      },
+      "stats_val": {
+        "min": -0.06697731473223134,
+        "max": 0.06753740105699624,
+        "mean": -2.4813318599284996e-05,
+        "std": 0.005019213364800234,
+        "median": 1.5607584304966338e-05
+      }
+    },
+    {
+      "name": "raw_sign_12",
+      "dtype": "float64",
+      "position": 110,
+      "description": "Raw directional sign of fwd_ret_12 (+1, -1, 0).",
+      "unit": "integer {-1, 0, +1}",
+      "formula": "sign(fwd_ret_12)",
+      "group": "targets_base",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_12"
+      ],
+      "n_missing": 36,
+      "n_inf": 0,
+      "n_unique": 4,
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.016710343485364872,
+        "std": 0.9997562512108255,
+        "median": 1.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.00424632935460019,
+        "std": 0.9999804207298595,
+        "median": 1.0
+      }
+    },
+    {
+      "name": "has_valid_target_12",
+      "dtype": "bool",
+      "position": 111,
+      "description": "True if row t has a valid forward label for horizon N=12 (no gap crossing, not in boundary).",
+      "unit": "boolean",
+      "formula": "gap_id[t] == gap_id[t+12] AND t not in last 12 rows",
+      "group": "targets_base",
+      "role": "flag",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "gap_id"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 2,
+      "stats_train": {
+        "min": 0.0,
+        "max": 1.0,
+        "mean": 0.9999456898073346,
+        "std": 0.007369361495807922,
+        "median": 1.0
+      },
+      "stats_val": {
+        "min": 0.0,
+        "max": 1.0,
+        "mean": 0.9997465520518724,
+        "std": 0.015918199144693022,
+        "median": 1.0
+      }
+    },
+    {
+      "name": "target_2_S1",
+      "dtype": "float64",
+      "position": 112,
+      "description": "3-class label for horizon N=2 (10 min), rule S1 (+1 Up, -1 Down, 0 Neutral). Symmetric cost-floor threshold: theta_up = theta_down = c (0.23%).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule S1 evaluated against forward return fwd_ret_2",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_2"
+      ],
+      "n_missing": 6,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 2,
+      "theta_rule": "S1",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.003512090916085467,
+        "std": 0.40983206324160326,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.0014573872637026085,
+        "std": 0.3969749652313366,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "target_2_S2",
+      "dtype": "float64",
+      "position": 113,
+      "description": "3-class label for horizon N=2 (10 min), rule S2 (+1 Up, -1 Down, 0 Neutral). Symmetric fixed threshold: theta_up = theta_down = 0.30%.",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule S2 evaluated against forward return fwd_ret_2",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_2"
+      ],
+      "n_missing": 6,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 2,
+      "theta_rule": "S2",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.0011541020407239615,
+        "std": 0.32023629050431046,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.0018375752455380716,
+        "std": 0.31295261682890857,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "target_2_Q1",
+      "dtype": "float64",
+      "position": 114,
+      "description": "3-class label for horizon N=2 (10 min), rule Q1 (+1 Up, -1 Down, 0 Neutral). Symmetric quantile threshold: theta = max(c, median |ret|). Floor binds (Q1 == S1).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule Q1 evaluated against forward return fwd_ret_2",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_2"
+      ],
+      "n_missing": 6,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 2,
+      "theta_rule": "Q1",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.003512090916085467,
+        "std": 0.40983206324160326,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.0014573872637026085,
+        "std": 0.3969749652313366,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "target_2_V1",
+      "dtype": "float64",
+      "position": 115,
+      "description": "3-class label for horizon N=2 (10 min), rule V1 (+1 Up, -1 Down, 0 Neutral). Volatility-adjusted threshold (half-sigma): theta = max(c, 0.5 * sigma * sqrt(N)).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule V1 evaluated against forward return fwd_ret_2",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_2"
+      ],
+      "n_missing": 6,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 2,
+      "theta_rule": "V1",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.0034442025607487633,
+        "std": 0.4082005005100571,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.001710845918259584,
+        "std": 0.3958016573456965,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "target_2_V2",
+      "dtype": "float64",
+      "position": 116,
+      "description": "3-class label for horizon N=2 (10 min), rule V2 (+1 Up, -1 Down, 0 Neutral). Volatility-adjusted threshold (one-sigma): theta = max(c, 1.0 * sigma * sqrt(N)).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule V2 evaluated against forward return fwd_ret_2",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_2"
+      ],
+      "n_missing": 6,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 2,
+      "theta_rule": "V2",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.0025978610642178584,
+        "std": 0.37617739328486716,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.0022811278910127787,
+        "std": 0.36806427248631995,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "target_2_A1",
+      "dtype": "float64",
+      "position": 117,
+      "description": "3-class label for horizon N=2 (10 min), rule A1 (+1 Up, -1 Down, 0 Neutral). Asymmetric threshold: theta_up = 0.23%, theta_down = 0.30%.",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule A1 evaluated against forward return fwd_ret_2",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_2"
+      ],
+      "n_missing": 6,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 2,
+      "theta_rule": "A1",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.03504396902480641,
+        "std": 0.3677153093861031,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.028176153764917097,
+        "std": 0.3565994499224277,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "target_2_A2",
+      "dtype": "float64",
+      "position": 118,
+      "description": "3-class label for horizon N=2 (10 min), rule A2 (+1 Up, -1 Down, 0 Neutral). Asymmetric threshold: theta_up = 0.30%, theta_down = 0.23%.",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule A2 evaluated against forward return fwd_ret_2",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_2"
+      ],
+      "n_missing": 6,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 2,
+      "theta_rule": "A2",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.03037777606799698,
+        "std": 0.3649134432674546,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.03147111627415778,
+        "std": 0.3557898705739543,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "target_2_F05",
+      "dtype": "float64",
+      "position": 119,
+      "description": "3-class label for horizon N=2 (10 min), rule F05 (+1 Up, -1 Down, 0 Neutral). Research sub-cost threshold: theta_up = theta_down = 0.05% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule F05 evaluated against forward return fwd_ret_2",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_2"
+      ],
+      "n_missing": 6,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 2,
+      "theta_rule": "F05",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.003919421048105689,
+        "std": 0.8379130255767565,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.0017953321364452424,
+        "std": 0.8182044904161899,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "target_2_F10",
+      "dtype": "float64",
+      "position": 120,
+      "description": "3-class label for horizon N=2 (10 min), rule F10 (+1 Up, -1 Down, 0 Neutral). Research sub-cost threshold: theta_up = theta_down = 0.10% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule F10 evaluated against forward return fwd_ret_2",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_2"
+      ],
+      "n_missing": 6,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 2,
+      "theta_rule": "F10",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.0066349552615738334,
+        "std": 0.6844348850075382,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.0007603759636709261,
+        "std": 0.6602387990458368,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "target_2_F15",
+      "dtype": "float64",
+      "position": 121,
+      "description": "3-class label for horizon N=2 (10 min), rule F15 (+1 Up, -1 Down, 0 Neutral). Research sub-cost threshold: theta_up = theta_down = 0.15% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule F15 evaluated against forward return fwd_ret_2",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_2"
+      ],
+      "n_missing": 6,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 2,
+      "theta_rule": "F15",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.005345076510176464,
+        "std": 0.5589271698470364,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.001816453690991657,
+        "std": 0.5372615393485752,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "target_3_S1",
+      "dtype": "float64",
+      "position": 122,
+      "description": "3-class label for horizon N=3 (15 min), rule S1 (+1 Up, -1 Down, 0 Neutral). Symmetric cost-floor threshold: theta_up = theta_down = c (0.23%).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule S1 evaluated against forward return fwd_ret_3",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_3"
+      ],
+      "n_missing": 9,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 3,
+      "theta_rule": "S1",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.0037927132835483142,
+        "std": 0.4758339619830168,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.0024712740790807704,
+        "std": 0.4630419531622255,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "target_3_S2",
+      "dtype": "float64",
+      "position": 123,
+      "description": "3-class label for horizon N=3 (15 min), rule S2 (+1 Up, -1 Down, 0 Neutral). Symmetric fixed threshold: theta_up = theta_down = 0.30%.",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule S2 evaluated against forward return fwd_ret_3",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_3"
+      ],
+      "n_missing": 9,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 3,
+      "theta_rule": "S2",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.002240325865580448,
+        "std": 0.3843512784527382,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.001964346062859074,
+        "std": 0.377056137514033,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "target_3_Q1",
+      "dtype": "float64",
+      "position": 124,
+      "description": "3-class label for horizon N=3 (15 min), rule Q1 (+1 Up, -1 Down, 0 Neutral). Symmetric quantile threshold: theta = max(c, median |ret|). Floor binds (Q1 == S1).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule Q1 evaluated against forward return fwd_ret_3",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_3"
+      ],
+      "n_missing": 9,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 3,
+      "theta_rule": "Q1",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.0037927132835483142,
+        "std": 0.4758339619830168,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.0024712740790807704,
+        "std": 0.4630419531622255,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "target_3_V1",
+      "dtype": "float64",
+      "position": 125,
+      "description": "3-class label for horizon N=3 (15 min), rule V1 (+1 Up, -1 Down, 0 Neutral). Volatility-adjusted threshold (half-sigma): theta = max(c, 0.5 * sigma * sqrt(N)).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule V1 evaluated against forward return fwd_ret_3",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_3"
+      ],
+      "n_missing": 9,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 3,
+      "theta_rule": "V1",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.0036886173342385157,
+        "std": 0.4720579694055485,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.0023234200743494425,
+        "std": 0.4601369454535423,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "target_3_V2",
+      "dtype": "float64",
+      "position": 126,
+      "description": "3-class label for horizon N=3 (15 min), rule V2 (+1 Up, -1 Down, 0 Neutral). Volatility-adjusted threshold (one-sigma): theta = max(c, 1.0 * sigma * sqrt(N)).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule V2 evaluated against forward return fwd_ret_3",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_3"
+      ],
+      "n_missing": 9,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 3,
+      "theta_rule": "V2",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.002643131930300973,
+        "std": 0.4162496469806875,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.0025980060831361945,
+        "std": 0.40659395164605017,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "target_3_A1",
+      "dtype": "float64",
+      "position": 127,
+      "description": "3-class label for horizon N=3 (15 min), rule A1 (+1 Up, -1 Down, 0 Neutral). Asymmetric threshold: theta_up = 0.23%, theta_down = 0.30%.",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule A1 evaluated against forward return fwd_ret_3",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_3"
+      ],
+      "n_missing": 9,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 3,
+      "theta_rule": "A1",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.04236705136908803,
+        "std": 0.4313500391557385,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.033900811084825955,
+        "std": 0.4205850865330608,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "target_3_A2",
+      "dtype": "float64",
+      "position": 128,
+      "description": "3-class label for horizon N=3 (15 min), rule A2 (+1 Up, -1 Down, 0 Neutral). Asymmetric threshold: theta_up = 0.30%, theta_down = 0.23%.",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule A2 evaluated against forward return fwd_ret_3",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_3"
+      ],
+      "n_missing": 9,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 3,
+      "theta_rule": "A2",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.036334012219959265,
+        "std": 0.4300991404110723,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.0383364312267658,
+        "std": 0.4208067608805948,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "target_3_F05",
+      "dtype": "float64",
+      "position": 129,
+      "description": "3-class label for horizon N=3 (15 min), rule F05 (+1 Up, -1 Down, 0 Neutral). Research sub-cost threshold: theta_up = theta_down = 0.05% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule F05 evaluated against forward return fwd_ret_3",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_3"
+      ],
+      "n_missing": 9,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 3,
+      "theta_rule": "F05",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.0061642905634759,
+        "std": 0.866505690487268,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.0035907401149036836,
+        "std": 0.8516394104102065,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "target_3_F10",
+      "dtype": "float64",
+      "position": 130,
+      "description": "3-class label for horizon N=3 (15 min), rule F10 (+1 Up, -1 Down, 0 Neutral). Research sub-cost threshold: theta_up = theta_down = 0.10% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule F10 evaluated against forward return fwd_ret_3",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_3"
+      ],
+      "n_missing": 9,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 3,
+      "theta_rule": "F10",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.007336501470921023,
+        "std": 0.7357598836258474,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.0024923960797566744,
+        "std": 0.7158087055163447,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "target_3_F15",
+      "dtype": "float64",
+      "position": 131,
+      "description": "3-class label for horizon N=3 (15 min), rule F15 (+1 Up, -1 Down, 0 Neutral). Research sub-cost threshold: theta_up = theta_down = 0.15% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule F15 evaluated against forward return fwd_ret_3",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_3"
+      ],
+      "n_missing": 9,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 3,
+      "theta_rule": "F15",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.0068386512785698125,
+        "std": 0.6206561726824733,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.0002957080094626563,
+        "std": 0.6004665518117599,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "target_6_S1",
+      "dtype": "float64",
+      "position": 132,
+      "description": "3-class label for horizon N=6 (30 min), rule S1 (+1 Up, -1 Down, 0 Neutral). Symmetric cost-floor threshold: theta_up = theta_down = c (0.23%).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule S1 evaluated against forward return fwd_ret_6",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_6"
+      ],
+      "n_missing": 18,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 6,
+      "theta_rule": "S1",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.007829932065155898,
+        "std": 0.588314350828656,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.00031685008766185757,
+        "std": 0.57461795039423,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "target_6_S2",
+      "dtype": "float64",
+      "position": 133,
+      "description": "3-class label for horizon N=6 (30 min), rule S2 (+1 Up, -1 Down, 0 Neutral). Symmetric fixed threshold: theta_up = theta_down = 0.30%.",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule S2 evaluated against forward return fwd_ret_6",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_6"
+      ],
+      "n_missing": 18,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 6,
+      "theta_rule": "S2",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.005426640778105157,
+        "std": 0.4990032584851485,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.0016053737774867451,
+        "std": 0.4883924725648246,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "target_6_Q1",
+      "dtype": "float64",
+      "position": 134,
+      "description": "3-class label for horizon N=6 (30 min), rule Q1 (+1 Up, -1 Down, 0 Neutral). Symmetric quantile threshold: theta = max(c, median |ret|). Floor binds (Q1 == S1).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule Q1 evaluated against forward return fwd_ret_6",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_6"
+      ],
+      "n_missing": 18,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 6,
+      "theta_rule": "Q1",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.007829932065155898,
+        "std": 0.588314350828656,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.00031685008766185757,
+        "std": 0.57461795039423,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "target_6_V1",
+      "dtype": "float64",
+      "position": 135,
+      "description": "3-class label for horizon N=6 (30 min), rule V1 (+1 Up, -1 Down, 0 Neutral). Volatility-adjusted threshold (half-sigma): theta = max(c, 0.5 * sigma * sqrt(N)).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule V1 evaluated against forward return fwd_ret_6",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_6"
+      ],
+      "n_missing": 18,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 6,
+      "theta_rule": "V1",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.007046938858640307,
+        "std": 0.5750226557533407,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.0005914534969688008,
+        "std": 0.5647732371923384,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "target_6_V2",
+      "dtype": "float64",
+      "position": 136,
+      "description": "3-class label for horizon N=6 (30 min), rule V2 (+1 Up, -1 Down, 0 Neutral). Volatility-adjusted threshold (one-sigma): theta = max(c, 1.0 * sigma * sqrt(N)).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule V2 evaluated against forward return fwd_ret_6",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_6"
+      ],
+      "n_missing": 18,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 6,
+      "theta_rule": "V2",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.003942121866329935,
+        "std": 0.4553093571613727,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.003696584356055005,
+        "std": 0.44237790015193174,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "target_6_A1",
+      "dtype": "float64",
+      "position": 137,
+      "description": "3-class label for horizon N=6 (30 min), rule A1 (+1 Up, -1 Down, 0 Neutral). Asymmetric threshold: theta_up = 0.23%, theta_down = 0.30%.",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule A1 evaluated against forward return fwd_ret_6",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_6"
+      ],
+      "n_missing": 18,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 6,
+      "theta_rule": "A1",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.055198758073203076,
+        "std": 0.5438374080756773,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.044865972412919036,
+        "std": 0.5319672117496922,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "target_6_A2",
+      "dtype": "float64",
+      "position": 138,
+      "description": "3-class label for horizon N=6 (30 min), rule A2 (+1 Up, -1 Down, 0 Neutral). Asymmetric threshold: theta_up = 0.30%, theta_down = 0.23%.",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule A2 evaluated against forward return fwd_ret_6",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_6"
+      ],
+      "n_missing": 18,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 6,
+      "theta_rule": "A2",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.041942185229942024,
+        "std": 0.5428108197866698,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.046788196278067636,
+        "std": 0.5305887106944851,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "target_6_F05",
+      "dtype": "float64",
+      "position": 139,
+      "description": "3-class label for horizon N=6 (30 min), rule F05 (+1 Up, -1 Down, 0 Neutral). Research sub-cost threshold: theta_up = theta_down = 0.05% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule F05 evaluated against forward return fwd_ret_6",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_6"
+      ],
+      "n_missing": 18,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 6,
+      "theta_rule": "F05",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.008812068052519382,
+        "std": 0.9034722387693821,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.008554952366870155,
+        "std": 0.8958611970706188,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "target_6_F10",
+      "dtype": "float64",
+      "position": 140,
+      "description": "3-class label for horizon N=6 (30 min), rule F10 (+1 Up, -1 Down, 0 Neutral). Research sub-cost threshold: theta_up = theta_down = 0.10% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule F10 evaluated against forward return fwd_ret_6",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_6"
+      ],
+      "n_missing": 18,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 6,
+      "theta_rule": "F10",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.009816833901342857,
+        "std": 0.8068958049569686,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.004288037853023806,
+        "std": 0.7929522884884641,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "target_6_F15",
+      "dtype": "float64",
+      "position": 141,
+      "description": "3-class label for horizon N=6 (30 min), rule F15 (+1 Up, -1 Down, 0 Neutral). Research sub-cost threshold: theta_up = theta_down = 0.15% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule F15 evaluated against forward return fwd_ret_6",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_6"
+      ],
+      "n_missing": 18,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 6,
+      "theta_rule": "F15",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.00961769112049496,
+        "std": 0.715453859099218,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.0013730170465347162,
+        "std": 0.6989174856526287,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "target_12_S1",
+      "dtype": "float64",
+      "position": 142,
+      "description": "3-class label for horizon N=12 (60 min), rule S1 (+1 Up, -1 Down, 0 Neutral). Symmetric cost-floor threshold: theta_up = theta_down = c (0.23%).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule S1 evaluated against forward return fwd_ret_12",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_12"
+      ],
+      "n_missing": 36,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 12,
+      "theta_rule": "S1",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.014524239502853703,
+        "std": 0.6876965529262528,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.0013098130347522976,
+        "std": 0.6761783764386832,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "target_12_S2",
+      "dtype": "float64",
+      "position": 143,
+      "description": "3-class label for horizon N=12 (60 min), rule S2 (+1 Up, -1 Down, 0 Neutral). Symmetric fixed threshold: theta_up = theta_down = 0.30%.",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule S2 evaluated against forward return fwd_ret_12",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_12"
+      ],
+      "n_missing": 36,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 12,
+      "theta_rule": "S2",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.012387922567563285,
+        "std": 0.6092030323648958,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.0008661666842716806,
+        "std": 0.5996253193996601,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "target_12_Q1",
+      "dtype": "float64",
+      "position": 144,
+      "description": "3-class label for horizon N=12 (60 min), rule Q1 (+1 Up, -1 Down, 0 Neutral). Symmetric quantile threshold: theta = max(c, median |ret|). Floor binds (Q1 == S1).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule Q1 evaluated against forward return fwd_ret_12",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_12"
+      ],
+      "n_missing": 36,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 12,
+      "theta_rule": "Q1",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.014524239502853703,
+        "std": 0.6876965529262528,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.0013098130347522976,
+        "std": 0.6761783764386832,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "target_12_V1",
+      "dtype": "float64",
+      "position": 145,
+      "description": "3-class label for horizon N=12 (60 min), rule V1 (+1 Up, -1 Down, 0 Neutral). Volatility-adjusted threshold (half-sigma): theta = max(c, 0.5 * sigma * sqrt(N)).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule V1 evaluated against forward return fwd_ret_12",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_12"
+      ],
+      "n_missing": 36,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 12,
+      "theta_rule": "V1",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.012636857803667042,
+        "std": 0.6496432716758151,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.0012886870180627442,
+        "std": 0.6398500338940784,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "target_12_V2",
+      "dtype": "float64",
+      "position": 146,
+      "description": "3-class label for horizon N=12 (60 min), rule V2 (+1 Up, -1 Down, 0 Neutral). Volatility-adjusted threshold (one-sigma): theta = max(c, 1.0 * sigma * sqrt(N)).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule V2 evaluated against forward return fwd_ret_12",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_12"
+      ],
+      "n_missing": 36,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 12,
+      "theta_rule": "V2",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.005508257860695842,
+        "std": 0.4682085315081553,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.005936410689764445,
+        "std": 0.4564373592588603,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "target_12_A1",
+      "dtype": "float64",
+      "position": 147,
+      "description": "3-class label for horizon N=12 (60 min), rule A1 (+1 Up, -1 Down, 0 Neutral). Asymmetric threshold: theta_up = 0.23%, theta_down = 0.30%.",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule A1 evaluated against forward return fwd_ret_12",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_12"
+      ],
+      "n_missing": 36,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 12,
+      "theta_rule": "A1",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.06438370424683512,
+        "std": 0.6474044584696829,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.0477447977183902,
+        "std": 0.6370899869231911,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "target_12_A2",
+      "dtype": "float64",
+      "position": 148,
+      "description": "3-class label for horizon N=12 (60 min), rule A2 (+1 Up, -1 Down, 0 Neutral). Asymmetric threshold: theta_up = 0.30%, theta_down = 0.23%.",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule A2 evaluated against forward return fwd_ret_12",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_12"
+      ],
+      "n_missing": 36,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 12,
+      "theta_rule": "A2",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.03747154217641814,
+        "std": 0.6478714097319924,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.049920777437414174,
+        "std": 0.6372713584968374,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "target_12_F05",
+      "dtype": "float64",
+      "position": 149,
+      "description": "3-class label for horizon N=12 (60 min), rule F05 (+1 Up, -1 Down, 0 Neutral). Research sub-cost threshold: theta_up = theta_down = 0.05% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule F05 evaluated against forward return fwd_ret_12",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_12"
+      ],
+      "n_missing": 36,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 12,
+      "theta_rule": "F05",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.01631204710759886,
+        "std": 0.930258403803257,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.0057674025562480195,
+        "std": 0.9248774783744442,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "target_12_F10",
+      "dtype": "float64",
+      "position": 150,
+      "description": "3-class label for horizon N=12 (60 min), rule F10 (+1 Up, -1 Down, 0 Neutral). Research sub-cost threshold: theta_up = theta_down = 0.10% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule F10 evaluated against forward return fwd_ret_12",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_12"
+      ],
+      "n_missing": 36,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 12,
+      "theta_rule": "F10",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.016642452057336575,
+        "std": 0.8593170793018565,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.00285201225308968,
+        "std": 0.8483804182434548,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "target_12_F15",
+      "dtype": "float64",
+      "position": 151,
+      "description": "3-class label for horizon N=12 (60 min), rule F15 (+1 Up, -1 Down, 0 Neutral). Research sub-cost threshold: theta_up = theta_down = 0.15% (move below cost c=0.23%; label is NOT tradable after costs; a signal on a move below c loses money).",
+      "unit": "integer {-1, 0, +1} or NaN",
+      "formula": "Label rule F15 evaluated against forward return fwd_ret_12",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "fwd_ret_12"
+      ],
+      "n_missing": 36,
+      "n_inf": 0,
+      "n_unique": 4,
+      "horizon": 12,
+      "theta_rule": "F15",
+      "stats_train": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": 0.015768915683372485,
+        "std": 0.7900928288964244,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": -1.0,
+        "max": 1.0,
+        "mean": -0.001140804901235872,
+        "std": 0.7769868116260473,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "big_move_2",
+      "dtype": "float64",
+      "position": 152,
+      "description": "1 if |forward return over 2 candles| exceeds the round-trip cost c (0.23%), else 0; basis for the worth-it model",
+      "unit": "binary {0, 1} or NaN",
+      "formula": "1.0 if target_2_S1 != 0 else 0.0 (NaN if invalid)",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "target_2_S1"
+      ],
+      "n_missing": 6,
+      "n_inf": 0,
+      "n_unique": 3,
+      "horizon": 2,
+      "stats_train": {
+        "min": 0.0,
+        "max": 1.0,
+        "mean": 0.16797389466442786,
+        "std": 0.37384394860817277,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": 0.0,
+        "max": 1.0,
+        "mean": 0.15758791847079945,
+        "std": 0.364358025096482,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "big_move_3",
+      "dtype": "float64",
+      "position": 153,
+      "description": "1 if |forward return over 3 candles| exceeds the round-trip cost c (0.23%), else 0; basis for the worth-it model",
+      "unit": "binary {0, 1} or NaN",
+      "formula": "1.0 if target_3_S1 != 0 else 0.0 (NaN if invalid)",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "target_3_S1"
+      ],
+      "n_missing": 9,
+      "n_inf": 0,
+      "n_unique": 3,
+      "horizon": 3,
+      "stats_train": {
+        "min": 0.0,
+        "max": 1.0,
+        "mean": 0.22643131930300972,
+        "std": 0.4185223646409349,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": 0.0,
+        "max": 1.0,
+        "mean": 0.21440942886110173,
+        "std": 0.4104163538405827,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "big_move_6",
+      "dtype": "float64",
+      "position": 154,
+      "description": "1 if |forward return over 6 candles| exceeds the round-trip cost c (0.23%), else 0; basis for the worth-it model",
+      "unit": "binary {0, 1} or NaN",
+      "formula": "1.0 if target_6_S1 != 0 else 0.0 (NaN if invalid)",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "target_6_S1"
+      ],
+      "n_missing": 18,
+      "n_inf": 0,
+      "n_unique": 3,
+      "horizon": 6,
+      "stats_train": {
+        "min": 0.0,
+        "max": 1.0,
+        "mean": 0.3461735167257306,
+        "std": 0.475750394056555,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": 0.0,
+        "max": 1.0,
+        "mean": 0.33017891468283306,
+        "std": 0.4702823308768384,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "big_move_12",
+      "dtype": "float64",
+      "position": 155,
+      "description": "1 if |forward return over 12 candles| exceeds the round-trip cost c (0.23%), else 0; basis for the worth-it model",
+      "unit": "binary {0, 1} or NaN",
+      "formula": "1.0 if target_12_S1 != 0 else 0.0 (NaN if invalid)",
+      "group": "targets_labels",
+      "role": "target",
+      "is_future_looking": true,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "target_12_S1"
+      ],
+      "n_missing": 36,
+      "n_inf": 0,
+      "n_unique": 3,
+      "horizon": 12,
+      "stats_train": {
+        "min": 0.0,
+        "max": 1.0,
+        "mean": 0.4731353619292028,
+        "std": 0.4992788994977752,
+        "median": 0.0
+      },
+      "stats_val": {
+        "min": 0.0,
+        "max": 1.0,
+        "mean": 0.45720925319531003,
+        "std": 0.4981708491271651,
+        "median": 0.0
+      }
+    },
+    {
+      "name": "theta_up_2_V1",
+      "dtype": "float64",
+      "position": 156,
+      "description": "Up threshold for horizon N=2, rule V1. Volatility-adjusted threshold (half-sigma): theta = max(c, 0.5 * sigma * sqrt(N)).",
+      "unit": "fraction",
+      "formula": "Rule V1 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 3875,
+      "horizon": 2,
+      "theta_rule": "V1",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.004787356266327362,
+        "mean": 0.002309899266695916,
+        "std": 0.00011551420200904628,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.003638085381875995,
+        "mean": 0.0023078652194494604,
+        "std": 9.416570965102988e-05,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "theta_down_2_V1",
+      "dtype": "float64",
+      "position": 157,
+      "description": "Down threshold for horizon N=2, rule V1. Volatility-adjusted threshold (half-sigma): theta = max(c, 0.5 * sigma * sqrt(N)).",
+      "unit": "fraction",
+      "formula": "Rule V1 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 3875,
+      "horizon": 2,
+      "theta_rule": "V1",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.004787356266327362,
+        "mean": 0.002309899266695916,
+        "std": 0.00011551420200904628,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.003638085381875995,
+        "mean": 0.0023078652194494604,
+        "std": 9.416570965102988e-05,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "theta_up_2_V2",
+      "dtype": "float64",
+      "position": 158,
+      "description": "Up threshold for horizon N=2, rule V2. Volatility-adjusted threshold (one-sigma): theta = max(c, 1.0 * sigma * sqrt(N)).",
+      "unit": "fraction",
+      "formula": "Rule V2 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 72167,
+      "horizon": 2,
+      "theta_rule": "V2",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.009574712532654723,
+        "mean": 0.0025128167725693407,
+        "std": 0.0006080260146359468,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.00727617076375199,
+        "mean": 0.0024735001639610405,
+        "std": 0.0005129107810513917,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "theta_down_2_V2",
+      "dtype": "float64",
+      "position": 159,
+      "description": "Down threshold for horizon N=2, rule V2. Volatility-adjusted threshold (one-sigma): theta = max(c, 1.0 * sigma * sqrt(N)).",
+      "unit": "fraction",
+      "formula": "Rule V2 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 72167,
+      "horizon": 2,
+      "theta_rule": "V2",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.009574712532654723,
+        "mean": 0.0025128167725693407,
+        "std": 0.0006080260146359468,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.00727617076375199,
+        "mean": 0.0024735001639610405,
+        "std": 0.0005129107810513917,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "theta_up_3_V1",
+      "dtype": "float64",
+      "position": 160,
+      "description": "Up threshold for horizon N=3, rule V1. Volatility-adjusted threshold (half-sigma): theta = max(c, 0.5 * sigma * sqrt(N)).",
+      "unit": "fraction",
+      "formula": "Rule V1 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 12551,
+      "horizon": 3,
+      "theta_rule": "V1",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.005863290034708821,
+        "mean": 0.0023277018427132843,
+        "std": 0.00019609753297177327,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.004455726413137335,
+        "mean": 0.0023190064487856963,
+        "std": 0.00016398636245059859,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "theta_down_3_V1",
+      "dtype": "float64",
+      "position": 161,
+      "description": "Down threshold for horizon N=3, rule V1. Volatility-adjusted threshold (half-sigma): theta = max(c, 0.5 * sigma * sqrt(N)).",
+      "unit": "fraction",
+      "formula": "Rule V1 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 12551,
+      "horizon": 3,
+      "theta_rule": "V1",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.005863290034708821,
+        "mean": 0.0023277018427132843,
+        "std": 0.00019609753297177327,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.004455726413137335,
+        "mean": 0.0023190064487856963,
+        "std": 0.00016398636245059859,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "theta_up_3_V2",
+      "dtype": "float64",
+      "position": 162,
+      "description": "Up threshold for horizon N=3, rule V2. Volatility-adjusted threshold (one-sigma): theta = max(c, 1.0 * sigma * sqrt(N)).",
+      "unit": "fraction",
+      "formula": "Rule V2 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 131541,
+      "horizon": 3,
+      "theta_rule": "V2",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.011726580069417642,
+        "mean": 0.0027379597640251555,
+        "std": 0.000884725277365679,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.00891145282627467,
+        "mean": 0.0026948562578306707,
+        "std": 0.0007671731440977901,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "theta_down_3_V2",
+      "dtype": "float64",
+      "position": 163,
+      "description": "Down threshold for horizon N=3, rule V2. Volatility-adjusted threshold (one-sigma): theta = max(c, 1.0 * sigma * sqrt(N)).",
+      "unit": "fraction",
+      "formula": "Rule V2 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 131541,
+      "horizon": 3,
+      "theta_rule": "V2",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.011726580069417642,
+        "mean": 0.0027379597640251555,
+        "std": 0.000884725277365679,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.00891145282627467,
+        "mean": 0.0026948562578306707,
+        "std": 0.0007671731440977901,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "theta_up_6_V1",
+      "dtype": "float64",
+      "position": 164,
+      "description": "Up threshold for horizon N=6, rule V1. Volatility-adjusted threshold (half-sigma): theta = max(c, 0.5 * sigma * sqrt(N)).",
+      "unit": "fraction",
+      "formula": "Rule V1 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 43286,
+      "horizon": 6,
+      "theta_rule": "V1",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.00829194428721223,
+        "mean": 0.0024231970251603237,
+        "std": 0.0004503483522760454,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.006301348723682843,
+        "mean": 0.0023889931033326743,
+        "std": 0.00037396839420690846,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "theta_down_6_V1",
+      "dtype": "float64",
+      "position": 165,
+      "description": "Down threshold for horizon N=6, rule V1. Volatility-adjusted threshold (half-sigma): theta = max(c, 0.5 * sigma * sqrt(N)).",
+      "unit": "fraction",
+      "formula": "Rule V1 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 43286,
+      "horizon": 6,
+      "theta_rule": "V1",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.00829194428721223,
+        "mean": 0.0024231970251603237,
+        "std": 0.0004503483522760454,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.006301348723682843,
+        "mean": 0.0023889931033326743,
+        "std": 0.00037396839420690846,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "theta_up_6_V2",
+      "dtype": "float64",
+      "position": 166,
+      "description": "Up threshold for horizon N=6, rule V2. Volatility-adjusted threshold (one-sigma): theta = max(c, 1.0 * sigma * sqrt(N)).",
+      "unit": "fraction",
+      "formula": "Rule V2 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 238988,
+      "horizon": 6,
+      "theta_rule": "V2",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.01658388857442446,
+        "mean": 0.003502938512648056,
+        "std": 0.0014790208716755837,
+        "median": 0.0030903911515330032
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.012602697447365686,
+        "mean": 0.0034485584288736246,
+        "std": 0.0013217733714022287,
+        "median": 0.0031015863877539604
+      }
+    },
+    {
+      "name": "theta_down_6_V2",
+      "dtype": "float64",
+      "position": 167,
+      "description": "Down threshold for horizon N=6, rule V2. Volatility-adjusted threshold (one-sigma): theta = max(c, 1.0 * sigma * sqrt(N)).",
+      "unit": "fraction",
+      "formula": "Rule V2 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 238988,
+      "horizon": 6,
+      "theta_rule": "V2",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.01658388857442446,
+        "mean": 0.003502938512648056,
+        "std": 0.0014790208716755837,
+        "median": 0.0030903911515330032
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.012602697447365686,
+        "mean": 0.0034485584288736246,
+        "std": 0.0013217733714022287,
+        "median": 0.0031015863877539604
+      }
+    },
+    {
+      "name": "theta_up_12_V1",
+      "dtype": "float64",
+      "position": 168,
+      "description": "Up threshold for horizon N=12, rule V1. Volatility-adjusted threshold (half-sigma): theta = max(c, 0.5 * sigma * sqrt(N)).",
+      "unit": "fraction",
+      "formula": "Rule V1 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 131541,
+      "horizon": 12,
+      "theta_rule": "V1",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.011726580069417642,
+        "mean": 0.0027379597640251555,
+        "std": 0.000884725277365679,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.00891145282627467,
+        "mean": 0.0026948562578306707,
+        "std": 0.0007671731440977901,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "theta_down_12_V1",
+      "dtype": "float64",
+      "position": 169,
+      "description": "Down threshold for horizon N=12, rule V1. Volatility-adjusted threshold (half-sigma): theta = max(c, 0.5 * sigma * sqrt(N)).",
+      "unit": "fraction",
+      "formula": "Rule V1 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 131541,
+      "horizon": 12,
+      "theta_rule": "V1",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.011726580069417642,
+        "mean": 0.0027379597640251555,
+        "std": 0.000884725277365679,
+        "median": 0.0023
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.00891145282627467,
+        "mean": 0.0026948562578306707,
+        "std": 0.0007671731440977901,
+        "median": 0.0023
+      }
+    },
+    {
+      "name": "theta_up_12_V2",
+      "dtype": "float64",
+      "position": 170,
+      "description": "Up threshold for horizon N=12, rule V2. Volatility-adjusted threshold (one-sigma): theta = max(c, 1.0 * sigma * sqrt(N)).",
+      "unit": "fraction",
+      "formula": "Rule V2 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 289957,
+      "horizon": 12,
+      "theta_rule": "V2",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.023453160138835284,
+        "mean": 0.004819508148605025,
+        "std": 0.0022182698988656253,
+        "median": 0.00437047307953578
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.01782290565254934,
+        "mean": 0.0047331734637268835,
+        "std": 0.0020137447105185633,
+        "median": 0.004386305534433428
+      }
+    },
+    {
+      "name": "theta_down_12_V2",
+      "dtype": "float64",
+      "position": 171,
+      "description": "Down threshold for horizon N=12, rule V2. Volatility-adjusted threshold (one-sigma): theta = max(c, 1.0 * sigma * sqrt(N)).",
+      "unit": "fraction",
+      "formula": "Rule V2 threshold formula",
+      "group": "targets_labels",
+      "role": "threshold",
+      "is_future_looking": false,
+      "allowed_as_model_input": false,
+      "source_columns": [
+        "close"
+      ],
+      "n_missing": 0,
+      "n_inf": 0,
+      "n_unique": 289957,
+      "horizon": 12,
+      "theta_rule": "V2",
+      "stats_train": {
+        "min": 0.0023,
+        "max": 0.023453160138835284,
+        "mean": 0.004819508148605025,
+        "std": 0.0022182698988656253,
+        "median": 0.00437047307953578
+      },
+      "stats_val": {
+        "min": 0.0023,
+        "max": 0.01782290565254934,
+        "mean": 0.0047331734637268835,
+        "std": 0.0020137447105185633,
+        "median": 0.004386305534433428
+      }
+    }
+  ],
+  "row_counts_by_split": {
+    "train": 220953,
+    "val": 47347,
+    "test": {
+      "n_rows": 49940,
+      "first": "2026-05-20T14:20:00+00:00",
+      "last": "2026-11-09T23:55:00+00:00",
+      "note": "Test split is LOCKED — no value statistics computed."
+    }
+  },
+  "parameters": {
+    "n_features": 85,
+    "n_rules": 10,
+    "n_horizons": 4
+  },
+  "checks": {
+    "columns_with_valid_roles": 172,
+    "total_rows": 318240
+  },
+  "warnings": [],
+  "valid_rows": {
+    "N_2": {
+      "train": 220951,
+      "val": 47345
+    },
+    "N_3": {
+      "train": 220950,
+      "val": 47344
+    },
+    "N_6": {
+      "train": 220947,
+      "val": 47341
+    },
+    "N_12": {
+      "train": 220941,
+      "val": 47335
+    }
+  }
+}

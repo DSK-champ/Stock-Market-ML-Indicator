@@ -170,10 +170,39 @@ LABEL_UP = 1
 LABEL_DOWN = -1
 LABEL_NEUTRAL = 0
 
+# ---------------------------------------------------------------------
+# Label Threshold Rules (10 rules total across 4 horizons)
+# ---------------------------------------------------------------------
+LABEL_RULES: Dict[str, Dict[str, Any]] = {
+    "S1":  {"name": "S1",  "theta_up": 0.0023, "theta_down": 0.0023, "sub_cost": False, "type": "fixed",         "description": "Symmetric cost floor (c = 0.23%)"},
+    "S2":  {"name": "S2",  "theta_up": 0.0030, "theta_down": 0.0030, "sub_cost": False, "type": "fixed",         "description": "Symmetric 0.30%"},
+    "Q1":  {"name": "Q1",  "theta_up": None,   "theta_down": None,   "sub_cost": False, "type": "quantile",      "description": "Train 50th-pct of |fwd_ret| floored at c (identical to S1)"},
+    "V1":  {"name": "V1",  "theta_up": None,   "theta_down": None,   "sub_cost": False, "type": "volatility",    "description": "Dynamic rolling vol 0.5-sigma floored at c"},
+    "V2":  {"name": "V2",  "theta_up": None,   "theta_down": None,   "sub_cost": False, "type": "volatility",    "description": "Dynamic rolling vol 1.0-sigma floored at c"},
+    "A1":  {"name": "A1",  "theta_up": 0.0023, "theta_down": 0.0030, "sub_cost": False, "type": "asymmetric",    "description": "Asymmetric: easier UP bar (c / 0.30%)"},
+    "A2":  {"name": "A2",  "theta_up": 0.0030, "theta_down": 0.0023, "sub_cost": False, "type": "asymmetric",    "description": "Asymmetric: easier DOWN bar (0.30% / c)"},
+    "F05": {"name": "F05", "theta_up": 0.0005, "theta_down": 0.0005, "sub_cost": True,  "type": "fixed_sub_cost", "description": "Research sub-cost: symmetric 0.05% (move below cost c)"},
+    "F10": {"name": "F10", "theta_up": 0.0010, "theta_down": 0.0010, "sub_cost": True,  "type": "fixed_sub_cost", "description": "Research sub-cost: symmetric 0.10% (move below cost c)"},
+    "F15": {"name": "F15", "theta_up": 0.0015, "theta_down": 0.0015, "sub_cost": True,  "type": "fixed_sub_cost", "description": "Research sub-cost: symmetric 0.15% (move below cost c)"},
+}
+ALL_RULES = list(LABEL_RULES.keys())
+SUB_COST_RULES = [r for r, meta in LABEL_RULES.items() if meta["sub_cost"]]
+
+F05_THETA = 0.0005  # 0.05%
+F10_THETA = 0.0010  # 0.10%
+F15_THETA = 0.0015  # 0.15%
+
 # =====================================================================
 # 6. FEATURE ENGINEERING CONSTANTS
 # =====================================================================
-LOOKBACK_CANDLES = 120  # Minimum lookback needed for feature warm-up (e.g. 50-SMA + 1h resampling)
+LOOKBACK_CANDLES = 2018  # Minimum lookback needed for feature warm-up (7d HAR & seasonal: 2016 candles + 1 for return lag + 1 for 1h MTF completion = 2018 candles)
+LIVE_BUFFER_CANDLES = 2880  # Recommended live streaming buffer (10 full days: 2880 candles)
+
+# Features excluded specifically from linear/logistic models due to exact collinearity/identities
+# Trees (LightGBM/XGBoost) retain all features.
+LINEAR_MODEL_EXCLUDE = [
+    "feat_mom_macd_hist",  # Exact linear identity: feat_mom_macd_hist = feat_mom_macd_line - feat_mom_macd_signal (causes singular covariance matrix in logistic regression)
+]
 
 # =====================================================================
 # 7. MODELING AND REPRODUCIBILITY
