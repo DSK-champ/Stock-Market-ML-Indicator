@@ -627,4 +627,83 @@ def load_drawings_csv(
         raise ValueError(f"Unknown split: '{split}'. Expected 'train', 'val', 'train_val', 'test', or 'all'.")
 
 
+# ===========================================================================
+# Out-of-Fold (OOF) Prediction Caching
+# ===========================================================================
+
+OOF_DIR = config.RESULTS_DIR / "oof"
+OOF_SCHEMA_COLS = [
+    "open_time", "fold", "model", "setup", "horizon", "rule",
+    "prob_down", "prob_neutral", "prob_up", "pred_label", "true_label",
+]
+
+
+def save_oof_predictions(
+    df: pd.DataFrame,
+    model_name: str,
+    setup: str,
+    horizon: int,
+    rule: str,
+    base_dir: Optional[Union[str, Path]] = None,
+) -> Path:
+    """Save out-of-fold predictions to a parquet file in results/oof/.
+
+    Schema:
+      open_time, fold, model, setup, horizon, rule,
+      prob_down, prob_neutral, prob_up, pred_label, true_label
+    """
+    out_dir = Path(base_dir) if base_dir is not None else OOF_DIR
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    filename = f"{model_name}_{setup}_{horizon}_{rule}.parquet"
+    filepath = out_dir / filename
+
+    out_df = df.copy()
+    if "open_time" not in out_df.columns and isinstance(out_df.index, pd.DatetimeIndex):
+        out_df = out_df.reset_index()
+
+    # Fill default values if columns missing
+    if "model" not in out_df.columns:
+        out_df["model"] = model_name
+    if "setup" not in out_df.columns:
+        out_df["setup"] = setup
+    if "horizon" not in out_df.columns:
+        out_df["horizon"] = horizon
+    if "rule" not in out_df.columns:
+        out_df["rule"] = rule
+    if "prob_neutral" not in out_df.columns:
+        out_df["prob_neutral"] = 0.0
+
+    # Ensure required columns exist
+    for col in OOF_SCHEMA_COLS:
+        if col not in out_df.columns:
+            raise ValueError(f"OOF DataFrame missing required column '{col}'")
+
+    out_df = out_df[OOF_SCHEMA_COLS]
+    out_df.to_parquet(filepath, index=False)
+    logger.info("Saved OOF predictions to %s (%d rows)", filepath, len(out_df))
+    return filepath
+
+
+def load_oof_predictions(
+    model_name: str,
+    setup: str,
+    horizon: int,
+    rule: str,
+    base_dir: Optional[Union[str, Path]] = None,
+) -> pd.DataFrame:
+    """Load cached out-of-fold predictions from parquet."""
+    in_dir = Path(base_dir) if base_dir is not None else OOF_DIR
+    filename = f"{model_name}_{setup}_{horizon}_{rule}.parquet"
+    filepath = in_dir / filename
+    if not filepath.exists():
+        raise FileNotFoundError(f"OOF predictions file not found: {filepath}")
+
+    df = pd.read_parquet(filepath)
+    if "open_time" in df.columns:
+        df["open_time"] = pd.to_datetime(df["open_time"], utc=True)
+    return df
+
+
+
 

@@ -228,7 +228,7 @@ def test_master_rebuild_parity():
     else:
         df_disk.index = df_disk.index.tz_convert("UTC")
 
-    assert len(df_disk.columns) == 223, f"Expected 223 columns in master.csv, found {len(df_disk.columns)}"
+    assert len(df_disk.columns) == 227, f"Expected 227 columns in master.csv, found {len(df_disk.columns)}"
 
     # Rebuild from slice of source files
     c_slice = load_clean_market_data_csv().iloc[:2500]

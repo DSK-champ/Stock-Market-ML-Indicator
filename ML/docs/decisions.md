@@ -310,6 +310,118 @@ Diagonal trend lines require connecting non-adjacent pivots through linear regre
 - In `docs/decisions.md` Section 9.1, $k_{1h} = 3$ on completed 1h candles was declared, but multi-timeframe 1h horizontal level clustering and larger pivot windows ($k > 10$ on 5m, $k > 5$ on 1h) were NOT in the declared grid.
 - **SUGGESTION:** Do NOT run un-declared larger pivot windows or a separate 1h horizontal structure engine in Step 5. Modifying pivot parameters after observing Train results violates research pre-registration and introduces post-hoc data snooping.
 
+---
+
+## 10. Step 5 Model Architecture, Targets, Feature Sets, Folds, and Selection Protocol
+
+### 10.1 Architecture (Two Paths + Final Combiner Layer)
+- **Path 1 (Binary Up/Down):**
+  - **1A: Technical Analysis Model (`src/ta_models.py`):** Causal TA rule voters (R1, R2 inverted) and shallow decision tree / logistic regression on `FS_TA`. The TA model abstains (vote 0) when it has no opinion; it does NOT predict Neutral.
+  - **1B: Binary Ensemble (`src/binary_models.py`):** Ensemble of Logistic Regression + Random Forest + LightGBM predicting `bin_dir_N` or Setup A clear moves.
+- **Path 2 (Three-Class Up/Down/Neutral):**
+  - Three-class ensemble (`src/three_class_models.py`) of Logistic Regression + Random Forest + LightGBM predicting `target_N_<rule>` with class weights (no oversampling or SMOTE).
+- **Baselines (`src/baselines.py`):** Always-Up, majority class, fixed-seed coin flip, last-return momentum and its reverse, RSI(14) rule (<30 Up, >70 Down) and its reverse, $\text{sign}(0.5 - \text{feat\_loc\_position\_288})$, $\text{sign}(\text{EMA50} - \text{close})$, 4b rule vote and its inverse (flagged "chosen after seeing train results"), volatility-only logistic regression on `big_move_N`, and 5-feature reference logistic regression.
+- **Final Layer (Step 6):** Combines 1A, 1B, and Path 2 into an emitted trade decision: Up, Down, or Neutral ("No signal"). The separate worth-it model (Setup D) is NOT built; $P(\text{Neutral})$ from Path 2 plays that role. The `big_move_N` columns are preserved solely for the volatility-only reference baseline.
+
+### 10.2 Target Schema & Scoring Truths
+- **Binary Direction Target `bin_dir_N` ($N \in \{2, 3, 6, 12\}$):**
+  - Definition: $+1$ if $fwd\_ret\_N > 0$, $0$ if $fwd\_ret\_N < 0$, $\text{NaN}$ if $fwd\_ret\_N == 0$ or row is invalid.
+  - Role: `target`, `is_future_looking: True`, `allowed_as_model_input: False`.
+  - Appended to `master.csv` (schema expands from 223 to 227 columns).
+- **Binary Clear-Move Target (Setup A):**
+  - Derived dynamically in memory from `target_N_<rule>`: Up $= 1$, Down $= 0$, Neutral ($0$) rows dropped. Not stored on disk.
+- **Three-Class Target (Setup C):**
+  - Uses `target_N_<rule>` directly ($+1, -1, 0$), weighted by inverse class frequency.
+- **Scoring Ground Truths:**
+  - Emitted directional signals (+1 / -1) are evaluated against `raw_sign_N` (matching live evaluation).
+  - Three-class model probability distributions are additionally evaluated against `target_N_<rule>` via macro-F1, log loss, and confusion matrices.
+
+### 10.3 Pre-Declared Feature Sets (`config.py`)
+- **`FS_CORE` (85 features):** Core features from Groups 1–15 (no `ma_structure`, no `structure`, no rule vote).
+- **`FS_ALL` (136 features):** Complete feature set across all 17 groups.
+- **`FS_TA` (54 features):** Group 16 `ma_structure` (36 features) + Group 17 `structure` (15 features including `feat_struct_rule_vote`) + Group 4 `location` (3 features: `feat_loc_position_288`, `feat_loc_dist_high_288`, `feat_loc_dist_low_288`).
+- **`LINEAR_FEATURES`:** Feature set minus `LINEAR_MODEL_EXCLUDE` (`feat_mom_macd_hist`), retaining one feature per hierarchical cluster ($|\text{Spearman}| > 0.95$, complete linkage on Train post-warmup), while strictly protecting `feat_vol_sigma_288`, `feat_vol_natr_14`, and `feat_mom_rsi_14`.
+- **Ensemble Variants:**
+  - **Variant A:** ML models trained strictly on `FS_CORE` (ensures TA voter 1A remains mathematically independent).
+  - **Variant B:** ML models trained on `FS_ALL`.
+- **Scaler Isolation:** Feature scalers (`StandardScaler`) for linear models are fitted strictly on each fold's training block, never on validation or held-out folds.
+
+### 10.4 Expanding-Window Walk-Forward Folds (`src/cv.py`)
+- Evaluated strictly inside Train post-warmup ($N_{avail} = 220,953 - 2,018 = 218,935$ candles, 760.2 days).
+- **Structure:** Initial training block of ~300 days ($86,400$ candles), followed by 6 consecutive held-out evaluation blocks of ~75 days ($21,600$ candles each, with the 6th block absorbing the remaining $25,335$ candles).
+- **Purge Gap:** Exactly **12 candles** (equal to the maximum candidate horizon $N=12$) placed between each fold's training end and held-out start. Every horizon uses the identical row boundaries.
+- **Early Stopping:** LightGBM early stopping uses the last 15% of each fold's training block (with a 12-candle purge), strictly isolated from the held-out block.
+
+### 10.5 Fixed Model Hyperparameters for Step 5
+- **Logistic Regression (LR):** L2 penalty, $C = 0.1$, `solver="lbfgs"`, `max_iter=1000`, `class_weight="balanced"` for three-class.
+- **Random Forest (RF):** `n_estimators=300`, `max_depth=6`, `min_samples_leaf=500`, `max_features="sqrt"`, `max_samples=0.3`, `random_state=42`, `class_weight="balanced_subsample"` for three-class.
+- **LightGBM:** `num_leaves=15`, `max_depth=4`, `learning_rate=0.03`, `n_estimators=600`, early stopping $= 50$, `min_child_samples=500`, `feature_fraction=0.7`, `bagging_fraction=0.7`, `bagging_freq=1`, `lambda_l2=10.0`, `deterministic=True`, `random_state=42`.
+
+### 10.6 Experiment Budget & Selection Rule
+- **Stage 1 (Logistic Regression on `FS_CORE` LINEAR_FEATURES):**
+  - Setup B (raw sign, all rows): 4 horizons ($N \in \{2, 3, 6, 12\}$) = **4 configurations**.
+  - Setups A (clear move) and C (three-class): 4 horizons $\times$ 9 distinct rules ($S_1=Q_1$ counted once, $S_2, V_1, V_2, A_1, A_2, F_{05}, F_{10}, F_{15}$) = $36 + 36 =$ **72 configurations**.
+  - Total Stage 1 Budget = **76 configurations**.
+- **Common Selection Metric:**
+  - Evaluated on the top 20% most confident emitted signals:
+    $$hit = \text{share with } \text{sign} == raw\_sign\_N$$
+    $$m = \text{mean } |fwd\_ret\_open\_N| \text{ of those signals}$$
+    $$BE = 0.5 + \frac{c}{2m}, \quad c = 0.0023$$
+    $$gap = hit - BE$$
+  - Ranking Score: Mean gap across walk-forward folds minus 1 fold standard deviation ($\mu_{gap} - \sigma_{gap}$).
+  - Rejection Filter: Reject any configuration yielding fewer than 15 signals per day at 20% coverage.
+  - Secondary Metrics: Out-of-fold ROC AUC vs `raw_sign_N`, and simulated net return after cost $c$.
+- **Survivors for Stage 2:** Top 3 configurations + mandatory fallback ($N = 12$, rule $S_1$, Setup B).
+- Stage 2 (LightGBM, Random Forest, TA-ML) runs strictly on the survivors.
+
+### 10.7 Evaluation Metrics Protocol (`src/evaluate.py`)
+Metrics computed per fold, pooled, and across subsets (volatility terciles, monthly macro regimes, hour of day, confidence deciles):
+Accuracy, balanced accuracy, precision, recall, per-class F1, macro/weighted F1, MCC, ROC AUC (OvR for three-class), PR AUC (minority class), log loss, Brier score, row-normalized confusion matrix, expected calibration error (ECE), coverage, signals per day, accuracy vs `raw_sign_N`, gap to break-even ($hit - BE$), net return in bps after cost $c$, and block-bootstrap confidence intervals (block length $\ge 288$ candles). Plain accuracy is never used to judge three-class models due to high trivial Neutral base rates.
+
+### 10.8 Rigorous Leakage Prevention Checks
+Every model family undergoes 5 mandatory leakage checks:
+1. Shuffled-label test (AUC / macro-F1 must collapse to chance).
+2. Circular-shift test (offset $\ge 2,018$ candles; score must collapse to chance).
+3. Dominant-feature check (no single feature accounts for $> 40\%$ importance).
+4. Train-vs-OOF generalization gap inspection.
+5. Permutation feature importance on out-of-fold rows.
+
+### 10.9 Pre-Declared Step 6 Combiner & Validation Specification
+- **Hyperparameter Grid (OOF Log Loss on Train folds only, $\le 27$ combos per family):**
+  - LR: $C \in \{0.01, 0.1, 1.0\}$.
+  - RF: `max_depth` $\in \{4, 6, 8\} \times$ `min_samples_leaf` $\in \{250, 500, 1000\}$.
+  - LightGBM: `num_leaves` $\in \{7, 15, 31\} \times$ `min_child_samples` $\in \{250, 500, 1000\} \times$ `lambda_l2` $\in \{1, 10, 50\}$.
+- **Calibration:** Each voter probability calibrated via cross-fitted Platt scaling or isotonic regression on its own train OOF predictions. Final threshold $\gamma$ fitted on Validation only (small grid, each inspection logged).
+- **Combiner Formula:**
+  $$d_{bin} = 2 p_{bin} - 1, \quad d_3 = P_3(\text{Up}) - P_3(\text{Down}), \quad d_{ta} \in [-1, 1]$$
+  $$s = w_{bin} d_{bin} + w_3 d_3 + w_{ta} d_{ta}, \quad w \ge 0, \quad \sum w = 1 \text{ (grid step 0.1)}$$
+  Signal: Up if $s > \tau_{dir}$, Down if $s < -\tau_{dir}$, $P(\text{Neutral}) < \tau_{neu}$, and $\ge k$ voters agree ($k \in \{2, 3\}$); otherwise Neutral ("No signal").
+- If the combination does not beat the single best voter by more than fold standard deviation, the single best voter is selected as the production architecture.
+
+### 10.10 Checkpoint 1 Empirical Results (Stage 1 Screening & Baselines)
+- **Purged Walk-Forward CV Execution:**
+  - 6 expanding folds on post-warmup train split ($N=218,935$ rows, warmup = 2,018 rows).
+  - Evaluated held-out rows: 132,523 candles (~460 days of continuous evaluation).
+  - Purge gap: exactly 12 candles strictly separating training and held-out blocks.
+- **Stage 1 Screening (76 Logistic Regression Configurations on 70 LINEAR_FEATURES):**
+  - Evaluated on top 20% most confident directional signals.
+  - Ranked by $\text{rank\_metric} = \mu_{\text{gap}} - \sigma_{\text{gap}}$ on break-even gap ($hit - BE$).
+  - **Selected Top 3 Survivors:**
+    1. **`C_12_F15` (Setup C, $N=12$, Rule F15):** 28.8 sig/day, Hit Rate: 52.90%, BE Gap: -0.1759 (std: 0.0381), Rank Metric: **-0.2140**, Net Return: -21.27 bps/trade. (`survivor`)
+    2. **`C_12_F10` (Setup C, $N=12$, Rule F10):** 48.1 sig/day, Hit Rate: 53.53%, BE Gap: -0.1989 (std: 0.0407), Rank Metric: **-0.2396**, Net Return: -21.00 bps/trade. (`survivor`)
+    3. **`C_12_F05` (Setup C, $N=12$, Rule F05):** 58.0 sig/day, Hit Rate: 53.87%, BE Gap: -0.2259 (std: 0.0516), Rank Metric: **-0.2775**, Net Return: -21.08 bps/trade. (`survivor`)
+  - **Mandatory Fallback:**
+    4. **`B_12` (Setup B, $N=12$, Rule `raw_sign`):** 66.6 sig/day, Hit Rate: 54.61%, BE Gap: -0.2917 (std: 0.0844), Rank Metric: **-0.3761**, Net Return: -21.12 bps/trade. (`fallback`)
+- **Key Empirical Observations:**
+  - Setup C (Three-class with Neutral class) strongly outperforms binary setups: allows the model to abstain during low-volatility dead-zone regimes.
+  - Sub-cost rules ($F_{15}, F_{10}, F_{05}$) outperform high fixed thresholds ($S_1, S_2$) by triggering on active trend expansion bars without suffering heavy opportunity cost.
+  - Horizon $N=12$ (60 minutes) consistently outperforms shorter horizons ($N=2, 3, 6$) due to more favorable signal-to-noise ratios and higher expected move magnitude $m$ relative to friction $c$.
+- **Model vs. Baseline Advantage:**
+  - Best Baseline: `loc_position_288` ($N=12$): BE Gap: -0.3228, Net: -22.79 bps/trade, 181.6 sig/day.
+  - Top Model (`C_12_F15`): BE Gap: -0.1759, Net: -21.27 bps/trade, 28.8 sig/day.
+  - Model outperforms the best baseline by **+14.69 percentage points** in break-even gap.
+
+
 
 
 

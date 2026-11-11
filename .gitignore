@@ -52,6 +52,9 @@ ML/models/*
 # Generated plots and reports
 ML/reports/figures/*
 !ML/reports/figures/.gitkeep
+ML/results/oof/*
+!ML/results/oof/.gitkeep
+ML/scratch/*
 
 # Frontend / Node.js
 node_modules/

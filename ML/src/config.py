@@ -5,7 +5,7 @@ are defined here. No module should hard-code paths or constants.
 """
 
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, List, Tuple, Optional
 import pandas as pd
 
 # =====================================================================
@@ -203,6 +203,88 @@ LIVE_BUFFER_CANDLES = 2880  # Recommended live streaming buffer (10 full days: 2
 LINEAR_MODEL_EXCLUDE = [
     "feat_mom_macd_hist",  # Exact linear identity: feat_mom_macd_hist = feat_mom_macd_line - feat_mom_macd_signal (causes singular covariance matrix in logistic regression)
 ]
+
+# Drop reason map for linear model pruning (1 feature per cluster at |Spearman| > 0.95 on Train)
+LINEAR_FEATURE_DROPS: Dict[str, str] = {
+    "feat_mom_macd_hist": "Exact linear identity: hist = line - signal (singular covariance)",
+    "feat_mom_sma_ratio_10_50": "Cluster 11 (|rho|=0.990 with feat_mom_macd_signal)",
+    "feat_mom_sma_ratio_50": "Cluster 13 (|rho|=0.970 with feat_mom_ema_ratio_50)",
+    "feat_of_taker_buy_zscore_60": "Cluster 23 (|rho|=0.962 with feat_of_taker_buy_ratio)",
+    "feat_mom_sma_ratio_20": "Cluster 27 (|rho|=0.970 with feat_mom_ema_ratio_20)",
+    "feat_vol_bb_pct_20": "Cluster 28 (|rho|=0.961 with feat_mom_rsi_7)",
+    "feat_mom_sma_ratio_10": "Cluster 31 (|rho|=0.971 with feat_mom_ema_ratio_10)",
+    "feat_vol_parkinson_12": "Cluster 43 (|rho|=0.965 with protected feat_vol_natr_14)",
+    "feat_vol_gk_12": "Cluster 43 (|rho|=0.965 with protected feat_vol_natr_14)",
+    "feat_vol_realized_abs_sum_12": "Cluster 44 (|rho|=0.985 with feat_vol_sigma_12)",
+    "feat_vol_parkinson_60": "Cluster 47 (|rho|=0.965 with feat_vol_sigma_60)",
+    "feat_vol_gk_60": "Cluster 47 (|rho|=0.965 with feat_vol_sigma_60)",
+    "feat_vol_har_rv_72": "Cluster 47 (|rho|=0.965 with feat_vol_sigma_60)",
+    "feat_vol_parkinson_288": "Cluster 53 (|rho|=0.981 with protected feat_vol_sigma_288)",
+    "feat_vol_gk_288": "Cluster 53 (|rho|=0.981 with protected feat_vol_sigma_288)",
+}
+
+# The 85 core features (Groups 1-15, excluding structure and ma_structure)
+CORE_FEATURE_GROUPS = [
+    "returns", "volatility", "candle_shape", "momentum", "volume",
+    "order_flow", "time", "mtf_1h", "vol_range", "vol_realized",
+    "vol_seasonal", "vol_har", "flow_window", "location", "time_weekend"
+]
+
+def get_feature_set(name: str = "FS_CORE") -> List[str]:
+    """Dynamically get canonical feature sets from FEATURE_GROUPS."""
+    from src.features import FEATURE_GROUPS
+    name_upper = name.upper()
+    if name_upper in ("FS_CORE", "CORE"):
+        return [c for g in CORE_FEATURE_GROUPS for c in FEATURE_GROUPS[g]]
+    elif name_upper in ("LINEAR_FEATURES", "LINEAR"):
+        core = [c for g in CORE_FEATURE_GROUPS for c in FEATURE_GROUPS[g]]
+        return [c for c in core if c not in LINEAR_FEATURE_DROPS]
+    elif name_upper in ("FS_ALL", "ALL"):
+        all_cols = []
+        for g, cols in FEATURE_GROUPS.items():
+            all_cols.extend(cols)
+        return all_cols
+    elif name_upper in ("FS_TA", "TA"):
+        return (
+            FEATURE_GROUPS.get("ma_structure", [])
+            + FEATURE_GROUPS.get("structure", [])
+            + FEATURE_GROUPS.get("location", [])
+        )
+    else:
+        raise ValueError(f"Unknown feature set name: {name}")
+
+# Lazy-loaded / module-level exposed list proxies
+class _LazyFeatureList(list):
+    def __init__(self, set_name: str):
+        self.set_name = set_name
+        self._loaded = False
+
+    def _ensure_loaded(self):
+        if not self._loaded:
+            self.extend(get_feature_set(self.set_name))
+            self._loaded = True
+
+    def __iter__(self):
+        self._ensure_loaded()
+        return super().__iter__()
+
+    def __len__(self):
+        self._ensure_loaded()
+        return super().__len__()
+
+    def __getitem__(self, index):
+        self._ensure_loaded()
+        return super().__getitem__(index)
+
+    def __contains__(self, item):
+        self._ensure_loaded()
+        return super().__contains__(item)
+
+
+FS_CORE = _LazyFeatureList("FS_CORE")
+FS_ALL = _LazyFeatureList("FS_ALL")
+FS_TA = _LazyFeatureList("FS_TA")
+LINEAR_FEATURES = _LazyFeatureList("LINEAR_FEATURES")
 
 # =====================================================================
 # 7. MODELING AND REPRODUCIBILITY

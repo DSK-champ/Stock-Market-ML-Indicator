@@ -31,11 +31,13 @@ from src.io_utils import (
     load_clean_market_data_csv,
     load_targets_base_csv,
     load_targets_labels_csv,
+    load_features_csv,
     save_master_csv,
     save_features_csv,
     save_drawings_csv,
     MASTER_CSV_PATH,
     DRAWINGS_CSV_PATH,
+    FEATURES_PATH,
 )
 from src.utils import setup_logger
 
@@ -76,21 +78,42 @@ def build_master(
 
     # 2. Engineered features
     if df_features is None:
-        logger.info("Building 136 engineered causal features across 17 groups...")
-        df_features = build_features(df_clean)
-        # Only overwrite component files when running full dataset build
-        if save_components and len(df_clean) == len(config.CANDIDATE_HORIZONS): # wait, check full length
-            pass
-        elif save_components and len(df_clean) > 300000:
-            save_features_csv(df_features)
-            logger.info("Building and saving companion drawings.csv...")
-            _, df_drawings = build_structure(df_clean)
-            save_drawings_csv(df_drawings)
+        if Path(FEATURES_PATH).exists():
+            logger.info("Loading existing engineered features from %s...", FEATURES_PATH)
+            df_features = load_features_csv()
+            if len(df_features) != len(df_clean):
+                logger.warning(
+                    "features.csv row count mismatch (%d vs clean %d). Rebuilding features for full history...",
+                    len(df_features), len(df_clean)
+                )
+                df_features = None
+
+        if df_features is None:
+            logger.info("Building 136 engineered causal features across 17 groups for full history (%d rows)...", len(df_clean))
+            df_features = build_features(df_clean)
+            if save_components and len(df_clean) > 300000:
+                save_features_csv(df_features)
+                logger.info("Building and saving companion drawings.csv...")
+                _, df_drawings = build_structure(df_clean)
+                save_drawings_csv(df_drawings)
 
     # 3. Base targets
     if df_targets_base is None:
         logger.info("Loading base targets...")
         df_targets_base = load_targets_base_csv()
+
+    # 3b. Derive bin_dir_N targets (1 if fwd_ret_N > 0, 0 if < 0, NaN if == 0 or invalid)
+    horizons = config.CANDIDATE_HORIZONS
+    bin_dir_dfs = {}
+    for N in horizons:
+        raw_s = df_targets_base[f"raw_sign_{N}"]
+        valid_m = df_targets_base[f"has_valid_target_{N}"].astype(bool) if f"has_valid_target_{N}" in df_targets_base.columns else raw_s.notna()
+
+        b_series = pd.Series(float("nan"), index=df_targets_base.index, dtype="float64")
+        b_series[valid_m & (raw_s == 1.0)] = 1.0
+        b_series[valid_m & (raw_s == -1.0)] = 0.0
+        bin_dir_dfs[f"bin_dir_{N}"] = b_series
+    df_bin_dir = pd.DataFrame(bin_dir_dfs, index=df_targets_base.index)
 
     # 4. Target labels and dynamic thetas
     if df_targets_labels is None:
@@ -98,7 +121,6 @@ def build_master(
         df_targets_labels = load_targets_labels_csv()
 
     # Extract 40 target label columns (10 rules across 4 candidate horizons)
-    horizons = config.CANDIDATE_HORIZONS
     rules = config.ALL_RULES
     target_label_cols = [f"target_{N}_{r}" for N in horizons for r in rules]
 
@@ -115,11 +137,12 @@ def build_master(
     df_labels_subset = df_targets_labels[target_label_cols + big_move_cols + v_theta_cols]
 
     # Join on index (open_time)
-    logger.info("Joining market, features, base targets, and label targets...")
+    logger.info("Joining market, features, base targets, binary direction, and label targets...")
     master = pd.concat([
         df_clean,
         df_features,
         df_targets_base,
+        df_bin_dir,
         df_labels_subset,
     ], axis=1)
 

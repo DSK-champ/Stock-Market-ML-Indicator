@@ -592,4 +592,42 @@ def test_label_and_theta_columns_match_config():
                 assert col in train.columns, f"Missing theta column {col}"
 
 
+# ===========================================================================
+# TEST 13 — Binary Direction Target (bin_dir_N) Contracts
+# ===========================================================================
+
+def test_bin_dir_targets():
+    """Verify that bin_dir_N matches raw_sign_N, handles NaNs/0, and is never a feature."""
+    from src.column_dictionary import load_master, get_feature_columns
+    from src.master import build_master
+
+    master = build_master()
+
+    # 1. get_feature_columns never returns bin_dir columns
+    feat_cols = get_feature_columns(master)
+    for c in feat_cols:
+        assert not c.startswith("bin_dir_"), f"bin_dir column {c} leaked into get_feature_columns!"
+
+    # 2. Value mapping contract for each horizon
+    for N in config.CANDIDATE_HORIZONS:
+        col = f"bin_dir_{N}"
+        raw_col = f"raw_sign_{N}"
+        valid_col = f"has_valid_target_{N}"
+
+        assert col in master.columns, f"Missing binary direction target {col}"
+        
+        # Valid +1 -> 1.0
+        mask_up = (master[raw_col] == 1.0) & (master[valid_col] == 1)
+        assert (master.loc[mask_up, col] == 1.0).all(), f"{col} != 1.0 when raw_sign_{N} == 1"
+
+        # Valid -1 -> 0.0
+        mask_down = (master[raw_col] == -1.0) & (master[valid_col] == 1)
+        assert (master.loc[mask_down, col] == 0.0).all(), f"{col} != 0.0 when raw_sign_{N} == -1"
+
+        # Zero or invalid -> NaN
+        mask_nan = (master[raw_col] == 0.0) | (master[valid_col] == 0) | master[raw_col].isna()
+        assert master.loc[mask_nan, col].isna().all(), f"{col} must be NaN when raw_sign_{N} is 0 or invalid"
+
+
+
 

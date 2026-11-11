@@ -79,15 +79,15 @@
     {
       "name": "step_master",
       "path": "details/step_master.json",
-      "step": 4,
-      "created_at": "2026-11-11T14:06:42.838999+00:00",
-      "git_commit": "7e2b9e7",
-      "size_bytes": 213213,
+      "step": 5,
+      "created_at": "2026-11-11T16:16:20.054264+00:00",
+      "git_commit": "855ad8f",
+      "size_bytes": 217024,
       "shape": {
         "n_rows": 318240,
-        "n_columns": 223
+        "n_columns": 227
       }
     }
   ],
-  "updated_at": "2026-11-11T14:06:44.487723+00:00"
+  "updated_at": "2026-11-11T16:16:20.152440+00:00"
 }

@@ -213,6 +213,16 @@ def _target_base_entries() -> Dict[str, Any]:
             "allowed_as_model_input": False,
             "source_columns": [f"fwd_ret_{N}"],
         }
+        entries[f"bin_dir_{N}"] = {
+            "description": f"Binary directional target at horizon N={N} ({minutes} min): 1 if fwd_ret_{N} > 0, 0 if < 0, NaN if 0 or invalid.",
+            "unit": "binary {0, 1}",
+            "formula": f"1.0 if fwd_ret_{N} > 0 else (0.0 if fwd_ret_{N} < 0 else NaN)",
+            "group": "targets_base",
+            "role": "target",
+            "is_future_looking": True,
+            "allowed_as_model_input": False,
+            "source_columns": [f"fwd_ret_{N}", f"raw_sign_{N}"],
+        }
         entries[f"has_valid_target_{N}"] = {
             "description": f"True if row t has a valid forward label for horizon N={N} (no gap crossing, not in boundary).",
             "unit": "boolean",
@@ -647,17 +657,50 @@ def get_columns_by_role(role: str) -> List[str]:
     return [col for col, meta in COLUMN_DICT.items() if meta["role"] == role]
 
 
-def get_feature_columns(df: Optional[pd.DataFrame] = None) -> List[str]:
+def get_feature_columns(
+    df: Optional[pd.DataFrame] = None,
+    feature_set: str = "all",
+) -> List[str]:
     """Return ONLY columns with role 'feature'.
 
     Guarantees:
       - All returned columns have role == 'feature'
       - No column with role 'target' or 'threshold' is ever returned
-      - No returned column name contains 'fwd_', 'target_', 'raw_sign', or 'big_move_'
+      - No returned column name contains 'fwd_', 'target_', 'raw_sign', 'bin_dir_', or 'big_move_'
     All model training and feature evaluation code MUST use this function.
+
+    Parameters
+    ----------
+    df : Optional[pd.DataFrame]
+        Optional DataFrame to filter against existing columns.
+    feature_set : str
+        'all' | 'FS_ALL': all 136 features.
+        'FS_CORE' | 'core': 85 baseline features (no ma_structure, no structure).
+        'FS_TA' | 'ta': 54 features (ma_structure, structure, location).
+        'LINEAR_FEATURES' | 'linear': 70 features for linear models (uncorrelated, non-redundant).
     """
     feature_cols = [col for col, meta in COLUMN_DICT.items() if meta["role"] == "feature"]
-    
+
+    # Filter by feature_set
+    fs_upper = feature_set.upper()
+    if fs_upper in ("FS_CORE", "CORE"):
+        core_groups = {
+            "returns", "volatility", "candle_shape", "momentum", "volume",
+            "order_flow", "time", "mtf_1h", "vol_range", "vol_realized",
+            "vol_seasonal", "vol_har", "flow_window", "location", "time_weekend"
+        }
+        feature_cols = [c for c in feature_cols if COLUMN_DICT[c]["group"] in core_groups]
+    elif fs_upper in ("FS_TA", "TA"):
+        ta_groups = {"ma_structure", "structure", "location"}
+        feature_cols = [c for c in feature_cols if COLUMN_DICT[c]["group"] in ta_groups]
+    elif fs_upper in ("LINEAR_FEATURES", "LINEAR"):
+        from src.config import LINEAR_FEATURES
+        feature_cols = [c for c in LINEAR_FEATURES]
+    elif fs_upper in ("FS_ALL", "ALL"):
+        pass
+    else:
+        raise ValueError(f"Unknown feature_set: {feature_set}. Must be 'all', 'FS_CORE', 'FS_TA', or 'LINEAR_FEATURES'.")
+
     # Assert safety contracts
     for col in feature_cols:
         meta = COLUMN_DICT[col]
@@ -666,8 +709,9 @@ def get_feature_columns(df: Optional[pd.DataFrame] = None) -> List[str]:
         assert not col.startswith("fwd_"), f"Feature {col} contains fwd_ prefix"
         assert not col.startswith("target_"), f"Feature {col} contains target_ prefix"
         assert not col.startswith("raw_sign_"), f"Feature {col} contains raw_sign_ prefix"
+        assert not col.startswith("bin_dir_"), f"Feature {col} contains bin_dir_ prefix"
         assert not col.startswith("big_move_"), f"Feature {col} contains big_move_ prefix"
-        
+
     if df is not None:
         return [c for c in feature_cols if c in df.columns]
     return feature_cols
