@@ -287,11 +287,18 @@ Diagonal trend lines require connecting non-adjacent pivots through linear regre
   - $L = 3500$: Failing features count = 0. Max diff = $3.66 \times 10^{-5}$ (`feat_ma_1h_ema_ratio_100`).
 
 ### 9.8 True Event Transitions vs Row States & Trend Segment Lifespan Dynamics
-- **Event Definition:** To eliminate autocorrelation and state persistence bias, structural events are counted strictly upon state *transitions*:
+- **Event Definition:** To eliminate autocorrelation and state persistence bias, structural events are counted strictly upon state *transitions* (the initial entry candle where state becomes active, preceded by an inactive or different state):
   - *Break Transitions:* First candle where close crosses beyond level $+ \beta_{break} \times ATR$ (`bars_since_break == 0` preceded by `!= 0`). Total in Train: **190 events** (vs 218,554 row-state occurrences).
   - *Retest Transitions:* First candle of retest rejection (`bars_since_retest == 0` preceded by `!= 0`). Total in Train: **24,514 events** (12,531 Bull, 11,983 Bear).
   - *Rule Vote Transitions:* Discrete signal activations (+1 or -1 transitions). Total in Train: **8,690 events** (4,420 Bull, 4,270 Bear).
   - *Dow Trend Segments:* Distinct trend state episodes (+1, -1, 0). Total in Train: **12,895 segments**.
+- **Resolution of Discrepancies (e.g. 93 Breaks vs 6,166 Trend Segments vs 11,772 Retests in 2024):**
+  1. *How a Trend Segment Ends Without a Counted Break:* Dow trend state segments (+1 Uptrend, -1 Downtrend, 0 Consolidation) track local swing high/low progressions ($k=5$). An uptrend terminates as soon as a subsequent swing pivot fails to confirm a higher high or forms an inside consolidation bar, immediately transitioning the state machine back to 0 (Neutral). This termination occurs entirely via local swing failure without requiring price to reach or penetrate a macro horizontal support/resistance level. In contrast, a macro break event requires a candle CLOSE beyond an established horizontal cluster ($\text{close} > R + 0.2 \times ATR$ or $\text{close} < S - 0.2 \times ATR$). Because horizontal levels require merging multiple confirmed pivots ($\tau_{merge} = 0.5 ATR$), hundreds of local trend oscillations occur within established ranges without ever breaking a macro boundary.
+  2. *Why Retests Outnumber Trend Segments ~2:1:* A retest occurs when price approaches within $\tau_{retest} = 0.5 ATR$ of a previously broken (flipped) level followed by an intraday rejection wick. Once a macro horizontal level flips from resistance to support (or vice-versa), price routinely oscillates around and bounces off that flipped boundary multiple times across consecutive 5-minute swings during a single broader trend or consolidation regime. Because each distinct approach-and-rejection touch represents a fresh transition event, a single trend segment frequently produces 2 to 5 discrete retests, naturally leading to retest counts exceeding broad trend segments by ~2:1.
+  3. *Row-Level Block-Bootstrap Standard Errors (Block Length $B = 288$ Candles):* In financial time series, i.i.d. standard errors $\sqrt{p(1-p)/N}$ are fundamentally invalid due to strong serial correlation. Standard errors are computed at the candle row level across all 218,935 post-warmup train candles using a stationary block bootstrap ($B = 288$ candles = 1 full trading day, 1,000 replications):
+     - Dow Trend Continuation Hit Rate: $48.39\% \pm 0.84\%$ ($SE = 0.43\%$, 95% CI $[47.55\%, 49.23\%]$) — statistically significantly below 50.0% ($p < 0.001$).
+     - Breakout Continuation Hit Rate: $48.12\% \pm 1.15\%$ ($SE = 0.59\%$, 95% CI $[46.96\%, 49.27\%]$) — statistically significantly below 50.0% ($p < 0.001$).
+     - Flipped Level Retest Rejection Hit Rate: $51.25\% \pm 0.72\%$ ($SE = 0.37\%$, 95% CI $[50.53\%, 51.97\%]$) — modest mean-reversion edge, but insufficient to clear trading friction ($c = 23$ bps) on standalone basis.
 - **Trend Lifespan vs Evaluation Horizons:**
   - Overall Median Trend Duration: **9.0 candles (45 minutes)**.
   - Up Trend Median Duration: **14.0 candles (70 minutes)**.
@@ -404,22 +411,25 @@ Every model family undergoes 5 mandatory leakage checks:
   - Evaluated held-out rows: 132,523 candles (~460 days of continuous evaluation).
   - Purge gap: exactly 12 candles strictly separating training and held-out blocks.
 - **Stage 1 Screening (76 Logistic Regression Configurations on 70 LINEAR_FEATURES):**
-  - Evaluated on top 20% most confident directional signals.
+  - Evaluated on top 20% most confident directional signals across candidate horizons and rules.
   - Ranked by $\text{rank\_metric} = \mu_{\text{gap}} - \sigma_{\text{gap}}$ on break-even gap ($hit - BE$).
-  - **Selected Top 3 Survivors:**
-    1. **`C_12_F15` (Setup C, $N=12$, Rule F15):** 28.8 sig/day, Hit Rate: 52.90%, BE Gap: -0.1759 (std: 0.0381), Rank Metric: **-0.2140**, Net Return: -21.27 bps/trade. (`survivor`)
-    2. **`C_12_F10` (Setup C, $N=12$, Rule F10):** 48.1 sig/day, Hit Rate: 53.53%, BE Gap: -0.1989 (std: 0.0407), Rank Metric: **-0.2396**, Net Return: -21.00 bps/trade. (`survivor`)
-    3. **`C_12_F05` (Setup C, $N=12$, Rule F05):** 58.0 sig/day, Hit Rate: 53.87%, BE Gap: -0.2259 (std: 0.0516), Rank Metric: **-0.2775**, Net Return: -21.08 bps/trade. (`survivor`)
-  - **Mandatory Fallback:**
-    4. **`B_12` (Setup B, $N=12$, Rule `raw_sign`):** 66.6 sig/day, Hit Rate: 54.61%, BE Gap: -0.2917 (std: 0.0844), Rank Metric: **-0.3761**, Net Return: -21.12 bps/trade. (`fallback`)
-- **Key Empirical Observations:**
-  - Setup C (Three-class with Neutral class) strongly outperforms binary setups: allows the model to abstain during low-volatility dead-zone regimes.
-  - Sub-cost rules ($F_{15}, F_{10}, F_{05}$) outperform high fixed thresholds ($S_1, S_2$) by triggering on active trend expansion bars without suffering heavy opportunity cost.
-  - Horizon $N=12$ (60 minutes) consistently outperforms shorter horizons ($N=2, 3, 6$) due to more favorable signal-to-noise ratios and higher expected move magnitude $m$ relative to friction $c$.
-- **Model vs. Baseline Advantage:**
-  - Best Baseline: `loc_position_288` ($N=12$): BE Gap: -0.3228, Net: -22.79 bps/trade, 181.6 sig/day.
-  - Top Model (`C_12_F15`): BE Gap: -0.1759, Net: -21.27 bps/trade, 28.8 sig/day.
-  - Model outperforms the best baseline by **+14.69 percentage points** in break-even gap.
+  - **Survivor Summary (Direction Hit Rate shown next to Rank Metric):**
+    | Rank | Model Config | Setup | Horizon | Rule | Rank Metric | Direction Hit Rate | Mean Break-Even Gap | Mean Net Return | Status |
+    |---|---|---|---|---|---|---|---|---|---|
+    | 1 | `C_12_F15` | Setup C | $N=12$ (60m) | $F_{15}$ | **-0.2140** | **52.90%** | -0.1759 | -21.27 bps | `survivor` |
+    | 2 | `C_12_F10` | Setup C | $N=12$ (60m) | $F_{10}$ | **-0.2396** | **53.53%** | -0.1989 | -21.00 bps | `survivor` |
+    | 3 | `C_12_F05` | Setup C | $N=12$ (60m) | $F_{05}$ | **-0.2775** | **53.87%** | -0.2259 | -21.08 bps | `survivor` |
+    | 4 | `B_12` | Setup B | $N=12$ (60m) | `raw_sign` | **-0.3761** | **54.61%** | -0.2917 | -21.12 bps | `fallback` |
+  - **Crucial Architectural Insight: Direction Skill vs. Size Selection:**
+    - Notice that **`B_12` achieves the highest directional hit rate (54.61%)** among all Stage 1 survivors, outperforming `C_12_F15` (52.90%) by **+1.71 percentage points** in pure directional sign prediction.
+    - The apparent +14.69 percentage point break-even gap advantage of `C_12_F15` over `loc_position_288` (and its +11.58 point advantage over `B_12`) is **primarily driven by a lower break-even hurdle from conditioning on volatile bars ($E[|fwd\_ret|]$ size selection)**, rather than superior directional sign forecasting.
+    - Under sub-cost rules ($F_{15}, F_{10}, F_{05}$), the model triggers only when forward price displacement exceeds the threshold, selecting bars where average forward return is elevated ($E[|fwd\_ret|] \approx 0.58\%$ vs $0.34\%$ for unconditional bars). Because $BE = \frac{c}{2 \cdot E[|fwd\_ret|]} + 0.5$, this elevated return compresses the required break-even hurdle from ~83.7% down to ~70.5%.
+    - Therefore, Setup C does not "prove" superior directional skill; rather, it combines modest directional skill (~52.9% - 53.9%) with implicit volatility gating that lowers the trading friction penalty.
+  - **Model vs. Baseline Comparison:**
+    - Baseline `loc_position_288` ($N=12$): BE Gap: -0.3228, Hit Rate: 51.83%, Net: -22.97 bps/trade.
+    - Baseline Volatility-Gated Reversal (top NATR_14, $\text{sign}(0.5 - \text{loc\_288})$): BE Gap: -0.1942, Hit Rate: 52.33%, Net: -19.41 bps/trade.
+    - Top Model (`C_12_F15`): BE Gap: -0.1759, Hit Rate: 52.90%, Net: -21.27 bps/trade.
+    - The top Stage 1 linear model performs comparably to the simple volatility-gated reversal heuristic at identical coverage, demonstrating that explicit size/volatility conditioning accounts for the majority of the hurdle reduction.
 
 
 

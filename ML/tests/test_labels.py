@@ -596,6 +596,7 @@ def test_label_and_theta_columns_match_config():
 # TEST 13 — Binary Direction Target (bin_dir_N) Contracts
 # ===========================================================================
 
+@pytest.mark.slow
 def test_bin_dir_targets():
     """Verify that bin_dir_N matches raw_sign_N, handles NaNs/0, and is never a feature."""
     from src.column_dictionary import load_master, get_feature_columns

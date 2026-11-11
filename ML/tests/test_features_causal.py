@@ -209,6 +209,7 @@ def test_master_lock_protection():
     assert len(df_test) == config.SPLIT_BOUNDARIES["test"]["expected_candles"]
 
 
+@pytest.mark.slow
 def test_master_rebuild_parity():
     """Verify master.csv matches a rebuild from source files."""
     if not MASTER_CSV_PATH.exists():

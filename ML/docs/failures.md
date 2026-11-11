@@ -77,6 +77,38 @@ This document tracks all negative results, rejected architectures, discarded fea
   2. *Strict Separation of Roles:* Prohibit raw price levels from entering the ML feature matrix (which would cause scale variance and leakage). All absolute price drawings are isolated to `data/processed/drawings.csv` with role `drawing`, while `master.csv` retains only scale-free ratios, ATR-normalized distances, and discrete state indicators (role `feature`).
   3. *Transition-Based Event Filtering & Multi-Voter Confluence:* Events are strictly defined by transition edges (`shift(1) != 0`). Standalone structural signals must not be traded in isolation. In Step 5 (modeling), structural trend votes (`feat_struct_rule_vote`) and MA alignment will be combined with volatility gating (`feat_vol_sigma_288` / `big_move_12`) and multi-voter consensus to filter out high-friction, chop-dominated regimes.
 
+---
+
+## Log Entry 005 — Baseline Evaluation Scaling Bugs, Feature Centering, and Category Errors
+- **Date:** 2026-11-12
+- **Identified Problems:**
+  1. *RSI(14) Rule Normalization Scale Collapse:*
+     In `src/features.py`, `feat_mom_rsi_14` was normalized as `_rsi / 100.0`, bounding it in $[0.0, 1.0]$. The baseline rule `rule_rsi_14` erroneously checked `rsi < 30.0` (oversold), which was unconditionally True for 100% of rows (actual range: $0.08$ to $0.91$). As a result, `rule_rsi_14` emitted $+1.0$ (Long) on every candle, collapsing into `always_up` (100% coverage, 50.75% hit rate, 0.0000 MCC). Conversely, `reverse_rsi_14` inverted this collapsed signal and equaled `always_down` (-1.0 everywhere).
+  2. *EMA50 Rule Centering Translation Collapse:*
+     In `src/features.py`, `feat_mom_ema_ratio_50` is defined as $(close - EMA50)/EMA50$, which is already centered at 0.0 (ranging approximately from -0.04 to +0.04). The rule subtracted 1.0 (`ratio - 1.0`), shifting all values to $\approx -1.0$. Taking `-np.sign(ratio - 1.0)` yielded `-(-1.0) = +1.0` on 100% of candles, causing `ema50_rule` to collapse into `always_up` as well.
+  3. *`volatility_lr` in Directional Tables:*
+     `volatility_lr` was a single-feature logistic regression on `feat_vol_sigma_288` evaluated in directional tables. Volatility is symmetric and unsigned; it measures magnitude of movement, not directional bias. Evaluating it on directional tables was a category error.
+- **Old vs. New Numbers at $N=12$ (60 minutes):**
+  | Baseline Model | Old Hit Rate | Old Coverage | Old BE Gap | Old Net bps | New Hit Rate | New Coverage | New BE Gap | New Net bps |
+  |---|---|---|---|---|---|---|---|---|
+  | `rsi_14` | 51.10% (collapsed) | 63.06% (100% active) | -32.64% | -22.05 | **51.84%** | **6.66%** | -24.46% | -20.68 |
+  | `reverse_rsi_14` | 48.90% (collapsed) | 63.06% (100% active) | -34.85% | -23.95 | **48.16%** | **6.66%** | -28.14% | -25.32 |
+  | `ema50_rule` | 51.10% (collapsed) | 63.06% (100% active) | -32.64% | -22.05 | **50.51%** | **100.0%** (45.7% L / 54.3% S) | -35.98% | -22.95 |
+  | `loc_position_288` | 51.46% | 63.06% | -32.28% | -22.79 | **51.83%** | **100.0%** (50.5% L / 49.5% S) | -34.67% | -22.97 |
+  | `ref_5feature_lr` | 51.44% | 100.0% | -35.06% | -22.83 | **52.26%** | **100.0%** | -34.24% | -22.82 |
+  | `rule_vote_4b` | 48.39% | 24.20% | -35.58% | -22.75 | **47.90%** | **37.54%** | -38.46% | -23.26 |
+- **Which Version Stage 1 Used:**
+  Stage 1 screening trained its 76 Logistic Regression configurations directly on the 70 `LINEAR_FEATURES` and targets, using Purged Walk-Forward CV splits. It did NOT consume outputs from `baselines.py`. In the Checkpoint 1 comparative summary, Stage 1 compared its top model (`C_12_F15`) against `loc_position_288`. `loc_position_288` was unaffected by the RSI/EMA scaling bugs.
+- **Resolutions & Unit Tests:**
+  1. Updated `rule_rsi_14` thresholds to $0.30$ and $0.70$. Verified Fold 1 signal counts: $+1: 590$, $-1: 880$, $0: 20,618$ (coverage: 6.66%, abstentions preserved).
+  2. Updated `rule_ema50` to `-np.sign(feat_mom_ema_ratio_50)`. Verified Fold 1 signal counts: $+1: 10,092$ (45.69%), $-1: 11,996$ (54.31%), both cleanly between 30% and 70%.
+  3. Removed `volatility_lr` from directional tables. Created `evaluate_volatility_baseline_big_move` scoring it strictly against `big_move_N` (reporting ROC AUC, PR AUC, F1, and Brier score).
+  4. Added regression tests in `tests/test_baselines.py`:
+     - `test_rsi_14_coverage_below_50`: RSI coverage < 50% on real train rows.
+     - `test_ema50_both_signs_between_30_and_70`: EMA50 emits both signs with each between 30% and 70%.
+     - `test_no_baseline_identical_except_allowed`: No baseline other than always_up and majority_class is identical to another. All 3 tests passed.
+
+
 
 
 
