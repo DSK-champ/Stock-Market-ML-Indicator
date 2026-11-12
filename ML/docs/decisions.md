@@ -572,4 +572,32 @@ Every model family undergoes 5 mandatory leakage checks:
 - **Nested Walk-Forward Tuning:** For each fold $k \in \{2..6\}$, weight $w \in \{0.0, 0.1, \dots, 1.0\}$ is optimized by minimizing multi-class log loss strictly on OOF predictions from folds $< k$ (with a 12-candle purge dropped). Fold $k$ is strictly held out.
 - **Decision Rule:** The blend is declared superior to ML-only if and only if the paired block-bootstrap 95% confidence interval of the directional accuracy difference strictly excludes zero at both natural coverage and 20% coverage tier.
 
+## 13. Final Combined Model Evaluation Architecture & Protocol (Step 5d, `notebooks/05d_Final_Combined_Evaluation_N2.ipynb`)
+
+### 13.1 Purpose and Synthesis Architecture
+- Synthesizes all predictive branches into one unified timestamp-level prediction system:
+  1. **Binary ML Models:** (`binary_lr`, `binary_rf`, `binary_gb`)
+  2. **Three-Class ML Models:** (`three_class_lr`, `three_class_rf`, `three_class_gb`)
+  3. **05b Meta-Model Baseline:** Primary calibrated LightGBM stacking meta-learner (`meta_model`).
+  4. **05c Trend Analysis:** Dow swing trend + multi-scale EMA hierarchy (`UPTREND`, `DOWNTREND`, `uncertain`).
+  5. **05c Market Phase Analysis:** Swing pullback vs momentum impulse (`PULLBACK`, `IMPULSE`, `uncertain`), where `BREAKTHROUGH` is formally mapped to canonical `IMPULSE`.
+  6. **Empirical Context Distributions:** Laplace-smoothed 3-class distributions $P(c \mid tr, ph, ml) = \frac{N_c + 1}{N + 3}$ estimated on earlier folds $< k$.
+  7. **Directional Neutral Override:** Asymmetric decision rule overriding low-conviction NEUTRAL classifications when directional probability exceeds threshold $\theta_{\text{dir}}$.
+
+### 13.2 Strict Invariance and Leakage-Free Rules
+- **Unaltered Artifacts:** `05b_Horizon_N2.ipynb` (42 cells) and `05c_TA_State_N2.ipynb` (11 cells) remain completely unmodified. No existing base models, meta-models, or OOF files were retrained or overwritten.
+- **Timestamp Alignment:** Exact alignment across all 110,433 out-of-fold candles (folds 2..6) with 0 duplicate timestamps and 0 missing values.
+- **Nested Tuning:** $w_{\text{context}} \in [0.0, 1.0]$ and $\theta_{\text{dir}} \in [0.30, 0.45]$ are tuned strictly on folds $< k$ (dropping the 12-candle purge gap).
+
+### 13.3 Directional Neutral Override Decision Rule
+$$\text{If } p_{\text{up}} \ge p_{\text{down}} \text{ and } p_{\text{up}} \ge p_{\text{neutral}} \implies \text{UP}$$
+$$\text{Else if } p_{\text{down}} \ge p_{\text{up}} \text{ and } p_{\text{down}} \ge p_{\text{neutral}} \implies \text{DOWN}$$
+$$\text{Else (NEUTRAL is argmax): If } \max(p_{\text{up}}, p_{\text{down}}) \ge \theta_{\text{dir}} \implies (\text{UP if } p_{\text{up}} > p_{\text{down}} \text{ else DOWN}); \text{ else NEUTRAL}$$
+Ties between UP and DOWN during override strictly fall back to NEUTRAL.
+
+### 13.4 Export Specification
+- Output dataset: `data/processed/final_predictions_N2.csv.gz` (110,433 rows, 17 columns):
+  `timestamp, trend, trend_confidence, phase, phase_confidence, p_up_ml, p_down_ml, p_neutral_ml, p_context_up, p_context_down, p_context_neutral, p_final_up, p_final_down, p_final_neutral, final_prediction, actual_target, correct`.
+
+
 
