@@ -1,12 +1,332 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1">
-		<title></title>
-		<style>
-			html, body { width: 100%; height: 100%; margin: 0; background: #131722; }
-		</style>
-	</head>
-	<body></body>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>BTC/USDT 5m — AI Trader Dashboard</title>
+  <link rel="stylesheet" href="assets/css/dashboard.css">
+  <script src="assets/vendor/lightweight-charts.standalone.production.js"></script>
+</head>
+
+<body>
+  <div class="app-shell">
+    <!-- 1. Top Header -->
+    <header class="header" role="banner">
+      <div class="header-left">
+        <div class="symbol-badge">BTC/USDT</div>
+        <div class="timeframe-pill">5m</div>
+        <div class="segmented-switch" role="tablist">
+          <button id="btn-tab-live" class="segmented-btn active" role="tab" aria-selected="true">Live</button>
+          <button id="btn-tab-replay" class="segmented-btn" role="tab" aria-selected="false">Replay (Test
+            split)</button>
+        </div>
+      </div>
+
+      <div class="header-center">
+        <div class="status-indicator">
+          <span id="status-dot" class="status-dot live"></span>
+          <span id="status-text">Connecting...</span>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <div id="clock-server" class="tabular-nums" style="color: var(--text-dim); font-size: 11px;">UTC 00:00:00</div>
+        <button id="btn-guide" class="btn-icon" aria-label="System Guide & Manual" title="System Guide">ℹ</button>
+      </div>
+    </header>
+
+    <!-- 2. Main Row -->
+    <main class="main-row" role="main">
+      <!-- Left Drawing / Tool Icon Bar -->
+      <aside class="left-toolbar" aria-label="Drawing Tools">
+        <div class="tool-icon active" title="Crosshair">✛</div>
+        <div class="tool-icon" title="Trendline">╱</div>
+        <div class="tool-icon" title="Horizontal Line">―</div>
+        <div class="tool-icon" title="Fibonacci">≡</div>
+        <div class="tool-icon" title="Brush">✎</div>
+        <div class="tool-icon" title="Text">T</div>
+        <div class="tool-icon" title="Measure">📏</div>
+        <div class="tool-icon" title="Zoom In">🔍</div>
+      </aside>
+
+      <!-- Center Chart Viewport -->
+      <section class="chart-area" aria-label="Chart Area">
+        <!-- Layer Overlays Bar -->
+        <div class="chart-toolbar">
+          <div class="layer-toggles">
+            <label class="layer-toggle">
+              <input type="checkbox" data-layer="markers" checked> Markers
+            </label>
+            <label class="layer-toggle">
+              <input type="checkbox" data-layer="bands" checked> Indicative range
+            </label>
+            <label class="layer-toggle">
+              <input type="checkbox" data-layer="smartPrice" checked> Smart price
+            </label>
+            <label class="layer-toggle">
+              <input type="checkbox" data-layer="classicBb"> Classic BB
+            </label>
+            <label class="layer-toggle">
+              <input type="checkbox" data-layer="volume" checked> Volume
+            </label>
+          </div>
+          <div id="countdown-label" style="color: var(--text-dim);">
+            Next Close: <b id="pred-countdown" class="tabular-nums" style="color: #fff;">00:00</b>
+          </div>
+        </div>
+
+        <div id="stale-banner" class="stale-banner"></div>
+
+        <!-- Live Chart Container -->
+        <div id="live-view" class="chart-viewport" style="display: flex;">
+          <div id="live-chart-container" class="chart-container"></div>
+          <div class="chart-legend">
+            <div class="legend-symbol-row">
+              <span>Bitcoin / TetherUS · 5 · Binance</span>
+            </div>
+            <div id="live-legend-ohlc" class="legend-ohlc-row tabular-nums">
+              <span>O: <b class="legend-val">—</b></span>
+              <span>H: <b class="legend-val">—</b></span>
+              <span>L: <b class="legend-val">—</b></span>
+              <span>C: <b class="legend-val">—</b></span>
+            </div>
+          </div>
+          <button id="btn-realtime" class="realtime-btn" title="Go to real-time">▶ Realtime</button>
+        </div>
+
+        <!-- Replay Chart Container -->
+        <div id="replay-view" class="replay-view">
+          <!-- Overview Strip (Train / Val / Test Zones) -->
+          <div class="overview-strip">
+            <div class="overview-legend">
+              <span class="overview-legend-item"><span class="split-dot train"></span>TRAIN</span>
+              <span class="overview-legend-item"><span class="split-dot val"></span>VAL</span>
+              <span class="overview-legend-item"><span class="split-dot test"></span>TEST</span>
+            </div>
+            <div id="overview-chart-container" style="width: 100%; height: 100%;"></div>
+          </div>
+
+          <!-- Replay Interactive Control Bar -->
+          <div class="replay-controls-bar">
+            <div class="replay-controls-left">
+              <button id="btn-test-now" class="btn-ctrl btn-primary">Test now</button>
+              <button id="btn-play-pause" class="btn-ctrl">▶ Play</button>
+              <button id="btn-step-prev" class="btn-ctrl" title="Step -1 (hide candle)">◀ Step -1</button>
+              <button id="btn-step-next" class="btn-ctrl" title="Step +1 (reveal candle)">Step +1 ▶</button>
+              <button id="btn-speed" class="btn-ctrl" title="Replay Speed">1x</button>
+              <button id="btn-reset-replay" class="btn-ctrl">Reset</button>
+            </div>
+            <div class="replay-controls-right">
+              <span id="replay-date-badge" class="badge up">TEST SPLIT</span>
+              <input type="datetime-local" id="replay-date-picker" class="btn-ctrl" style="cursor: pointer;">
+            </div>
+          </div>
+
+          <div id="replay-chart-container" class="chart-container" style="flex: 1; min-height: 0;"></div>
+
+          <div class="replay-footnote">
+            ℹ Replay is a demonstration on held-out data. Do not use it to tune the model.
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Column: Prediction Panel + Log (One Flex Container) -->
+      <aside class="right-column" aria-label="Intelligence Column">
+        <!-- Panel 1: Prediction Panel -->
+        <section class="prediction-panel" aria-label="Model Prediction Panel">
+          <div class="panel-header">
+            <span class="panel-title">Prediction</span>
+            <span id="pred-candle-time" class="panel-subtitle tabular-nums">—</span>
+          </div>
+
+          <!-- Trend & Phase -->
+          <div class="panel-row">
+            <span class="panel-label">Trend</span>
+            <span id="pred-trend-badge" class="badge neutral">—</span>
+          </div>
+          <div class="panel-row">
+            <span class="panel-label">Phase</span>
+            <span id="pred-phase-badge" class="badge neutral">—</span>
+          </div>
+          <div class="panel-row">
+            <span class="panel-label">Context</span>
+            <b id="pred-context-text" style="color: var(--text);">—</b>
+          </div>
+
+          <!-- Model Argmax Result -->
+          <div class="panel-row">
+            <span class="panel-label">Model result</span>
+            <span id="pred-model-result" class="badge neutral"
+              title="Argmax of blended probabilities before override rule">—</span>
+          </div>
+
+          <!-- 3-Class Probabilities -->
+          <div class="probs-container">
+            <div class="prob-labels tabular-nums">
+              <span>DOWN: <b id="pred-prob-down">—</b></span>
+              <span>NEUTRAL: <b id="pred-prob-neu">—</b></span>
+              <span>UP: <b id="pred-prob-up">—</b></span>
+            </div>
+            <div class="prob-track">
+              <div id="prob-bar-down" class="prob-seg down" style="width: 33%;"></div>
+              <div id="prob-bar-neu" class="prob-seg neutral" style="width: 34%;"></div>
+              <div id="prob-bar-up" class="prob-seg up" style="width: 33%;"></div>
+            </div>
+          </div>
+
+          <!-- FINAL DECISION -->
+          <div class="decision-card">
+            <div id="pred-final-badge" class="decision-badge-large badge neutral">NO CLEAR SIGNAL</div>
+            <div id="pred-confidence" class="decision-confidence tabular-nums">—</div>
+            <div class="uncalibrated-note">confidence is not calibrated</div>
+          </div>
+
+          <!-- Indicative Targets -->
+          <div class="panel-row">
+            <span class="panel-label">Smart price</span>
+            <b id="pred-smart-price" class="tabular-nums" style="color: var(--accent);">—</b>
+          </div>
+          <div class="panel-row">
+            <span class="panel-label">Upper cap</span>
+            <b id="pred-upper-cap" class="tabular-nums" style="color: var(--down);">—</b>
+          </div>
+          <div class="panel-row">
+            <span class="panel-label">Lower cap</span>
+            <b id="pred-lower-cap" class="tabular-nums" style="color: var(--up);">—</b>
+          </div>
+          <div class="panel-row" style="font-size: 10px; color: var(--text-dim);">
+            <span id="pred-band-containment">Awaiting resolutions...</span>
+          </div>
+        </section>
+
+        <!-- Panel 2: Prediction Log -->
+        <section class="prediction-log" aria-label="Prediction Ledger Log">
+          <div class="log-tabs-bar">
+            <div class="log-tabs">
+              <button id="log-tab-live" class="log-tab active">Live</button>
+              <button id="log-tab-replay" class="log-tab">Replay</button>
+            </div>
+            <div>
+              <button id="btn-export-csv" class="btn-ctrl" style="padding: 2px 6px; font-size: 10px;">Export
+                CSV</button>
+              <button id="btn-clear-replay" class="btn-ctrl" style="padding: 2px 6px; font-size: 10px;">Clear</button>
+            </div>
+          </div>
+
+          <!-- Summary Strip -->
+          <div class="log-summary-strip">
+            <div class="summary-stats-row">
+              <span>Calls: <b id="log-stat-calls" class="tabular-nums">—</b></span>
+              <span>Acc: <b id="log-stat-accuracy" class="tabular-nums" style="color: var(--up);">—</b></span>
+              <span>Cov: <b id="log-stat-coverage" class="tabular-nums">—</b></span>
+              <span>Streak: <b id="log-stat-streak" class="tabular-nums">—</b></span>
+            </div>
+            <div id="log-stat-benchmark" style="font-size: 10px; color: var(--text-dim);">
+              Ref: Held-out Test 51.90% | OOF 52.16%
+            </div>
+          </div>
+
+          <!-- Filter Pills -->
+          <div class="log-filters-bar">
+            <div class="filter-pills">
+              <button class="filter-pill active" data-filter="all">All</button>
+              <button class="filter-pill" data-filter="correct">Correct</button>
+              <button class="filter-pill" data-filter="wrong">Wrong</button>
+              <button class="filter-pill" data-filter="pending">Pending</button>
+            </div>
+          </div>
+
+          <!-- Scrollable Table -->
+          <div class="log-table-container">
+            <table class="log-table">
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Signal</th>
+                  <th>Conf</th>
+                  <th>State</th>
+                  <th>Signal $</th>
+                  <th>Outcome $</th>
+                  <th>Verdict</th>
+                </tr>
+              </thead>
+              <tbody id="log-table-body"></tbody>
+            </table>
+          </div>
+        </section>
+      </aside>
+
+      <!-- Far Right Icon Strip -->
+      <aside class="right-strip" aria-label="Right Strip Toolbar">
+        <div class="tool-icon active" title="Signals">⚡</div>
+        <div class="tool-icon" title="Alerts">🔔</div>
+        <div class="tool-icon" title="Data Feed">📡</div>
+        <div class="tool-icon" title="Scorecard">📊</div>
+        <div class="tool-icon" title="Settings">⚙</div>
+      </aside>
+    </main>
+
+    <!-- 3. Bottom Bar -->
+    <footer class="bottom-bar" role="contentinfo">
+      <div class="tf-shortcuts">
+        <span class="tf-shortcut">1m</span>
+        <span class="tf-shortcut active">5m</span>
+        <span class="tf-shortcut">15m</span>
+        <span class="tf-shortcut">1h</span>
+        <span class="tf-shortcut">4h</span>
+        <span class="tf-shortcut">1D</span>
+        <span class="tf-shortcut">1W</span>
+      </div>
+      <div>
+        <span id="clock-local" class="tabular-nums">00:00:00 (Local)</span>
+      </div>
+    </footer>
+
+    <!-- 4. Guide Drawer -->
+    <div id="guide-drawer" class="guide-drawer" role="dialog" aria-modal="true" aria-label="System Manual">
+      <div class="guide-header">
+        <span>Trader's Manual & Guide</span>
+        <button id="btn-close-guide" class="btn-icon" aria-label="Close Guide">✕</button>
+      </div>
+      <div class="guide-body">
+        <h4>1. How to Read in One Second</h4>
+        <p>Look at the <b>FINAL PREDICTION</b> badge. <b>UP</b> (Green) indicates expected expansion upward. <b>DOWN</b>
+          (Red) indicates downward expansion. <b>NO CLEAR SIGNAL</b> (Grey) means market conditions do not provide a
+          statistically verified edge over transaction costs.</p>
+
+        <h4>2. What Confidence Means</h4>
+        <p>The confidence percentage is the internal model probability $\max(P_{\text{up}}, P_{\text{down}})$. It is
+          <b>not calibrated</b> to represent actual empirical win rates. Do not treat 60% as a 60% certainty.</p>
+
+        <h4>3. Why NO CLEAR SIGNAL is Normal</h4>
+        <p>Bitcoin markets spend significant time in consolidation where noise dominates signal. Requiring expansion
+          beyond the <b>23 bps cost floor</b> means the model deliberately filters out ~45% of candles.</p>
+
+        <h4>4. Prediction Horizon</h4>
+        <p>The prediction horizon is strictly <b>2 candles (10 minutes)</b>. Predictions refer to the price change from
+          the signal candle close to the close of candle $k+2$.</p>
+
+        <h4>5. Indicative Range Heuristic</h4>
+        <p>The upper and lower dashed lines are visual heuristics calculated from Wilder's 14-period ATR and directional
+          model probabilities. They are indicative bounds, not guaranteed prediction intervals.</p>
+
+        <h4>6. When NOT to Trust the Signal</h4>
+        <ul>
+          <li>When the <b>Stale Data</b> banner is visible.</li>
+          <li>Immediately following sudden news spikes or extreme volatility.</li>
+          <li>When status indicates <i>imputed features</i> or <i>insufficient buffer</i>.</li>
+          <li>During the first 5 minutes after a connection drop.</li>
+        </ul>
+
+        <h4>7. Disclaimer</h4>
+        <p>This system is for research, forward-testing, and simulation only. Past performance on historical data is no
+          guarantee of future returns.</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/js/dashboard.js"></script>
+</body>
+
 </html>
