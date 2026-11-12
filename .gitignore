@@ -91,3 +91,5 @@ desktop.ini
 logs/
 tmp/
 temp/
+backend/data/*.db*
+!backend/data/.gitkeep

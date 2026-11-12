@@ -601,3 +601,63 @@ Ties between UP and DOWN during override strictly fall back to NEUTRAL.
 
 
 
+
+## 14. Live Forward Testing Layer Architecture (Step 10, `backend/live/`)
+
+### 14.1 Scope, Safety & Frozen-Model Protocol
+- **Strict Scope Boundaries:** Build live-testing infrastructure exclusively within `backend/live/`. Do NOT modify `ML/src/trading_engine.py`, model artifacts in `ML/models/horizon_2/`, `context_table_N2.json`, `ta_params_N2.json`, `clean.csv`, or `master.csv`.
+- **Frozen-Model Rule:** The model parameters ($w = 0.05$, $\theta_{\text{dir}} = 0.32$, margin $\ge 0.04$, cost floor $c = 23\text{ bps}$) are strictly immutable. Real-time live outcomes must NEVER feed back into model training, weights, or thresholds.
+- **Read-Only Market Access:** Only read-only public market data streams from Binance Spot are utilized. Zero API keys, zero order execution, and zero exchange balance operations.
+
+### 14.2 Timing and Resolution Protocol
+- **Time Indexing:** All candles are strictly indexed by ISO 8601 UTC `open_time`. Candle $k$ spans $[t_k, t_k + 5\text{ min})$.
+- **Prediction Execution:** Triggered at the close of Candle $k$ ($t_k + 5\text{ min}$) using exclusively closed candles $\le k$ (`x == true`). Reference close is $\text{Close}_k$.
+- **Horizon & Resolution Target:** The prediction refers to the market movement across Horizon $N=2$ candles, reaching fruition at the close of Candle $k+2$ ($t_k + 15\text{ min}$).
+- **Two Returns Tracked per Trade:**
+  1. Primary Label Return (Close-to-Close): $R_{\text{label}} = (\text{Close}_{k+2} / \text{Close}_k) - 1.0$.
+  2. Secondary Executable Return (Open-to-Close): $R_{\text{exec}} = (\text{Close}_{k+2} / \text{Open}_{k+1}) - 1.0$.
+- **Scoring Logic:**
+  - `LONG (+1)` or `SHORT (-1)`: Resolved against `raw_sign_2 = sign(R_label)`. If $R_{\text{label}} == 0.0$, status is `VOID` (`correct = NULL`). If matches, `correct = 1`, else `correct = 0`.
+  - `NEUTRAL (0)`: Status is `NO_CALL` (`correct = NULL`). Excluded from directional accuracy; evaluated only in 3-class matrix against `target_2_S1`.
+  - `NO_SIGNAL`: Emitted on buffer gap or short buffer. Recorded with error reason, never scored.
+
+### 14.3 Binance WebSocket & REST Ingestion
+- **Stream Endpoints:** Primary `wss://stream.binance.com:9443/ws/btcusdt@kline_5m` with fallback to port 443 and Binance Vision.
+- **Protocol Safeguards:**
+  - Automatic pong frame responses with matching payload.
+  - Proactive graceful reconnection every 23 hours at candle boundaries.
+  - Immediate reconnection on `serverShutdown` event.
+  - Watchdog timer: 15 seconds without incoming frame triggers forced reconnect.
+  - Connection backoff: Exponential backoff with random jitter (1s, 2s, 4s, ..., max 60s).
+  - De-duplication: By kline start time `k.t`.
+  - Filtering: Strictly process frames where `k.x == true`.
+
+### 14.4 Reconciliation & Storage Integrity
+- **SQLite Persistence:**
+  - Closed candles stored in `backend/data/candles.db` (`open_time PRIMARY KEY`).
+  - Prediction lifecycle stored in `backend/data/live_ledger.db` (and `replay_ledger.db` for offline simulation).
+- **REST Reconciliation:** 3 seconds after candle close, fetch REST kline. If OHLCV differs from WebSocket frame, overwrite and log reconciliation event. Outcome candles must be REST-confirmed before ledger resolution.
+- **Integrity Validation:** Enforce finite numbers, $H \ge \max(O, C)$, $L \le \min(O, C)$, $V \ge 0$, and 5-minute boundary alignment.
+
+### 14.5 Concurrency & Thread Safety
+- **Worker Pipeline:** Single-consumer `asyncio.Queue` ensures strict chronological order.
+- **Engine Lock:** Calls to `TradingEngine` are guarded by an `asyncio.Lock` and executed inside a thread executor to prevent blocking the WebSocket event loop.
+
+### 14.6 Statistical Metrics & Confidence
+- **Directional Accuracy:** Computed for ALL resolved directional calls, last 50, last 200, and last 24 hours.
+- **Confidence Intervals:**
+  - Wilson Score 95% Confidence Interval for binomial accuracy.
+  - Stationary Moving-Block Bootstrap ($B=1000$, block size $L=12$ candles) accounting for overlapping 2-candle horizon dependence.
+- **Statistical Significance Flag:** `too_few_samples = True` when $n < 2,000$ active directional calls; reports sample size requirement (~2,000 calls) for 95% power against coin-flip null ($p_0 = 0.50$).
+
+### 14.7 Window Sensitivity Analysis & Lookback Buffer Size Decision
+- **Methodology:** Evaluated $N = 200$ historical training timestamps comparing single-candle sliding window inferences against full-history batch predictions across lookback lengths: 100, 300, 600, and 1000 candles.
+- **Empirical Sensitivity Results:**
+  - Window 100: Within $10^{-3}$: 0.00% | Action Match: 75.00% | Mean Prob Diff: 0.043680 | p99 Prob Diff: 0.159187
+  - Window 300: Within $10^{-3}$: 0.00% | Action Match: 81.50% | Mean Prob Diff: 0.037436 | p99 Prob Diff: 0.161329
+  - Window 600: Within $10^{-3}$: 1.00% | Action Match: 80.00% | Mean Prob Diff: 0.036979 | p99 Prob Diff: 0.158236
+  - Window 1000: Within $10^{-3}$: 0.50% | Action Match: 80.00% | Mean Prob Diff: 0.036983 | p99 Prob Diff: 0.160348
+- **Lookback Buffer Decision:**
+  - Standard lookback buffer is set to **`1,000 candles`** (with `1,200 candles` recommended for full 100-hour 1h SMA initialization).
+  - Justification: At 100 candles, action match is degraded (75.00%). By 300–600 candles, action match stabilizes at $\ge 80.0\%$, and mean probability difference plateaus at 0.0369. The remaining variance is attributable to long-memory stateful features (e.g. Structure Engine historical swing level persistence and 24h rolling volatility $W=288$). A buffer of 1,000 candles provides ~3.47 days of continuous context, well exceeding the 1h SMA(100) warmup and 288-bar swing lookback.
+
