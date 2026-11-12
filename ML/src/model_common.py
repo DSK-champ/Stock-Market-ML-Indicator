@@ -116,21 +116,28 @@ def load_truth(horizon: int = config.HORIZON) -> pd.DataFrame:
         Truth DataFrame indexed by open_time with target and forward return columns.
     """
     df_train = load_master(split="train")
-    cols = [
-        "open_time",
+    metric_cols = [
         f"bin_dir_{horizon}",
         f"target_{horizon}_{config.THREE_CLASS_RULE}",
         f"raw_sign_{horizon}",
         f"fwd_ret_open_{horizon}",
         f"has_valid_target_{horizon}",
     ]
-    missing = [c for c in cols if c not in df_train.columns]
+    missing = [c for c in metric_cols if c not in df_train.columns]
     if missing:
         raise KeyError(f"Missing truth columns in master dataset: {missing}")
 
-    res = df_train[cols].copy()
-    res["open_time"] = pd.to_datetime(res["open_time"], utc=True)
-    res = res.set_index("open_time")
+    if "open_time" in df_train.columns:
+        res = df_train[["open_time"] + metric_cols].copy()
+        res["open_time"] = pd.to_datetime(res["open_time"], utc=True)
+        res = res.set_index("open_time")
+    else:
+        res = df_train[metric_cols].copy()
+        res.index = pd.to_datetime(res.index, utc=True)
+        res.index.name = "open_time"
+
+    # Also supply open_time as a string column for convenient merging
+    res["open_time"] = res.index.strftime("%Y-%m-%dT%H:%M:%SZ")
     return res
 
 

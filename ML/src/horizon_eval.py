@@ -30,10 +30,8 @@ from sklearn.inspection import permutation_importance
 from sklearn.preprocessing import StandardScaler
 
 from src import config
-from src.evaluate import (
-    compute_expected_calibration_error,
-    block_bootstrap_ci,
-)
+from src.evaluate import compute_expected_calibration_error
+from src.like_for_like import compute_block_bootstrap_ci
 from src.utils import setup_logger
 
 logger = setup_logger("horizon_eval")
@@ -196,12 +194,11 @@ def evaluate_trading_performance(
     hit_rate = float(hits.mean())
 
     # Block bootstrap CI for hit rate
-    ci_low, ci_high = block_bootstrap_ci(
+    ci_low, ci_high, _ = compute_block_bootstrap_ci(
         hits,
-        statistic=np.mean,
         block_length=block_length,
-        n_bootstrap=b_reps,
-        random_state=seed,
+        n_boot=b_reps,
+        seed=seed,
     )
 
     # Average return magnitude m = E[|fwd_ret|]
@@ -255,17 +252,20 @@ def coverage_table(
         Summary table for tiers [100%, 50%, 20%, 10%].
     """
     merged = oof_df.copy()
-    merged["open_time_dt"] = pd.to_datetime(merged["open_time"], utc=True)
-    truth_copy = truth_df.copy()
-    if "open_time" in truth_copy.columns:
-        truth_copy["open_time_dt"] = pd.to_datetime(truth_copy["open_time"], utc=True)
-    else:
-        truth_copy["open_time_dt"] = pd.to_datetime(truth_copy.index, utc=True)
-
     truth_col = f"raw_sign_{horizon}"
     ret_col = f"fwd_ret_open_{horizon}"
 
-    data = merged.merge(truth_copy[["open_time_dt", truth_col, ret_col]], on="open_time_dt", how="inner")
+    if truth_col in merged.columns and ret_col in merged.columns:
+        data = merged.copy()
+    else:
+        merged["open_time_dt"] = pd.to_datetime(merged["open_time"], utc=True)
+        truth_copy = truth_df.copy()
+        if "open_time" in truth_copy.columns:
+            truth_copy["open_time_dt"] = pd.to_datetime(truth_copy["open_time"], utc=True)
+        else:
+            truth_copy["open_time_dt"] = pd.to_datetime(truth_copy.index, utc=True)
+
+        data = merged.merge(truth_copy[["open_time_dt", truth_col, ret_col]], on="open_time_dt", how="inner")
 
     # Emitted signal and confidence score
     if is_binary:
@@ -587,3 +587,4 @@ def permutation_importance_lgbm(
     is_dominated = max_share > 0.30
 
     return df_imp.head(20), is_dominated
+

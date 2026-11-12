@@ -171,3 +171,4 @@ def ta_label(scores_df: Union[pd.DataFrame, pd.Series, Dict[str, float]]) -> Uni
         labels[means > 0.10] = "BULLISH"
         labels[means < -0.10] = "BEARISH"
         return labels
+
