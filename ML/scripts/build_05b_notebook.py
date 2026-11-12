@@ -555,6 +555,12 @@ else:
 - **Status:** Meta modeling & evaluation (requires Cell 10)"""
 
     c11_code = """from src.meta_model import nested_meta_oof, fit_meta_final
+from src.io_utils import load_horizon_oof_csv_gz
+from src.horizon_eval import evaluate_three_class
+from src.model_common import load_truth
+
+if "truth_df" not in globals() or truth_df is None:
+    truth_df = load_truth(horizon=HORIZON)
 
 if missing_files:
     print("Skipping: Run Cells 3 to 10 first.")
@@ -635,6 +641,13 @@ else:
 
     c12_code = """from src.horizon_pipeline import predict_horizon
 from src.features import build_features
+from src.column_dictionary import get_feature_columns, load_master
+from src.cv import PurgedWalkForwardCV
+
+if "df_train" not in globals() or df_train is None:
+    df_train = load_master(split="train")
+if "cv" not in globals() or cv is None:
+    cv = PurgedWalkForwardCV()
 
 # Check if model artifacts are available
 meta_artifact = config.MODELS_DIR / f"horizon_{HORIZON}" / f"meta_model_N{HORIZON}.joblib"
