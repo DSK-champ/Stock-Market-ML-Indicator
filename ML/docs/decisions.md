@@ -512,3 +512,64 @@ Every model family undergoes 5 mandatory leakage checks:
 - The pipeline provides `predict_horizon(candles_df, horizon=2)` accepting a rolling window of recent candles (>= 2018 rows).
 - In notebook Cell 12, an in-sample verification is executed on the final row of fold 6, verifying exact feature extraction parity between the raw buffer pipeline and `master.csv` (|Delta| < 1e-7) and confirming probability simplex closure (sum to 1 within 1e-6).
 
+## 12. Technical Analysis State Branch & Context-Blended Prediction (`src/ta_state.py`, `src/context_blend.py`)
+
+### 12.1 Purpose and Architectural Boundary
+- The TA State Branch acts as an independent, deterministic, causal context provider for market regime conditioning.
+- **Strict Invariance Contract:** All six existing base models, their training procedures, hyperparameter specifications, out-of-fold `.csv.gz` files, serialized `.joblib` model weights, the final stacking meta-model, and `master.csv` remain completely untouched. The TA State branch does not feed into or alter the primary meta-model.
+- **Output Artifacts:** Produces separate per-candle state (`data/processed/ta_state.csv.gz`) and evaluates a context-blended probability distribution alongside ML-only and Meta-Model predictions.
+
+### 12.2 Column Check & Break Direction Derivation
+- Causal structural features evaluated from `master.csv`:
+  - `feat_struct_trend_up`, `feat_struct_trend_down`, `feat_struct_trend_range` $\in [0, 1]$: Swing high/low trend indicators.
+  - `feat_struct_trend_age` (min 0, median 12, max 249): Candles elapsed since trend initiation.
+  - `feat_struct_pullback_depth_atr` (min 0, median 0.85, max 22.31): Retracement against trend in ATR units from swing extreme.
+  - `feat_struct_bars_since_break` (min 0, median 0, max 17): Candles since last S/R break. The uninitialized placeholder `9999` denotes no prior level break in lookback.
+  - `feat_struct_bars_since_retest`, `feat_struct_retest_direction`: Retest timing and polarity ($\pm 1$).
+  - `feat_struct_dist_support_atr`, `feat_struct_dist_resistance_atr`: Distance to nearest active S/R in ATR units.
+  - `feat_ma_alignment_ema_5m`, `feat_ma_alignment_ema_1h` $\in [-1, 1]$: 5m and 1h moving average hierarchy alignment scores.
+  - `feat_mom_adx_14` $\in [0, 1]$: Normalized trend strength.
+- **Break Direction Derivation:** Because `master.csv` stores elapsed bars since break but not the break sign, a read-only causal pass (`derive_break_direction`) identifies whether the most recent level break was bullish (+1, close broke above resistance buffer) or bearish (-1, close broke below support buffer), with zero modification to `master.csv`.
+
+### 12.3 Deterministic TA State Formulation (`src/ta_state.py`)
+- **Trend Formulation:**
+  - $\text{trend\_score} = 0.5 \cdot (\text{trend\_up} - \text{trend\_down}) + 0.3 \cdot \text{ema\_align\_5m} + 0.2 \cdot \text{ema\_align\_1h} \in [-1, 1]$. Fixed declared weights.
+  - $\text{ta\_trend\_label} = \text{"UP" if trend\_score} \ge 0 \text{ else "DOWN"}$.
+  - $\text{ta\_trend\_strength} = |\text{trend\_score}| \in [0, 1]$.
+  - $\text{ta\_trend\_p\_up} = 0.5 + 0.5 \cdot \text{trend\_score} \in [0, 1]$.
+- **Phase Formulation:**
+  - $\text{pullback\_score} = \text{clip}(\text{feat\_struct\_pullback\_depth\_atr} / 2.0, 0, 1)$.
+  - $\text{breakthrough\_score} = \exp(-\text{bars\_since\_break} / 6)$ if last break direction aligns with trend direction, else $0.0$.
+  - $\text{ta\_phase\_p\_pullback} = \frac{\text{pullback\_score}}{\text{pullback\_score} + \text{breakthrough\_score}}$ if sum $> 0.05$ else $0.5$.
+  - $\text{ta\_phase\_label} = \text{"PULLBACK" if } p \ge 0.5 \text{ else "BREAKTHROUGH"}$.
+  - $\text{ta\_phase\_strength} = |2p - 1| \in [0, 1]$.
+- **Four Canonical Contexts:**
+  - `UPTREND | PULLBACK`, `UPTREND | BREAKTHROUGH`, `DOWNTREND | PULLBACK`, `DOWNTREND | BREAKTHROUGH`.
+
+### 12.4 ML Base Distribution Synthesis (`src/context_blend.py`)
+- To isolate regime sizing from directional sign:
+  - $p_{\text{neutral\_ml}} = \frac{1}{3} \sum_{m \in \{\text{LR, RF, GB}\}} P_m(\text{neutral})$.
+  - $b = \frac{1}{3} \sum_{m \in \{\text{LR, RF, GB}\}} P_m(\text{up})$ from binary models.
+  - $p_{\text{up\_ml}} = (1 - p_{\text{neutral\_ml}}) \cdot b$
+  - $p_{\text{down\_ml}} = (1 - p_{\text{neutral\_ml}}) \cdot (1 - b)$.
+  - Sizing is driven by the 3-class models while directional polarity is anchored by the 51.87% binary models.
+
+### 12.5 Context Mapping Tables
+- **$T_{\text{HAND}}$ (Domain Heuristic):**
+  - Uptrend, Pullback: $\text{UP} \to \text{NEUTRAL}, \text{DOWN} \to \text{DOWN}, \text{NEUTRAL} \to \text{DOWN}$.
+  - Uptrend, Breakthrough: $\text{UP} \to \text{UP}, \text{DOWN} \to \text{NEUTRAL}, \text{NEUTRAL} \to \text{UP}$.
+  - Downtrend, Pullback: $\text{UP} \to \text{UP}, \text{DOWN} \to \text{NEUTRAL}, \text{NEUTRAL} \to \text{UP}$.
+  - Downtrend, Breakthrough: $\text{UP} \to \text{NEUTRAL}, \text{DOWN} \to \text{DOWN}, \text{NEUTRAL} \to \text{DOWN}$.
+  - Mirror symmetry is mathematically guaranteed across trend inversion and label inversion.
+- **$T_{\text{LEARNED}}$ (Empirical Cross-Validation Baseline):**
+  - Estimated on earlier training folds $1..k-1$ for evaluation on fold $k$. Cell output is UP if empirical UP share $> 0.51$, DOWN if $< 0.49$, else NEUTRAL.
+
+### 12.6 Soft Blending & Nested Walk-Forward Grid Search
+- **Probability Tensor Product:**
+  $$q(c) = \sum_{\tau \in \{\text{UP, DN}\}} \sum_{\phi \in \{\text{PB, BT}\}} \sum_{m \in \{-1, 0, 1\}} P(\tau) \cdot P(\phi) \cdot p_{\text{ml}}[m] \cdot \mathbf{1}[T(\tau, \phi, m) = c]$$
+- **Blending:** $p_{\text{final}} = (1 - w) \cdot p_{\text{ml}} + w \cdot q$.
+- **Strength-Weighted Variant:** $w_{\text{ctx}} = w \cdot \text{ta\_trend\_strength} \cdot \text{ta\_phase\_strength}$.
+- **Nested Walk-Forward Tuning:** For each fold $k \in \{2..6\}$, weight $w \in \{0.0, 0.1, \dots, 1.0\}$ is optimized by minimizing multi-class log loss strictly on OOF predictions from folds $< k$ (with a 12-candle purge dropped). Fold $k$ is strictly held out.
+- **Decision Rule:** The blend is declared superior to ML-only if and only if the paired block-bootstrap 95% confidence interval of the directional accuracy difference strictly excludes zero at both natural coverage and 20% coverage tier.
+
+
