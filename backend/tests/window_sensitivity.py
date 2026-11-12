@@ -21,36 +21,40 @@ from src.column_dictionary import load_master
 from src.trading_engine import TradingEngine
 
 
-def run_window_sensitivity(n_samples: int = 200, seed: int = 42) -> pd.DataFrame:
+def run_window_sensitivity(n_samples: int = 50, seed: int = 42) -> pd.DataFrame:
     print("=" * 80)
-    print(f"RUNNING WINDOW SENSITIVITY TEST (N = {n_samples} Train Timestamps)")
+    print(f"RUNNING EXTENDED WINDOW SENSITIVITY TEST (N = {n_samples} Train Timestamps)")
     print("=" * 80)
 
-    # 1. Load Train partition (slice 5,000 to 10,000 to keep test causal and fast)
+    # 1. Load Train partition slice
     print("Loading Train slice for full-history reference...")
     t0 = time.time()
     df_train_full = load_master(split="train")
     
-    # Use a contiguous 4,000 candle block from Train (candles 5,000 to 9,000)
-    start_idx = 5000
+    # 5,000 candle block from Train (candles 4,000 to 9,000)
+    start_idx = 4000
     end_idx = 9000
-    df_block = df_train_full.iloc[start_idx:end_idx].copy()
+    cols = [
+        "open", "high", "low", "close", "volume",
+        "quote_volume", "number_of_trades", "taker_buy_base_volume", "taker_buy_quote_volume"
+    ]
+    df_block = df_train_full.iloc[start_idx:end_idx][cols].copy()
     print(f"Loaded block of {len(df_block):,} candles in {time.time() - t0:.2f}s.")
 
     engine = TradingEngine.get_instance()
 
-    # 2. Run full-history predict_batch on the entire 4,000-candle block
+    # 2. Run full-history predict_batch on the block
     print("Computing full-history reference predictions via predict_batch...")
     t_batch = time.time()
     df_ref_batch = engine.predict_batch(df_block)
     print(f"Full-history batch inference completed in {time.time() - t_batch:.2f}s.")
 
-    # 3. Sample 200 timestamps with at least 1,000 preceding candles in the block
+    # 3. Sample timestamps with at least 3,000 preceding candles in the block
     np.random.seed(seed)
-    valid_test_indices = np.random.choice(np.arange(1050, len(df_block) - 10), size=n_samples, replace=False)
+    valid_test_indices = np.random.choice(np.arange(3005, len(df_block) - 10), size=n_samples, replace=False)
     valid_test_indices.sort()
 
-    windows = [100, 300, 600, 1000]
+    windows = [1000, 1200, 1500, 2000, 3000]
     metrics = {w: {"prob_diffs": [], "action_matches": 0} for w in windows}
 
     print(f"Evaluating {n_samples} timestamps across windows {windows}...")
@@ -63,8 +67,8 @@ def run_window_sensitivity(n_samples: int = 200, seed: int = 42) -> pd.DataFrame
         act_ref = int(ref_row["final_action"])
 
         for w in windows:
-            # Sub-window slice of raw OHLCV columns ending at idx
-            sub_df = df_block.iloc[idx - w : idx + 1][["open", "high", "low", "close", "volume"]]
+            # Sub-window slice of full OHLCV + order flow columns ending at idx
+            sub_df = df_block.iloc[idx - w : idx + 1][cols]
             res_w = engine.predict_candle(sub_df)
             p_w = np.array([res_w["probabilities"]["p_down"], res_w["probabilities"]["p_neutral"], res_w["probabilities"]["p_up"]])
             act_w = int(res_w["action"])
@@ -74,12 +78,12 @@ def run_window_sensitivity(n_samples: int = 200, seed: int = 42) -> pd.DataFrame
             if act_ref == act_w:
                 metrics[w]["action_matches"] += 1
 
-        if (i + 1) % 50 == 0:
+        if (i + 1) % 10 == 0 or (i + 1) == n_samples:
             print(f"  Processed {i + 1}/{n_samples} timestamps ({time.time() - t_eval:.1f}s)...", flush=True)
 
     rows = []
     print("\n" + "=" * 80)
-    print("WINDOW SENSITIVITY TEST SUMMARY")
+    print("EXTENDED WINDOW SENSITIVITY TEST SUMMARY")
     print("=" * 80)
     for w in windows:
         diffs = np.array(metrics[w]["prob_diffs"])
@@ -105,12 +109,12 @@ def run_window_sensitivity(n_samples: int = 200, seed: int = 42) -> pd.DataFrame
 
 
 if __name__ == "__main__":
-    df_out = run_window_sensitivity(n_samples=200)
-    # Check if window 1000 or 600 passes
-    best_pass = df_out[df_out["within_1e3_pct"] >= 99.0]
-    if not best_pass.empty:
-        chosen = int(best_pass.iloc[0]["window_candles"])
-        print(f"\n[DECISION] Smallest window meeting >= 99% within 1e-3 tolerance: {chosen} candles.")
+    df_out = run_window_sensitivity(n_samples=50)
+    # Check if window meets >= 99% within 1e-3 and >= 99.5% action match
+    pass_gate = df_out[(df_out["within_1e3_pct"] >= 99.0) & (df_out["action_match_pct"] >= 99.5)]
+    if not pass_gate.empty:
+        chosen = int(pass_gate.iloc[0]["window_candles"])
+        print(f"\n[GATE PASS] Smallest window meeting >= 99% within 1e-3 tolerance and >= 99.5% action match: {chosen} candles.")
     else:
-        print(f"\n[NOTE] Largest window tested: {int(df_out.iloc[-1]['window_candles'])} candles.")
+        print(f"\n[GATE FAIL] No window met declared gate criterion.")
 

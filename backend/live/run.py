@@ -5,6 +5,8 @@ import asyncio
 import signal
 import sys
 import time
+import shutil
+import subprocess
 from pathlib import Path
 from datetime import datetime, timezone
 from typing import Optional, Dict, Any, List
@@ -18,7 +20,7 @@ sys.path.insert(0, str(BASE_DIR.parent / "ML"))
 from backend.live import config
 from backend.live.candle_store import CandleStore
 from backend.live.ledger import PredictionLedger
-from backend.live.predictor import PredictorWorker
+from backend.live.predictor import PredictorWorker, get_git_commit, compute_config_hash
 from backend.live.stream import BinanceKlineStream
 from backend.live.api import LiveApiServer
 from backend.live.metrics import LiveMetricsCalculator
@@ -139,6 +141,7 @@ async def main() -> None:
     parser.add_argument("--to", dest="to_date", type=str, default=None, help="Replay end date (ISO)")
     parser.add_argument("--speed", type=float, default=60.0, help="Replay speed multiplier")
     parser.add_argument("--dry-run", action="store_true", help="Run without persisting to DB")
+    parser.add_argument("--allow-dirty", action="store_true", help="Allow starting live mode with uncommitted git changes")
     parser.add_argument("--host", type=str, default="0.0.0.0", help="API host")
     parser.add_argument("--port", type=int, default=8000, help="API port")
 
@@ -147,6 +150,35 @@ async def main() -> None:
     print("=" * 80)
     print(f"STARTING LIVE FORWARD TESTING LAYER (MODE = {args.mode.upper()})")
     print("=" * 80)
+
+    # 1. Forward-Test Hygiene: Check Git Tree Cleanliness
+    clean_repo = True
+    if args.mode == "live" and not args.dry_run:
+        try:
+            status_out = subprocess.check_output(["git", "status", "--porcelain"], text=True).strip()
+            if status_out:
+                clean_repo = False
+                if not args.allow_dirty:
+                    print("\n[ERROR] Git working tree is dirty! Forward-test hygiene policy requires clean tree.")
+                    print("Uncommitted changes detected:")
+                    for line in status_out.splitlines()[:5]:
+                        print(f"  {line}")
+                    print("Please commit changes or launch with --allow-dirty to override.")
+                    sys.exit(1)
+                else:
+                    print("[WARN] Git tree is dirty but --allow-dirty was passed. Proceeding with caution.")
+        except Exception as e:
+            print(f"[WARN] Unable to verify git status: {e}")
+
+    # 2. Forward-Test Hygiene: Archive existing live_ledger.db on fresh startup
+    if args.mode == "live" and not args.dry_run and config.LIVE_LEDGER_DB_PATH.exists():
+        timestamp_str = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        archive_path = config.ARCHIVE_DIR / f"live_ledger_{timestamp_str}.db"
+        try:
+            shutil.copy2(config.LIVE_LEDGER_DB_PATH, archive_path)
+            print(f"[HYGIENE] Archived existing live_ledger.db to {archive_path}")
+        except Exception as e:
+            print(f"[WARN] Failed to archive live_ledger.db: {e}")
 
     # Database selection
     if args.dry_run:
@@ -162,6 +194,19 @@ async def main() -> None:
     candle_store = CandleStore(db_path=candles_db)
     ledger = PredictionLedger(db_path=ledger_db)
     predictor = PredictorWorker(candle_store=candle_store, ledger=ledger, buffer_size=config.BUFFER_SIZE)
+
+    # 3. Record run_start record in ledger
+    if not args.dry_run:
+        git_commit = get_git_commit()
+        git_tag = "step-10b-parity"
+        config_hash = compute_config_hash()
+        ledger.record_run_start(
+            git_commit=git_commit,
+            git_tag=git_tag,
+            buffer_size=config.BUFFER_SIZE,
+            config_hash=config_hash,
+            clean_repo_asserted=clean_repo,
+        )
 
     stream_engine = None
     if args.mode == "live":

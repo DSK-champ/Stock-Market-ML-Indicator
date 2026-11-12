@@ -6,7 +6,9 @@ from typing import List, Dict, Any
 # Paths
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
+ARCHIVE_DIR = DATA_DIR / "archive"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
+ARCHIVE_DIR.mkdir(parents=True, exist_ok=True)
 
 CANDLES_DB_PATH = DATA_DIR / "candles.db"
 LIVE_LEDGER_DB_PATH = DATA_DIR / "live_ledger.db"
@@ -34,9 +36,17 @@ CONTEXT_WEIGHT = 0.05
 OVERRIDE_THRESHOLD = 0.32
 OVERRIDE_MARGIN = 0.04
 
-# Buffer & Timing Rules
-BUFFER_SIZE = 1000            # Rolling candles lookback window
-MIN_BUFFER_SIZE = 100         # Absolute minimum required candles for reliable indicators
+# Reference Benchmarks (Frozen Project Scorecard)
+REF_TEST_ACCURACY = 51.90    # Held-out Test directional accuracy (primary benchmark)
+REF_TEST_COVERAGE = 52.50    # Held-out Test coverage
+REF_OOF_ACCURACY = 52.16     # Out-of-fold CV (thresholds tuned on it)
+REF_OOF_COVERAGE = 65.90     # Out-of-fold CV coverage
+REF_EDGE_BPS = 190.0         # 1.9% theoretical directional edge (51.90% - 50.0%)
+
+# Buffer, Parity & Timing Rules
+BUFFER_SIZE = 3000           # Rolling candles lookback window (>= 2016 for 7-day seasonal features)
+MIN_BUFFER_SIZE = 2016        # Absolute minimum required candles for 0 NaN features
+REQUIRE_CLEAN_FEATURES = True # If True, any imputed feature on the last row emits NO_SIGNAL
 WATCHDOG_TIMEOUT_SECONDS = 15.0
 RECONCILIATION_DELAY_SECONDS = 3.0
 PROACTIVE_RECONNECT_SECONDS = 23 * 3600  # 23 hours

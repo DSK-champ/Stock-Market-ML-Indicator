@@ -138,52 +138,110 @@ class CandleStore:
         return df
 
     def backfill_from_rest(self, limit: int = config.BUFFER_SIZE) -> int:
-        """Fetch historical closed candles from Binance Public REST API and store."""
-        print(f"[INFO] Backfilling last {limit} candles from Binance REST API...")
+        """Fetch historical closed candles from Binance Public REST API with pagination."""
+        print(f"[INFO] Backfilling last {limit} candles from Binance REST API (paginated)...")
         url = f"{config.REST_BASE_URL}/klines"
-        params = {
-            "symbol": config.SYMBOL,
-            "interval": config.INTERVAL,
-            "limit": min(limit + 1, 1000),  # Fetch extra to discard current unclosed candle
-        }
-        res = requests.get(url, params=params, timeout=15).json()
-
-        if not isinstance(res, list):
-            raise RuntimeError(f"Unexpected Binance REST response: {res}")
-
+        all_candles: List[Dict[str, Any]] = []
         now_ms = int(time.time() * 1000)
-        stored_count = 0
+        end_time_ms: Optional[int] = None
 
-        for k in res:
-            open_ms = int(k[0])
-            close_ms = int(k[6])
-
-            # Drop candle if still forming (close time is in the future)
-            if close_ms > now_ms:
-                continue
-
-            open_time_dt = pd.to_datetime(open_ms, unit="ms", utc=True).strftime("%Y-%m-%d %H:%M:%S+00:00")
-            close_time_dt = pd.to_datetime(close_ms, unit="ms", utc=True).strftime("%Y-%m-%d %H:%M:%S+00:00")
-
-            candle_dict = {
-                "open_time": open_time_dt,
-                "open_time_ms": open_ms,
-                "open": float(k[1]),
-                "high": float(k[2]),
-                "low": float(k[3]),
-                "close": float(k[4]),
-                "volume": float(k[5]),
-                "quote_volume": float(k[7]),
-                "number_of_trades": float(k[8]),
-                "taker_buy_base_volume": float(k[9]),
-                "taker_buy_quote_volume": float(k[10]),
-                "close_time": close_time_dt,
+        while len(all_candles) < limit:
+            chunk_size = min(1000, limit - len(all_candles) + 5)
+            params: Dict[str, Any] = {
+                "symbol": config.SYMBOL,
+                "interval": config.INTERVAL,
+                "limit": chunk_size,
             }
+            if end_time_ms is not None:
+                params["endTime"] = end_time_ms
 
-            if self.store_candle(candle_dict, source="REST"):
-                stored_count += 1
+            try:
+                res = requests.get(url, params=params, timeout=15).json()
+            except Exception as e:
+                print(f"[WARN] REST backfill request failed: {e}")
+                break
 
-        print(f"[OK] Backfilled {stored_count} closed candles successfully.")
+            if not isinstance(res, list) or len(res) == 0:
+                break
+
+            chunk_candles = []
+            for k in res:
+                open_ms = int(k[0])
+                close_ms = int(k[6])
+                if close_ms > now_ms:
+                    continue
+                open_time_dt = pd.to_datetime(open_ms, unit="ms", utc=True).strftime("%Y-%m-%d %H:%M:%S+00:00")
+                close_time_dt = pd.to_datetime(close_ms, unit="ms", utc=True).strftime("%Y-%m-%d %H:%M:%S+00:00")
+                candle_dict = {
+                    "open_time": open_time_dt,
+                    "open_time_ms": open_ms,
+                    "open": float(k[1]),
+                    "high": float(k[2]),
+                    "low": float(k[3]),
+                    "close": float(k[4]),
+                    "volume": float(k[5]),
+                    "quote_volume": float(k[7]),
+                    "number_of_trades": float(k[8]),
+                    "taker_buy_base_volume": float(k[9]),
+                    "taker_buy_quote_volume": float(k[10]),
+                    "close_time": close_time_dt,
+                }
+                chunk_candles.append(candle_dict)
+
+            if not chunk_candles:
+                break
+
+            oldest_open_ms = min(c["open_time_ms"] for c in chunk_candles)
+            end_time_ms = oldest_open_ms - 1
+            all_candles = chunk_candles + all_candles
+            if len(chunk_candles) < 2:
+                break
+
+        # Dedup and take tail limit
+        seen = set()
+        unique_candles = []
+        for c in sorted(all_candles, key=lambda x: x["open_time_ms"]):
+            if c["open_time"] not in seen:
+                seen.add(c["open_time"])
+                unique_candles.append(c)
+
+        if len(unique_candles) > limit:
+            unique_candles = unique_candles[-limit:]
+
+        # Fast bulk insert inside a single SQLite transaction
+        stored_count = 0
+        with self._get_connection() as conn:
+            for c in unique_candles:
+                try:
+                    conn.execute("""
+                        INSERT INTO candles (
+                            open_time, open, high, low, close, volume,
+                            quote_volume, number_of_trades, taker_buy_base_volume, taker_buy_quote_volume,
+                            close_time, received_at, source, is_reconciled
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+                        ON CONFLICT(open_time) DO UPDATE SET
+                            open = excluded.open,
+                            high = excluded.high,
+                            low = excluded.low,
+                            close = excluded.close,
+                            volume = excluded.volume,
+                            quote_volume = excluded.quote_volume,
+                            number_of_trades = excluded.number_of_trades,
+                            taker_buy_base_volume = excluded.taker_buy_base_volume,
+                            taker_buy_quote_volume = excluded.taker_buy_quote_volume,
+                            close_time = excluded.close_time,
+                            is_reconciled = 1
+                    """, (
+                        c["open_time"], c["open"], c["high"], c["low"], c["close"], c["volume"],
+                        c["quote_volume"], c["number_of_trades"], c["taker_buy_base_volume"], c["taker_buy_quote_volume"],
+                        c["close_time"], datetime.now(timezone.utc).isoformat(), "REST"
+                    ))
+                    stored_count += 1
+                except Exception as e:
+                    print(f"[WARN] Error inserting candle {c['open_time']}: {e}")
+            conn.commit()
+
+        print(f"[OK] Backfilled {stored_count} closed candles successfully with pagination.")
         return stored_count
 
     def reconcile_candle(self, open_time_iso: str) -> bool:

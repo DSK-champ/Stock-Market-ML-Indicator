@@ -171,11 +171,42 @@ class LiveMetricsCalculator:
             always_neu_rate = 0.0
             three_class_acc = 0.0
 
+        # Sample size calculations from reference accuracy (51.90%, edge = 0.019)
+        p_ref = config.REF_TEST_ACCURACY / 100.0
+        edge = p_ref - 0.50
+        # 95% Confidence (two-sided z=1.96): n = z^2 * p * (1-p) / edge^2
+        calls_needed_95_confidence = int(np.ceil((1.96 ** 2 * p_ref * (1.0 - p_ref)) / (edge ** 2)))
+        # 80% Power at alpha=0.05 (z_alpha/2 = 1.96, z_beta = 0.8416): n = (z_alpha/2 + z_beta)^2 * p * (1-p) / edge^2
+        calls_needed_80_power = int(np.ceil(((1.96 + 0.8416) ** 2 * p_ref * (1.0 - p_ref)) / (edge ** 2)))
+        ref_signals_per_day = round(config.REF_TEST_COVERAGE * 288.0 / 100.0, 1)
+
+        sample_size_notice = (
+            f"Evaluated {n_dir} directional calls. "
+            f"Calls needed for 95% confidence vs 50% coin-flip null: ~{calls_needed_95_confidence:,} (at 1.9% edge). "
+            f"Calls needed for 80% statistical power: ~{calls_needed_80_power:,}. "
+            f"Expected signal rate: ~{ref_signals_per_day} calls/day (at {config.REF_TEST_COVERAGE}% test coverage). "
+            f"Note: 2-candle overlapping outcomes induce positive autocorrelation, reducing effective n."
+        )
+
         return {
             "total_resolved_candles": total_candles,
             "directional_calls_count": n_dir,
-            "too_few_samples": n_dir < 2000,
-            "calls_needed_for_95pct_vs_coinflip": 2000,
+            "too_few_samples": n_dir < calls_needed_95_confidence,
+            "sample_size_notice": sample_size_notice,
+            "sample_size_requirements": {
+                "calls_needed_for_95pct_confidence": calls_needed_95_confidence,
+                "calls_needed_for_80pct_power": calls_needed_80_power,
+                "expected_signals_per_day": ref_signals_per_day,
+                "note": "Never use the word power for confidence. Overlapping 2-candle horizon reduces effective n."
+            },
+            "reference_benchmarks": {
+                "held_out_test_accuracy_pct": config.REF_TEST_ACCURACY,
+                "held_out_test_coverage_pct": config.REF_TEST_COVERAGE,
+                "primary_benchmark_label": "Held-Out Test Set (Unseen)",
+                "out_of_fold_accuracy_pct": config.REF_OOF_ACCURACY,
+                "out_of_fold_coverage_pct": config.REF_OOF_COVERAGE,
+                "out_of_fold_label": "out-of-fold, thresholds tuned on it",
+            },
             "directional_accuracy": {
                 "overall_pct": round(dir_acc, 2),
                 "last_50_calls_pct": round(acc_last_50, 2),
@@ -186,13 +217,14 @@ class LiveMetricsCalculator:
                 "wilson_95_ci": [round(wilson_low * 100.0, 2), round(wilson_high * 100.0, 2)],
                 "block_bootstrap_95_ci": [round(boot_low * 100.0, 2), round(boot_high * 100.0, 2)],
                 "p_value_vs_50pct_coinflip": round(p_val_coinflip, 4),
-                "p_value_vs_52_16pct_claimed": round(p_val_claimed, 4),
+                "p_value_vs_51_90pct_test": round(p_val_claimed, 4),
             },
             "coverage": {
-                "active_coverage_pct": round(coverage_pct, 2),
+                "live_coverage_pct": round(coverage_pct, 2),
+                "reference_test_coverage_pct": config.REF_TEST_COVERAGE,
                 "signals_per_day": round(signals_per_day, 1),
-                "claimed_coverage_pct": 65.90,
-                "claimed_signals_per_day": 189.79,
+                "reference_test_signals_per_day": ref_signals_per_day,
+                "out_of_fold_coverage_pct": config.REF_OOF_COVERAGE,
             },
             "returns": {
                 "gross_profit_per_trade_bps": round(gross_bps, 2),
@@ -211,7 +243,8 @@ class LiveMetricsCalculator:
             },
             "notes": (
                 "The models were trained on historical Bitcoin Spot data (2023-2025). "
-                "Live market performance may fluctuate across differing volatility or trend regimes."
+                "Primary benchmark is held-out test (51.90% at 52.50% coverage). "
+                "Out-of-fold accuracy is 52.16% at 65.90% coverage (thresholds tuned on it)."
             ),
         }
 

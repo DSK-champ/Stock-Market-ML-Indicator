@@ -194,6 +194,8 @@ class BinanceKlineStream:
             "taker_buy_base_volume": float(k.get("V", 0.0)),
             "taker_buy_quote_volume": float(k.get("Q", 0.0)),
             "close_time": close_time_dt,
+            "exchange_event_time_ms": event_time_ms,
+            "exchange_close_time": close_time_dt,
         }
 
         # Store in SQLite

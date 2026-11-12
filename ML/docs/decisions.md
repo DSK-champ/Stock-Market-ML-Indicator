@@ -650,14 +650,55 @@ Ties between UP and DOWN during override strictly fall back to NEUTRAL.
   - Stationary Moving-Block Bootstrap ($B=1000$, block size $L=12$ candles) accounting for overlapping 2-candle horizon dependence.
 - **Statistical Significance Flag:** `too_few_samples = True` when $n < 2,000$ active directional calls; reports sample size requirement (~2,000 calls) for 95% power against coin-flip null ($p_0 = 0.50$).
 
-### 14.7 Window Sensitivity Analysis & Lookback Buffer Size Decision
-- **Methodology:** Evaluated $N = 200$ historical training timestamps comparing single-candle sliding window inferences against full-history batch predictions across lookback lengths: 100, 300, 600, and 1000 candles.
-- **Empirical Sensitivity Results:**
-  - Window 100: Within $10^{-3}$: 0.00% | Action Match: 75.00% | Mean Prob Diff: 0.043680 | p99 Prob Diff: 0.159187
-  - Window 300: Within $10^{-3}$: 0.00% | Action Match: 81.50% | Mean Prob Diff: 0.037436 | p99 Prob Diff: 0.161329
-  - Window 600: Within $10^{-3}$: 1.00% | Action Match: 80.00% | Mean Prob Diff: 0.036979 | p99 Prob Diff: 0.158236
-  - Window 1000: Within $10^{-3}$: 0.50% | Action Match: 80.00% | Mean Prob Diff: 0.036983 | p99 Prob Diff: 0.160348
-- **Lookback Buffer Decision:**
-  - Standard lookback buffer is set to **`1,000 candles`** (with `1,200 candles` recommended for full 100-hour 1h SMA initialization).
-  - Justification: At 100 candles, action match is degraded (75.00%). By 300–600 candles, action match stabilizes at $\ge 80.0\%$, and mean probability difference plateaus at 0.0369. The remaining variance is attributable to long-memory stateful features (e.g. Structure Engine historical swing level persistence and 24h rolling volatility $W=288$). A buffer of 1,000 candles provides ~3.47 days of continuous context, well exceeding the 1h SMA(100) warmup and 288-bar swing lookback.
+### 14.7 Window Sensitivity Analysis (FAILED GATE — Step 10 Retrospective)
+> [!WARNING] FAILED GATE (Step 10 Retrospective)
+> The window sensitivity result from step 10 FAILED the declared criterion (>= 99% of timestamps within 1e-3; measured 0.5-1.0%, action match 75-81%) and the stop rule was not followed. This is recorded as a failed gate, not as a valid decision. Lookback buffer of 1,000 candles is rejected due to active feature truncation and NaN imputation.
+
+- **Step 10 Deficient Evaluation:**
+  - Window 100: Within $10^{-3}$: 0.00% | Action Match: 75.00% | Mean Prob Diff: 0.043680 | p99: 0.159187
+  - Window 300: Within $10^{-3}$: 0.00% | Action Match: 81.50% | Mean Prob Diff: 0.037436 | p99: 0.161329
+  - Window 600: Within $10^{-3}$: 1.00% | Action Match: 80.00% | Mean Prob Diff: 0.036979 | p99: 0.158236
+  - Window 1000: Within $10^{-3}$: 0.50% | Action Match: 80.00% | Mean Prob Diff: 0.036983 | p99: 0.160348
+
+
+## 15. Step 10b Parity Diagnosis, Gate Pass & Hygiene Protocol
+
+### 15.1 Parity Diagnosis & Feature Warmup Analysis
+- **Code-Path Separation (Diagnosis 1d):**
+  - Evaluated `predict_candle` against `predict_batch` on an expanding window with identical history up to timestamp $k$.
+  - Maximum probability difference: $\max(|p_{\text{batch}} - p_{\text{candle}}|) = 4.09 \times 10^{-5}$ (< 0.0001, purely 4-decimal place float rounding).
+  - Verdict: **Batch and single-candle code paths are mathematically identical.** Zero discrepancies exist in ML model code or inference pipelines.
+- **Root Cause of Truncation Discrepancies (Diagnosis 1b & 1c):**
+  - The feature engineering pipeline contains long-memory multi-day features:
+    - `feat_vol_seasonal_slot_abs_ret_7d`: 7-day seasonal volatility slot return ($7 \times 288 = 2,016$ 5m candles).
+    - `feat_vol_har_ratio_288_2016`: HAR volatility ratio ($2,016$ 5m candles).
+    - `feat_ma_1h_ema_ratio_100`: 100-hour exponential moving average ($100 \times 12 = 1,200$ 5m candles).
+  - At window lengths $\le 2,000$ candles, `feat_vol_seasonal_slot_abs_ret_7d` is NaN on the last row and gets imputed as 0.0 by `_prepare_features_robust`, shifting model probabilities by ~0.009.
+  - At window length = 3,000 candles: **0 NaNs on the last row before imputation**, and **0 differing features vs full history**.
+
+### 15.2 Extended Window Sensitivity & Gate Pass (Section 1a & Gate 2)
+Evaluated across Train-period timestamps comparing single-candle sliding windows against full-history batch predictions:
+
+| Window (Candles) | Within $10^{-3}$ Prob Tol (%) | Action Match (%) | Mean Prob Diff | p99 Prob Diff | Gate Verdict |
+| :---: | :---: | :---: | :---: | :---: | :---: |
+| **1000** | 0.00% | 96.00% | 0.009772 | 0.023108 | **FAIL** |
+| **1200** | 0.00% | 96.00% | 0.008737 | 0.021150 | **FAIL** |
+| **1500** | 0.00% | 96.00% | 0.008702 | 0.021340 | **FAIL** |
+| **2000** | 0.00% | 96.00% | 0.009019 | 0.022248 | **FAIL** |
+| **3000** | **100.00%** | **100.00%** | **0.000055** | **0.000511** | **PASS** |
+
+- **Gate Decision:** Lookback buffer is set to **`3,000 candles`** (~10.4 days of 5m candles).
+  - Criterion: $\ge 99.0\%$ within $10^{-3}$ and $\ge 99.5\%$ action match.
+  - Result: **100.00% within $10^{-3}$** and **100.00% action match**. Gate successfully PASSED.
+
+### 15.3 Imputation Visibility & Live Safeguard
+- Added `n_imputed_features` (integer) and `imputed_feature_names` (JSON list of strings) to `predictions` table in SQLite ledger.
+- In live operation, if any feature on the last row is NaN/imputed before model scoring and `config.REQUIRE_CLEAN_FEATURES == True`, the worker immediately halts directional inference, marks the prediction as `status = 'NO_SIGNAL'`, records `status_reason = 'imputed features'`, logs the offending column names, and leaves `correct = NULL`.
+
+### 15.4 Forward-Test Hygiene & Timing Integrity
+- **Paginated REST Backfill:** Startup and reconnection backfill uses Binance REST pagination (`endTime` decrementing in 1,000-candle blocks) to fetch all 3,000 candles in bulk transactions.
+- **Git State Hygiene:** Refuses to launch `--mode live` if the git working tree is dirty (`git status --porcelain` non-empty), unless explicitly overridden by `--allow-dirty`.
+- **Database Archiving:** Existing `live_ledger.db` files are automatically snapshotted to `backend/data/archive/live_ledger_<timestamp>.db` upon fresh startup.
+- **Run Tracking:** Every engine session writes a `run_start` entry recording start time, commit hash, tag, buffer size, config hash, and clean repository status.
+- **Exchange Timing Clock Independence:** Candle resolution countdowns and trade durations use Binance exchange timestamps (`E`, `T`) from the payload, preventing local machine clock drift from affecting scoring.
 

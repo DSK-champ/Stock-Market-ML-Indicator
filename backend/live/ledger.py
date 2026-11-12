@@ -3,6 +3,7 @@
 from typing import Dict, Any, List, Optional, Tuple
 from pathlib import Path
 import sqlite3
+import json
 import numpy as np
 import pandas as pd
 from datetime import datetime, timezone
@@ -45,6 +46,10 @@ class PredictionLedger:
                     compute_latency_ms REAL NOT NULL,
                     status TEXT NOT NULL,
                     status_reason TEXT,
+                    n_imputed_features INTEGER DEFAULT 0,
+                    imputed_feature_names TEXT DEFAULT '[]',
+                    exchange_close_time TEXT,
+                    exchange_event_time_ms INTEGER,
                     outcome_close REAL,
                     outcome_open REAL,
                     actual_raw_sign_2 REAL,
@@ -58,16 +63,62 @@ class PredictionLedger:
             """)
             conn.execute("CREATE INDEX IF NOT EXISTS idx_pred_status ON predictions(status)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_pred_target_time ON predictions(target_candle_open_time)")
+
+            # Table for run lifecycle tracking
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS run_start (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    start_time TEXT NOT NULL,
+                    git_commit TEXT NOT NULL,
+                    git_tag TEXT,
+                    buffer_size INTEGER NOT NULL,
+                    config_hash TEXT NOT NULL,
+                    clean_repo_asserted INTEGER NOT NULL
+                )
+            """)
+
+            # Migration check for existing databases
+            cols = [col[1] for col in conn.execute("PRAGMA table_info(predictions)").fetchall()]
+            if "n_imputed_features" not in cols:
+                conn.execute("ALTER TABLE predictions ADD COLUMN n_imputed_features INTEGER DEFAULT 0")
+            if "imputed_feature_names" not in cols:
+                conn.execute("ALTER TABLE predictions ADD COLUMN imputed_feature_names TEXT DEFAULT '[]'")
+            if "exchange_close_time" not in cols:
+                conn.execute("ALTER TABLE predictions ADD COLUMN exchange_close_time TEXT")
+            if "exchange_event_time_ms" not in cols:
+                conn.execute("ALTER TABLE predictions ADD COLUMN exchange_event_time_ms INTEGER")
+
             conn.commit()
+
+    def record_run_start(
+        self,
+        git_commit: str,
+        git_tag: Optional[str],
+        buffer_size: int,
+        config_hash: str,
+        clean_repo_asserted: bool,
+    ) -> int:
+        """Record process initialization metadata for forward-test hygiene."""
+        now_str = datetime.now(timezone.utc).isoformat()
+        with self._get_connection() as conn:
+            cur = conn.execute("""
+                INSERT INTO run_start (start_time, git_commit, git_tag, buffer_size, config_hash, clean_repo_asserted)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (now_str, git_commit, git_tag, buffer_size, config_hash, 1 if clean_repo_asserted else 0))
+            conn.commit()
+            return int(cur.lastrowid)
 
     def record_prediction(self, pred: Dict[str, Any]) -> bool:
         """Record an emitted prediction into the ledger (idempotent primary key)."""
         open_time = pred["candle_open_time"]
         now_str = datetime.now(timezone.utc).isoformat()
 
-        # If action is 0 (Neutral), initial status is NO_CALL once resolved, or PENDING until outcome candle
-        # Per specification: "action NEUTRAL: status NO_CALL, excluded from directional accuracy"
         initial_status = "NO_SIGNAL" if pred.get("status") == "NO_SIGNAL" else "PENDING"
+        imputed_names = pred.get("imputed_feature_names", [])
+        if isinstance(imputed_names, list):
+            imputed_names_str = json.dumps(imputed_names)
+        else:
+            imputed_names_str = str(imputed_names)
 
         with self._get_connection() as conn:
             conn.execute("""
@@ -75,8 +126,9 @@ class PredictionLedger:
                     candle_open_time, ref_close, target_candle_open_time, action, action_label,
                     confidence, p_up, p_neutral, p_down, trend, market_phase, model_version,
                     git_commit, config_hash, buffer_length, compute_latency_ms, status, status_reason,
+                    n_imputed_features, imputed_feature_names, exchange_close_time, exchange_event_time_ms,
                     created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 open_time,
                 float(pred["ref_close"]),
@@ -96,6 +148,10 @@ class PredictionLedger:
                 float(pred.get("compute_latency_ms", 0.0)),
                 initial_status,
                 pred.get("status_reason"),
+                int(pred.get("n_imputed_features", 0)),
+                imputed_names_str,
+                pred.get("exchange_close_time"),
+                pred.get("exchange_event_time_ms"),
                 now_str,
             ))
             conn.commit()

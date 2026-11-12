@@ -12,6 +12,7 @@ from backend.live import config
 from backend.live.candle_store import CandleStore
 from backend.live.ledger import PredictionLedger
 from backend.engine import TradingEngine
+from src.features import build_features
 
 
 def get_git_commit() -> str:
@@ -166,10 +167,48 @@ class PredictorWorker:
             self._broadcast("new_prediction", pred_record)
             return
 
-        # 3. Execute Model in Thread Executor under Lock
+        # 3. Imputation Visibility & Clean Feature Verification
+        n_imputed = 0
+        imputed_names: List[str] = []
+        loop = asyncio.get_running_loop()
+        try:
+            raw_feats = await loop.run_in_executor(None, build_features, recent_df)
+            last_feats = raw_feats.iloc[-1]
+            imputed_names = last_feats.index[last_feats.isna()].tolist()
+            n_imputed = len(imputed_names)
+        except Exception as e:
+            print(f"[WARN] Imputation pre-check encountered: {e}")
+
+        if n_imputed > 0 and config.REQUIRE_CLEAN_FEATURES:
+            pred_record = {
+                "candle_open_time": open_time,
+                "ref_close": ref_close,
+                "target_candle_open_time": target_open_time,
+                "action": 0,
+                "action_label": "NEUTRAL",
+                "confidence": 0.0,
+                "probabilities": {"p_up": 0.3333, "p_neutral": 0.3334, "p_down": 0.3333},
+                "trend": "uncertain",
+                "market_phase": "uncertain",
+                "model_version": f"TradingEngine-v2.0-N{config.HORIZON}",
+                "git_commit": self.git_commit,
+                "config_hash": self.config_hash,
+                "buffer_length": buffer_len,
+                "compute_latency_ms": 0.0,
+                "status": "NO_SIGNAL",
+                "status_reason": f"imputed features ({n_imputed} columns)",
+                "n_imputed_features": n_imputed,
+                "imputed_feature_names": imputed_names,
+                "exchange_close_time": candle.get("close_time"),
+                "exchange_event_time_ms": candle.get("exchange_event_time_ms"),
+            }
+            self.ledger.record_prediction(pred_record)
+            self._broadcast("new_prediction", pred_record)
+            return
+
+        # 4. Execute Model in Thread Executor under Lock
         t0 = time.time()
         async with self.lock:
-            loop = asyncio.get_running_loop()
             try:
                 result = await loop.run_in_executor(None, self.engine.predict_candle, recent_df)
             except Exception as e:
@@ -191,6 +230,10 @@ class PredictorWorker:
                     "compute_latency_ms": (time.time() - t0) * 1000.0,
                     "status": "NO_SIGNAL",
                     "status_reason": f"Model inference exception: {str(e)}",
+                    "n_imputed_features": n_imputed,
+                    "imputed_feature_names": imputed_names,
+                    "exchange_close_time": candle.get("close_time"),
+                    "exchange_event_time_ms": candle.get("exchange_event_time_ms"),
                 }
                 self.ledger.record_prediction(pred_record)
                 self._broadcast("new_prediction", pred_record)
@@ -198,7 +241,7 @@ class PredictorWorker:
 
         latency_ms = (time.time() - t0) * 1000.0
 
-        # 4. Form Record & Persist
+        # 5. Form Record & Persist
         pred_record = {
             "candle_open_time": open_time,
             "ref_close": ref_close,
@@ -216,11 +259,15 @@ class PredictorWorker:
             "compute_latency_ms": latency_ms,
             "status": "PENDING",
             "status_reason": None,
+            "n_imputed_features": n_imputed,
+            "imputed_feature_names": imputed_names,
+            "exchange_close_time": candle.get("close_time"),
+            "exchange_event_time_ms": candle.get("exchange_event_time_ms"),
         }
         self.ledger.record_prediction(pred_record)
         self._broadcast("new_prediction", pred_record)
 
-        # 5. Resolve Pending Predictions (if candle k+2 has arrived)
+        # 6. Resolve Pending Predictions (if candle k+2 has arrived)
         resolved_list = self.ledger.resolve_pending(self.candle_store)
         for r in resolved_list:
             self._broadcast("prediction_resolved", r)
