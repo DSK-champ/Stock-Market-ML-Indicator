@@ -64,3 +64,4 @@ def test_backtest_simulation(engine):
     assert res["total_trades"] > 0
     assert "fee_deducted_per_trade_bps" in res
     assert res["fee_deducted_per_trade_bps"] == 23.0
+
