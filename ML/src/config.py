@@ -303,7 +303,7 @@ MIN_SIGNALS_PER_DAY = 15
 # 8. HORIZON PREDICTION SYSTEM CONFIGURATION (HORIZON = 2)
 # =====================================================================
 HORIZON = 2
-THREE_CLASS_RULE = "S1"            # label column = f"target_{HORIZON}_{THREE_CLASS_RULE}", i.e. target_2_S1
+THREE_CLASS_RULE = "F05"            # label column = f"target_{HORIZON}_{THREE_CLASS_RULE}", i.e. target_2_F05
 BINARY_TARGET = f"bin_dir_{HORIZON}"
 THREE_CLASS_TARGET = f"target_{HORIZON}_{THREE_CLASS_RULE}"
 TRUTH_COL = f"raw_sign_{HORIZON}"

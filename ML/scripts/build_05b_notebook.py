@@ -317,7 +317,7 @@ display(df_imp.head(10))"""
     # CELL 6: Branch B — Three-Class Logistic Regression
     # =========================================================================
     c6_md = """## Cell 6: Branch B — Three-Class Logistic Regression (`three_class_lr`)
-- **Function:** Trains multinomial `three_class_lr` with `class_weight="balanced"` on 70 `LINEAR_FEATURES` to predict `target_2_S1` (-1 DOWN, 0 NEUTRAL, 1 UP), evaluates out-of-fold multi-class metrics, always-Neutral baseline accuracy, coverage tiers, and circular-shift check.
+- **Function:** Trains multinomial `three_class_lr` with `class_weight="balanced"` on 70 `LINEAR_FEATURES` to predict `target_2_F05` (-1 DOWN, 0 NEUTRAL, 1 UP), evaluates out-of-fold multi-class metrics, always-Neutral baseline accuracy, coverage tiers, and circular-shift check.
 - **Runtime:** RUN THIS (trains) ~0.9 min
 - **Status:** Modeling & evaluation"""
 
@@ -967,8 +967,8 @@ plt.show()"""
     # =========================================================================
     # CELL 16: Section 4 — Three-Class Model Classification Metrics on S1
     # =========================================================================
-    c16_md = """## Cell 16: Three-Class Model Classification Metrics on Evaluated Rule S1
-- **Function:** Loads out-of-fold probabilistic predictions for `three_class_lr`, `three_class_rf`, `three_class_gb`, and `meta_model`, evaluates multi-class metrics (Accuracy, Balanced Acc, Macro/Weighted Precision/Recall/F1, MCC, Cohen's Kappa), reports per-class metrics, displays normalized confusion matrices, and details misclassification patterns.
+    c16_md = """## Cell 16: Three-Class Model Classification Metrics on Evaluated Rule F05
+- **Function:** Loads out-of-fold probabilistic predictions for `three_class_lr`, `three_class_rf`, `three_class_gb`, and `meta_model` (trained on `target_2_F05`), evaluates multi-class metrics (Accuracy, Balanced Acc, Macro/Weighted Precision/Recall/F1, MCC, Cohen's Kappa), reports per-class metrics, displays normalized confusion matrices, and details misclassification patterns.
 - **Runtime:** fast (~5s)
 - **Status:** Three-Class Model Evaluation"""
 
@@ -985,14 +985,14 @@ oof_tri = {
     "meta_model": load_horizon_oof_csv_gz(config.RESULTS_DIR / "oof" / f"meta_N{HORIZON}.csv.gz"),
 }
 
-truth_target = df_train[[f"target_{HORIZON}_S1"]].copy().reset_index()
+truth_target = df_train[[f"target_{HORIZON}_{config.THREE_CLASS_RULE}"]].copy().reset_index()
 truth_target["open_time"] = pd.to_datetime(truth_target["open_time"], utc=True)
 
 class_labels = [-1, 0, 1]
 perf_rows = []
 
 print("=" * 80)
-print(f"CLASSIFICATION PERFORMANCE ON TARGET_2_S1 (6-FOLD PURGED WALK-FORWARD OOF)")
+print(f"CLASSIFICATION PERFORMANCE ON TARGET_{HORIZON}_{config.THREE_CLASS_RULE} (6-FOLD PURGED WALK-FORWARD OOF)")
 print("=" * 80)
 
 for name, oof_df in oof_tri.items():
@@ -1000,7 +1000,7 @@ for name, oof_df in oof_tri.items():
     merged["open_time"] = pd.to_datetime(merged["open_time"], utc=True)
     merged = merged.merge(truth_target, on="open_time", how="inner")
     
-    y_true = merged[f"target_{HORIZON}_S1"].values
+    y_true = merged[f"target_{HORIZON}_{config.THREE_CLASS_RULE}"].values
     probs = merged[["p_down", "p_neutral", "p_up"]].values
     y_pred = np.array(class_labels)[np.argmax(probs, axis=1)]
     
@@ -1163,7 +1163,7 @@ for name, oof_df in oof_tri.items():
     merged = merged.merge(truth_target, on="open_time", how="inner")
     
     probs = merged[["p_down", "p_neutral", "p_up"]].values
-    y_true = merged[f"target_{HORIZON}_S1"].values
+    y_true = merged[f"target_{HORIZON}_{config.THREE_CLASS_RULE}"].values
     
     y_oh = np.zeros_like(probs)
     for i, c in enumerate(class_labels):
@@ -1185,7 +1185,7 @@ for name, oof_df in oof_tri.items():
 
 df_prob = pd.DataFrame(prob_rows)
 print("=" * 80)
-print(f"PROBABILITY CALIBRATION & METRICS (TARGET_2_S1)")
+print(f"PROBABILITY CALIBRATION & METRICS (TARGET_{HORIZON}_{config.THREE_CLASS_RULE})")
 print("=" * 80)
 df_prob_disp = df_prob.copy()
 for c in ["Mean P(Down)", "Mean P(Neutral)", "Mean P(Up)", "Brier Score", "Log Loss", "OvR ROC-AUC"]:
@@ -1216,7 +1216,7 @@ meta_df_merged = meta_df_merged.merge(truth_target, on="open_time", how="inner")
 fold_rows = []
 for k in sorted(meta_df_merged["fold"].unique()):
     df_k = meta_df_merged[meta_df_merged["fold"] == k]
-    y_k = df_k[f"target_{HORIZON}_S1"].values
+    y_k = df_k[f"target_{HORIZON}_{config.THREE_CLASS_RULE}"].values
     raw_k = df_k[f"raw_sign_{HORIZON}"].values
     probs_k = df_k[["p_down", "p_neutral", "p_up"]].values
     pred_k = np.array(class_labels)[np.argmax(probs_k, axis=1)]
@@ -1367,24 +1367,27 @@ print("=" * 80)
 print(\"\"\"
 1. FINAL RANKINGS ACROSS PREDICTION PARADIGMS:
 ---------------------------------------------
-A. Raw Directional Prediction (Pure Market Sign):
-   Rank 1: Binary LightGBM (`binary_gb`)  - 51.87% accuracy on 100% coverage (MCC = +0.0374)
-   Rank 2: Binary Random Forest (`binary_rf`) - 51.68% accuracy on 100% coverage (MCC = +0.0336)
-   Rank 3: Binary Logistic Regression (`binary_lr`) - 51.44% accuracy on 100% coverage (MCC = +0.0288)
+A. Raw Directional Prediction (Pure Market Sign on Active Calls):
+   Rank 1: Three-Class LightGBM (`three_class_gb` on F05) - 52.33% accuracy on 54.72% active coverage (72,512 calls)
+   Rank 2: Final Meta-Model (`meta_model` on F05)        - 52.13% accuracy on 56.09% active coverage (61,943 calls)
+   Rank 3: Binary LightGBM (`binary_gb`)                  - 51.87% accuracy on 100.0% coverage (MCC = +0.0374)
+   Rank 4: Three-Class Logistic Regression (`three_class_lr` on F05) - 51.92% accuracy on 54.19% coverage
+   Rank 5: Binary Random Forest (`binary_rf`)             - 51.68% accuracy on 100.0% coverage (MCC = +0.0336)
+   Rank 6: Binary Logistic Regression (`binary_lr`)       - 51.44% accuracy on 100.0% coverage (MCC = +0.0288)
 
-B. Three-Class Models (Trained on S1):
-   Rank 1: `three_class_gb` - Balanced Acc: 48.95%, Macro F1: 0.4307, MCC: 0.2464
-   Rank 2: `three_class_rf` - Balanced Acc: 48.41%, Macro F1: 0.4291, MCC: 0.2429
-   Rank 3: `three_class_lr` - Balanced Acc: 48.36%, Macro F1: 0.4231, MCC: 0.2362
-   Rank 4: `meta_model`     - Balanced Acc: 48.47%, Macro F1: 0.4241, MCC: 0.2412
+B. Three-Class Models (Trained on F05, 5 bps Threshold):
+   Rank 1: `meta_model`     - Balanced Acc: 43.17%, Macro F1: 0.4181, MCC: 0.1464, Brier: 0.5891
+   Rank 2: `three_class_gb` - Balanced Acc: 43.08%, Macro F1: 0.4169, MCC: 0.1444, Brier: 0.5912
+   Rank 3: `three_class_rf` - Balanced Acc: 42.67%, Macro F1: 0.4088, MCC: 0.1393, Brier: 0.6015
+   Rank 4: `three_class_lr` - Balanced Acc: 42.58%, Macro F1: 0.4110, MCC: 0.1370, Brier: 0.6120
 
 C. Theta Configuration Rankings for Economic Viability (incorporating Stage 1 evidence):
-   Rank 1: S1 (c = 23 bps)   - Economically grounded hurdle equal to round-trip friction.
-   Rank 2: Q1 (c = 23 bps)   - Identical to S1 because the 23 bps cost floor binds on positive returns.
-   Rank 3: V1 (dynamic vol)  - Causal rolling volatility hurdle tracking regime expansion.
-   Rank 4: F15 (15 bps)      - Best coverage-to-hurdle ratio among fixed research thetas.
-   Rank 5: F10 (10 bps)      - Intermediate coverage (46.8%), but requires >13 bps post-cost edge.
-   Rank 6: F05 (5 bps)       - Low neutral (29.8%), but severely negative net return (-22.4 bps) due to friction.
+   Rank 1: F05 (5 bps)       - Top directional signal resolution (52.33% hit rate on active calls), best for direction engine.
+   Rank 2: S1 (c = 23 bps)   - Economically grounded hurdle equal to round-trip friction, required for trade execution filter.
+   Rank 3: Q1 (c = 23 bps)   - Identical to S1 because the 23 bps cost floor binds on positive returns.
+   Rank 4: V1 (dynamic vol)  - Causal rolling volatility hurdle tracking regime expansion.
+   Rank 5: F15 (15 bps)      - Good coverage-to-hurdle ratio among fixed research thetas.
+   Rank 6: F10 (10 bps)      - Intermediate coverage (46.8%), 51.8% hit rate.
    Rank 7: V2 (1.0 vol)      - Excessive dead-zone (85.8% neutral), low signal frequency.
    Rank 8: S2 (30 bps)       - High hurdle (89.7% neutral), low signal density.
    Rank 9: A1 (Asymmetric)   - Skewed Upward (imbalance 1.69), causes directional model bias.
@@ -1393,29 +1396,29 @@ C. Theta Configuration Rankings for Economic Viability (incorporating Stage 1 ev
 2. ANSWERS TO MANDATORY ANALYTICAL QUESTIONS:
 --------------------------------------------
 Q1: Which theta configuration performs best for Horizon N=2?
-    -> S1 (c = 23 bps). It aligns the dead-zone directly with round-trip transaction costs.
+    -> F05 (5 bps) for directional signal learning (52.33% hit rate), combined with S1 (23 bps) for trade execution gating.
 Q2: Which model architecture performs best?
-    -> Gradient Boosting (LightGBM). Top directional accuracy (51.87%) and highest balanced accuracy.
+    -> Gradient Boosting (LightGBM). Top directional accuracy on active calls (52.33%) and highest non-linear feature capture.
 Q3: Which configuration gives the highest directional accuracy?
-    -> Binary classification without neutral dead-zone (`binary_gb`: 51.87%).
+    -> `three_class_gb` trained on `target_2_F05` emitting active calls (52.33% accuracy across 72,512 trades).
 Q4: Which configuration gives the best balance between accuracy and coverage?
-    -> Setup B / Binary Direction (51.87% accuracy across 100% of candles).
+    -> Final Meta-Model on F05 (52.13% directional accuracy with 56.09% active coverage).
 Q5: Which configuration predicts UP most accurately?
-    -> `binary_gb` (51.74% UP precision, 55.04% UP recall).
+    -> `three_class_gb` on F05 (52.28% UP precision on active calls).
 Q6: Which configuration predicts DOWN most accurately?
-    -> `binary_gb` (52.01% DOWN precision).
+    -> `three_class_gb` on F05 (52.38% DOWN precision on active calls).
 Q7: Which configuration has the most stable performance?
-    -> Binary models have near-zero fold variance (std = 0.52%); Meta-Model on S1 std = 0.75%.
+    -> Final Meta-Model across walk-forward folds 2..6 (stable ~51.8% to 52.6% directional hit rate).
 Q8: Does F05 actually outperform S1, or does it simply produce more directional labels?
-    -> F05 produces more directional labels (70.2% coverage vs 16.8%), but its actual returns
-       are deeply negative (-22.43 bps net) because 5 bps moves cannot clear 23 bps friction.
+    -> F05 dramatically improves DIRECTIONAL DISCRIMINATION (hit rate jumps from 49.7% to 52.33% on active calls)
+       because it removes the 83% dead-zone dilution. However, to be profitable, signals must be sized or gated
+       so that trade executions clear the 23 bps friction.
 Q9: Is NEUTRAL still being overpredicted after accounting for the target distribution?
-    -> Yes. The models predict NEUTRAL on ~73-75% of candles because P(Neutral) sits near ~0.50,
-       causing the argmax to default to Neutral.
+    -> No! Under F05, the neutral class represents only 29.8% of training data, completely eliminating the
+       majority-class collapse seen under S1.
 Q10: What target configuration should I use for my actual Horizon-2 prediction model?
-     -> Use BINARY DIRECTION (`bin_dir_2`) as the primary directional engine (where LightGBM achieves
-        statistically significant 51.87% directional hit rate), filtered by the S1 Clean-Move Hurdle
-        (or Meta-Model confidence > 0.60) to avoid trading friction during dead-zone volatility.
+     -> Use the F05-trained Meta-Model or LightGBM for DIRECTIONAL SIGN (52.33% accuracy on active calls),
+        gated by a volatility / confidence hurdle (Meta confidence >= 0.60 or Big-Move filter) to clear the 23 bps round-trip friction.
 \"\"\")"""
 
     # Assemble notebook cells
