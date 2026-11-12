@@ -48,6 +48,10 @@ ML/data/processed/master.csv
 # Ignore generated model files by default
 ML/models/*
 !ML/models/.gitkeep
+models/smoke_N*
+results/smoke_N*
+ML/models/smoke_N*
+ML/results/smoke_N*
 
 # Generated plots and reports
 ML/reports/figures/*
