@@ -432,9 +432,83 @@ Every model family undergoes 5 mandatory leakage checks:
     - The top Stage 1 linear model performs comparably to the simple volatility-gated reversal heuristic at identical coverage, demonstrating that explicit size/volatility conditioning accounts for the majority of the hurdle reduction.
 
 
+## 11. Horizon 2 (N=2) Machine Learning Prediction System Architecture & Protocol
 
+### 11.1 Purpose and Scoping
+- **Single Horizon Focus:** This implementation addresses **HORIZON = 2 ONLY** (2 candles forward = 10 minutes at 5-minute sampling). Candidate horizons N in {3, 6, 12} remain deliberately deferred until N=2 is fully constructed, tested, and verified.
+- **Ensemble & Combiner Philosophy:** Rather than relying on a single classifier or naive majority voting, the system organizes predictions into four specialized branches:
+  1. **Branch A (Binary Direction Ensemble):** Predicts directional sign over next 10 minutes (UP=1, DOWN=0).
+  2. **Branch B (Three-Class Regime Ensemble):** Predicts market direction with explicit neutral/uncertainty band (DOWN=-1, NEUTRAL=0, UP=1) using Rule S1 thresholds.
+  3. **Branch C (Technical Analysis Engine):** Rule-based deterministic engine outputting 6 continuous bounded features [-1, 1] in conventional trend-following orientation.
+  4. **Branch D (Meta-Model Combiner Layer):** Multinomial Logistic Regression meta-model that stacks out-of-fold probabilistic outputs and TA features without data leakage.
 
+### 11.2 Strict Parameterization & Naming Conventions
+- **Zero Hardcoded Horizon Indices:** All target names, feature keys, filenames, and report paths are parameterized dynamically via f"_{HORIZON}".
+  - Binary target: `bin_dir_{HORIZON}` (from `bin_dir_2`)
+  - Three-class target: `target_{HORIZON}_{THREE_CLASS_RULE}` (from `target_2_S1`)
+  - Direction truth: `raw_sign_{HORIZON}`
+  - Target return: `fwd_ret_open_{HORIZON}`
+  - Target validity mask: `has_valid_target_{HORIZON}`
+- Output paths:
+  - Base OOF predictions: `results/oof/{model_id}_N{HORIZON}.csv.gz`
+  - Meta OOF predictions: `results/oof/meta_N{HORIZON}.csv.gz`
+  - Final fitted base models: `models/horizon_{HORIZON}/{model_id}_N{HORIZON}.joblib` and `.json`
+  - Final fitted meta-model: `models/horizon_{HORIZON}/meta_model_N{HORIZON}.joblib` and `.json`
+  - Technical analysis parameters: `models/horizon_{HORIZON}/ta_params_N{HORIZON}.json`
 
+### 11.3 Fixed Model Definitions & Feature Sets
+- Feature sets are resolved strictly through `get_feature_columns(feature_set=...)`:
+  - `LINEAR_FEATURES` (70 features): Used exclusively for linear models (`binary_lr`, `three_class_lr`). Features are standardized via `StandardScaler` fit strictly on the strided training block of each fold.
+  - `FS_ALL` (136 features): Used for tree-based models (`binary_rf`, `binary_gb`, `three_class_rf`, `three_class_gb`). Capping rule: `feat_struct_bars_since_break` and `feat_struct_bars_since_retest` are capped at 288 with never-happened indicator.
+- Hyperparameters are fixed prior to training (no hyperparameter grid search, no SMOTE or synthetic sampling):
+  - **`binary_lr`:** LogisticRegression, `penalty="l2"`, `C=0.1`, `solver="lbfgs"`, `max_iter=1000`.
+  - **`binary_rf`:** RandomForestClassifier, `n_estimators=300`, `max_depth=6`, `min_samples_leaf=500`, `max_features="sqrt"`, `max_samples=0.3`, `bootstrap=True`, `n_jobs=-1`, `random_state=42`.
+  - **`binary_gb`:** LGBMClassifier, `num_leaves=15`, `max_depth=4`, `learning_rate=0.03`, `n_estimators=600`, early stopping = 50, `min_child_samples=500`, `colsample_bytree=0.7`, `subsample=0.7`, `subsample_freq=1`, `reg_lambda=10.0`, `max_bin=63`, `deterministic=True`, `force_row_wise=True`, `n_jobs=-1`, `random_state=42`.
+  - **`three_class_lr`:** Multinomial LogisticRegression, same as `binary_lr` plus `class_weight="balanced"`.
+  - **`three_class_rf`:** RandomForestClassifier, same as `binary_rf` plus `class_weight="balanced_subsample"`.
+  - **`three_class_gb`:** LGBMClassifier, `objective="multiclass"`, same as `binary_gb` plus `class_weight="balanced"`.
 
+### 11.4 Fold Structure & Stride Downsampling Policy
+- **Cross-Validation Scheme:** Exact reuse of `PurgedWalkForwardCV` with 6 expanding folds on post-warmup TRAIN rows, with a 12-candle purge separating training and held-out test blocks.
+- **Stride 3 Training Sampling:** To manage computational complexity and combat autocorrelation redundancy across adjacent 5-minute candles, training blocks are sampled at `STRIDE = 3` (`iloc[::STRIDE]`).
+- **Purged Early-Stopping Split for LightGBM:** Within each fold's strided fit block, the last 15% by time is reserved as an early-stopping validation set. A purge gap of 12 raw candles (4 strided rows) is enforced between the fitting portion and early-stopping portion. The fold held-out evaluation block is never touched during fitting or stopping.
+- **Full Resolution Out-of-Fold Evaluation:** Out-of-fold inference is performed on ALL held-out rows where `VALID_COL == 1` at stride 1 (no downsampling during evaluation).
 
+### 11.5 Technical Analysis Engine Specification (`src/ta_engine.py`)
+- The TA Engine is rule-based and requires no iterative parameter fitting. It calculates 6 continuous signals normalized to [-1, 1] using conventional trend-following orientation (positive = bullish, negative = bearish):
+  1. `ta_rule_vote` = `feat_struct_rule_vote`
+  2. `ta_loc` = clip((feat_loc_position_288 - 0.5) * 2, -1, 1)
+  3. `ta_trend` = feat_struct_trend_up - feat_struct_trend_down
+  4. `ta_ema50` = clip(feat_mom_ema_ratio_50 / q99, -1, 1), where q99 is the 99th percentile of abs(feat_mom_ema_ratio_50) calculated strictly on TRAIN and saved in `models/horizon_{HORIZON}/ta_params_N{HORIZON}.json`.
+  5. `ta_rsi` = (feat_mom_rsi_14 - 0.5) * 2
+  6. `ta_align` = feat_ma_alignment_ema_5m
+- **Display Label:** `ta_label` is computed as the simple average of the 6 scores: BULLISH if mean > +0.10, BEARISH if mean < -0.10, else NEUTRAL.
+- **Empirical Note on Orientation:** On 5m BTCUSDT, short-term momentum and trend-following rules frequently exhibit mean-reversion tendencies (directional hit rate < 50%). The TA engine retains standard technical definitions; the downstream meta-model learns the appropriate sign weighting empirically.
+
+### 11.6 Leakage-Free Stacking Meta-Model (`src/meta_model.py`)
+- **15 Declared Meta Inputs:**
+  - Binary probabilities: `bin_lr_p_up`, `bin_rf_p_up`, `bin_gb_p_up`
+  - Three-class probabilities: `tri_lr_p_up`, `tri_lr_p_down`, `tri_rf_p_up`, `tri_rf_p_down`, `tri_gb_p_up`, `tri_gb_p_down` (p_neutral is omitted as linearly dependent: 1 - p_up - p_down)
+  - Technical analysis scores: `ta_rule_vote`, `ta_loc`, `ta_trend`, `ta_ema50`, `ta_rsi`, `ta_align`
+- **Training Population:** Out-of-fold predictions only, evaluated on the row intersection across all 6 base models (approximately 132,523 rows). The pre-fold warm-up partition (first 86,400 rows) is excluded.
+- **Nested Walk-Forward Evaluation (`nested_meta_oof`):**
+  - To prevent stacking leakage, meta-model performance is evaluated strictly out-of-sample: for fold k in {2..6}, train on OOF predictions from folds 1..k-1 (with a 12-candle purge dropped before the boundary), and predict on fold k. Fold 1 has no prior OOF history and is omitted from meta-model evaluation.
+- **Final Meta-Model Training & Deployment Parity:**
+  - `fit_meta_final` trains on the full set of OOF predictions across folds 1-6.
+  - *Deployment Parity Note:* When deployed in production or cell 12 demo, final base models are trained on all TRAIN rows (expanding through fold 6), whereas meta-training occurred on fold-level OOF predictions. This standard stacking practice preserves out-of-sample integrity during meta training while maximizing base model statistical efficiency in deployment.
+
+### 11.7 Comprehensive Out-of-Sample Evaluation Protocol
+- **Evaluation Benchmark:** Directional performance is benchmarked against `raw_sign_2`.
+- **Coverage Tiers:** Metrics are reported at 100%, 50%, 20%, and 10% coverage tiers, where confidence thresholds are determined on each fold's training set and applied out-of-sample.
+- **Metrics Computed:**
+  - Classification: Accuracy, Balanced Accuracy, Macro F1, MCC, per-class Precision/Recall/F1, Confusion Matrix, Macro One-vs-Rest ROC AUC, PR AUC, Multi-class Log Loss, Brier Score, and Expected Calibration Error (ECE, 10 bins).
+  - Trading Performance: Directional hit rate with 95% block-bootstrap confidence intervals (block length 288 candles, B=500), average return magnitude m = E[|fwd_ret|], break-even hurdle BE = 0.5 + c / (2m), break-even gap hit - BE, net bps per trade (mean(signal * fwd_ret) - c), signals per day, and coverage.
+- **Leakage Auditing Suite:**
+  - Circular-shift null test (>= 2018 candles offset, 200 shifts, seed 42).
+  - Shuffled-label retrain on fold 3 for linear and gradient boosting models.
+  - Permutation feature importance on fold 6 held-out set (20,000 samples, 3 repeats) with single-feature dominance check (>30% threshold).
+
+### 11.8 Single-Candle Historical Inference Demo (`src/horizon_pipeline.py`)
+- The pipeline provides `predict_horizon(candles_df, horizon=2)` accepting a rolling window of recent candles (>= 2018 rows).
+- In notebook Cell 12, an in-sample verification is executed on the final row of fold 6, verifying exact feature extraction parity between the raw buffer pipeline and `master.csv` (|Delta| < 1e-7) and confirming probability simplex closure (sum to 1 within 1e-6).
 

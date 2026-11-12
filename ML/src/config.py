@@ -299,3 +299,22 @@ WALK_FORWARD_EXPANDING = True
 DEFAULT_CONFIDENCE_THRESHOLD = 0.60
 MIN_SIGNALS_PER_DAY = 15
 
+# =====================================================================
+# 8. HORIZON PREDICTION SYSTEM CONFIGURATION (HORIZON = 2)
+# =====================================================================
+HORIZON = 2
+THREE_CLASS_RULE = "S1"            # label column = f"target_{HORIZON}_{THREE_CLASS_RULE}", i.e. target_2_S1
+BINARY_TARGET = f"bin_dir_{HORIZON}"
+THREE_CLASS_TARGET = f"target_{HORIZON}_{THREE_CLASS_RULE}"
+TRUTH_COL = f"raw_sign_{HORIZON}"
+RETURN_COL = f"fwd_ret_open_{HORIZON}"
+VALID_COL = f"has_valid_target_{HORIZON}"
+COST = 0.0023
+STRIDE = 3
+N_JOBS = -1
+SEED = 42
+FORCE_RETRAIN = False
+MODEL_DIR = MODELS_DIR / f"horizon_{HORIZON}"
+OOF_DIR = RESULTS_DIR / "oof"
+
+

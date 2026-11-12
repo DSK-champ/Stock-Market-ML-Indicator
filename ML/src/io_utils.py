@@ -705,5 +705,53 @@ def load_oof_predictions(
     return df
 
 
+def save_horizon_oof_csv_gz(
+    df: pd.DataFrame,
+    filepath: Union[str, Path],
+) -> Path:
+    """Save horizon out-of-fold predictions to a gzip-compressed CSV file.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        OOF dataframe to persist.
+    filepath : Union[str, Path]
+        Target .csv.gz path.
+
+    Returns
+    -------
+    Path
+        Path to saved file.
+    """
+    path = Path(filepath)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    df.to_csv(path, index=False, compression="gzip")
+    logger.info("Saved Horizon OOF predictions to %s (%d rows)", path, len(df))
+    return path
+
+
+def load_horizon_oof_csv_gz(
+    filepath: Union[str, Path],
+) -> pd.DataFrame:
+    """Load horizon out-of-fold predictions from a gzip-compressed CSV file.
+
+    Parameters
+    ----------
+    filepath : Union[str, Path]
+        Path to .csv.gz file.
+
+    Returns
+    -------
+    pd.DataFrame
+        Loaded OOF predictions.
+    """
+    path = Path(filepath)
+    if not path.exists():
+        raise FileNotFoundError(f"Horizon OOF file not found: {path}")
+    df = pd.read_csv(path, compression="gzip")
+    return df
+
+
+
 
 
