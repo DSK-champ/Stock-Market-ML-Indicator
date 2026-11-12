@@ -6,7 +6,29 @@ This dashboard provides a TradingView dark-theme real-time trading terminal and 
 
 ## 1. Quickstart & Run Commands
 
-To run the complete production dashboard stack:
+### Single-Command All-in-One Launcher (Recommended)
+You can start all 3 services concurrently in **one single terminal** with automatic browser launch:
+```bash
+python start_dashboard.py
+```
+- Starts the Live Engine (Port 8000)
+- Starts the Dashboard API (Port 8001)
+- Serves the Frontend (Port 8080)
+- Opens `http://localhost:8080/blank.html` in your default browser automatically.
+- Press `Ctrl+C` to stop all 3 services cleanly.
+
+**Other single-command options:**
+```bash
+# Accelerated historical replay at 60x speed:
+python start_dashboard.py --mode replay --speed 60
+
+# Offline demo mode with synthetic data (no backend needed):
+python start_dashboard.py --mock
+```
+
+---
+
+### Alternative: Running in Separate Terminals (Manual)
 
 ### Step 1: Start Live Inference & Forward-Testing Engine (Port 8000)
 ```bash
@@ -91,3 +113,4 @@ $$\text{raw\_sign}_2 = \begin{cases} +1.0 & \text{if } \text{fwd\_ret} > 0 \\ -1
   - High-impact macroeconomic news spikes or flash crashes.
   - Less than 5 minutes after a connection drop or server restart.
   - Pre-inference feature imputation warnings (`imputed features`).
+
