@@ -881,9 +881,19 @@ res_df["final_p_up"] = np.round(final_probs[:, 2], 4)
 res_df["final_confidence"] = np.round(final_confidence, 4)
 
 out_path = config.RESULTS_DIR / "horizon_2_test.csv"
-res_df.to_csv(out_path)
-res_df.to_csv(Path("horizon_2_test.csv"))
-print(f"Exported: {out_path} ({len(res_df):,} rows x {len(res_df.columns)} columns)")
+try:
+    res_df.to_csv(out_path)
+    print(f"Exported: {out_path} ({len(res_df):,} rows x {len(res_df.columns)} columns)")
+except PermissionError:
+    alt_path = config.RESULTS_DIR / "horizon_2_test_latest.csv"
+    res_df.to_csv(alt_path)
+    print(f"[NOTE] '{out_path.name}' is currently open in Excel or another viewer (file lock).")
+    print(f"Exported successfully to alternative file: {alt_path}")
+
+try:
+    res_df.to_csv(Path("horizon_2_test.csv"))
+except PermissionError:
+    pass
 
 print("\\n--- Test Set Performance Summary ---")
 valid_bin = res_df["true_binary"].notna()
@@ -935,16 +945,13 @@ df_dist = pd.DataFrame(dist_rows)
 print("=" * 80)
 print(f"HORIZON N={HORIZON} TARGET DISTRIBUTION ACROSS ALL 10 THETA RULES (TRAIN SPLIT)")
 print("=" * 80)
-display(df_dist.style.format({
-    "UP Samples": "{:,}",
-    "DOWN Samples": "{:,}",
-    "NEUTRAL Samples": "{:,}",
-    "UP %": "{:.2f}%",
-    "DOWN %": "{:.2f}%",
-    "NEUTRAL %": "{:.2f}%",
-    "Directional Coverage %": "{:.2f}%",
-    "UP/DOWN Imbalance": "{:.3f}",
-}))
+df_dist_disp = df_dist.copy()
+for c in ["UP Samples", "DOWN Samples", "NEUTRAL Samples"]:
+    df_dist_disp[c] = df_dist_disp[c].map("{:,}".format)
+for c in ["UP %", "DOWN %", "NEUTRAL %", "Directional Coverage %"]:
+    df_dist_disp[c] = df_dist_disp[c].map("{:.2f}%".format)
+df_dist_disp["UP/DOWN Imbalance"] = df_dist_disp["UP/DOWN Imbalance"].map("{:.3f}".format)
+display(df_dist_disp)
 
 # Chart 1: Stacked Bar Chart of Target Distributions
 fig, ax = plt.subplots(figsize=(10, 5))
@@ -1112,21 +1119,14 @@ df_dir = pd.DataFrame(dir_rows)
 print("=" * 80)
 print(f"DIRECTIONAL ACCURACY ON RAW GROUND TRUTH (raw_sign_2, 6-FOLD PURGED WALK-FORWARD)")
 print("=" * 80)
-display(df_dir.style.format({
-    "Coverage %": "{:.2f}%",
-    "Active Calls": "{:,}",
-    "Dir Accuracy %": "{:.2f}%",
-    "Dir Bal Acc %": "{:.2f}%",
-    "Dir Macro F1": "{:.4f}",
-    "Dir MCC": "{:.4f}",
-    "UP Prec %": "{:.2f}%",
-    "DOWN Prec %": "{:.2f}%",
-    "UP Rec %": "{:.2f}%",
-    "DOWN Rec %": "{:.2f}%",
-    "UP Calls": "{:,}",
-    "DOWN Calls": "{:,}",
-    "Incorrect Calls": "{:,}",
-}))
+df_dir_disp = df_dir.copy()
+for c in ["Coverage %", "Dir Accuracy %", "Dir Bal Acc %", "UP Prec %", "DOWN Prec %", "UP Rec %", "DOWN Rec %"]:
+    df_dir_disp[c] = df_dir_disp[c].map("{:.2f}%".format)
+for c in ["Dir Macro F1", "Dir MCC"]:
+    df_dir_disp[c] = df_dir_disp[c].map("{:.4f}".format)
+for c in ["Active Calls", "UP Calls", "DOWN Calls", "Incorrect Calls"]:
+    df_dir_disp[c] = df_dir_disp[c].map("{:,}".format)
+display(df_dir_disp)
 
 # Charts 6 & 7: Directional Accuracy and Coverage Comparison
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
@@ -1187,14 +1187,10 @@ df_prob = pd.DataFrame(prob_rows)
 print("=" * 80)
 print(f"PROBABILITY CALIBRATION & METRICS (TARGET_2_S1)")
 print("=" * 80)
-display(df_prob.style.format({
-    "Mean P(Down)": "{:.4f}",
-    "Mean P(Neutral)": "{:.4f}",
-    "Mean P(Up)": "{:.4f}",
-    "Brier Score": "{:.4f}",
-    "Log Loss": "{:.4f}",
-    "OvR ROC-AUC": "{:.4f}",
-}))
+df_prob_disp = df_prob.copy()
+for c in ["Mean P(Down)", "Mean P(Neutral)", "Mean P(Up)", "Brier Score", "Log Loss", "OvR ROC-AUC"]:
+    df_prob_disp[c] = df_prob_disp[c].map("{:.4f}".format)
+display(df_prob_disp)
 
 print(\"\"\"
 [Calibration Analysis Findings]
@@ -1249,15 +1245,13 @@ df_folds = pd.DataFrame(fold_rows)
 print("=" * 80)
 print("FOLD-BY-FOLD STABILITY TABLE: FINAL META-MODEL (FOLDS 2 TO 6)")
 print("=" * 80)
-display(df_folds.style.format({
-    "Held-Out Rows": "{:,}",
-    "3-Class Acc %": "{:.2f}%",
-    "Balanced Acc %": "{:.2f}%",
-    "Macro F1": "{:.4f}",
-    "MCC": "{:.4f}",
-    "Dir Coverage %": "{:.2f}%",
-    "Dir Acc %": "{:.2f}%",
-}))
+df_folds_disp = df_folds.copy()
+df_folds_disp["Held-Out Rows"] = df_folds_disp["Held-Out Rows"].map("{:,}".format)
+for c in ["3-Class Acc %", "Balanced Acc %", "Dir Coverage %", "Dir Acc %"]:
+    df_folds_disp[c] = df_folds_disp[c].map("{:.2f}%".format)
+for c in ["Macro F1", "MCC"]:
+    df_folds_disp[c] = df_folds_disp[c].map("{:.4f}".format)
+display(df_folds_disp)
 
 print(f"Mean Directional Accuracy: {df_folds['Dir Acc %'].mean():.2f}% +/- {df_folds['Dir Acc %'].std():.2f}%")
 print(f"Best Fold: Fold {df_folds.loc[df_folds['Dir Acc %'].idxmax(), 'Fold']} ({df_folds['Dir Acc %'].max():.2f}%)")
@@ -1327,15 +1321,13 @@ df_cross = pd.DataFrame(cross_rows)
 print("=" * 80)
 print(f"CROSS-TARGET EVALUATION: META-MODEL SIGNALS EVALUATED AGAINST ALL 10 THETA RULES")
 print("=" * 80)
-display(df_cross.style.format({
-    "Target Accuracy %": "{:.2f}%",
-    "Balanced Acc %": "{:.2f}%",
-    "Macro F1": "{:.4f}",
-    "MCC": "{:.4f}",
-    "Active Calls": "{:,}",
-    "Target Hit Rate %": "{:.2f}%",
-    "Raw Direction Hit Rate %": "{:.2f}%",
-}))
+df_cross_disp = df_cross.copy()
+for c in ["Target Accuracy %", "Balanced Acc %", "Target Hit Rate %", "Raw Direction Hit Rate %"]:
+    df_cross_disp[c] = df_cross_disp[c].map("{:.2f}%".format)
+for c in ["Macro F1", "MCC"]:
+    df_cross_disp[c] = df_cross_disp[c].map("{:.4f}".format)
+df_cross_disp["Active Calls"] = df_cross_disp["Active Calls"].map("{:,}".format)
+display(df_cross_disp)
 
 # Chart 8: Directional Accuracy vs Coverage Scatter Plot
 # Chart 9: UP Precision vs DOWN Precision Comparison
