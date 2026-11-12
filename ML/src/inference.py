@@ -1,22 +1,11 @@
-"""Real-time inference interface for live backend integration.
+"""Real-Time Inference Interface for Live Backend Integration.
 
-Phase 7 will implement predict_one(candles_df) with strict closed-candle causal checks.
+Routes requests directly to the unified TradingEngine.
+Guarantees strict causal, zero-repainting predictions on closed candles.
 """
 
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 import pandas as pd
+from src.trading_engine import TradingEngine, get_engine, predict_one, get_model_metrics
 
-
-def predict_one(candles_df: pd.DataFrame) -> Dict[str, Any]:
-    """Given lookback closed candles, generate calibrated prediction.
-    
-    Stub for Phase 7.
-    """
-    return {
-        "direction": "NO_SIGNAL",
-        "confidence": 0.0,
-        "probabilities": {"UP": 0.0, "DOWN": 0.0, "NEUTRAL": 1.0},
-        "timestamp": None,
-        "reason": "Stub implementation",
-    }
-
+__all__ = ["TradingEngine", "get_engine", "predict_one", "get_model_metrics"]
