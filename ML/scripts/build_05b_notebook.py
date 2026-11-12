@@ -32,7 +32,10 @@ def create_notebook():
 - **Runtime:** fast (~2s)
 - **Status:** Configuration check (no training)"""
 
-    c1_code = """import sys
+    c1_code = """%load_ext autoreload
+%autoreload 2
+
+import sys
 from pathlib import Path
 import pandas as pd
 import numpy as np
@@ -153,7 +156,13 @@ for val, count in tri_counts.items():
 - **Runtime:** RUN THIS (trains) ~1.1 min
 - **Status:** Modeling & evaluation"""
 
-    c3_code = """from src.model_common import run_oof, load_truth, load_oof
+    c3_code = """import importlib
+import src.model_common
+import src.horizon_eval
+importlib.reload(src.model_common)
+importlib.reload(src.horizon_eval)
+
+from src.model_common import run_oof, load_truth, load_oof
 from src.horizon_eval import evaluate_binary, shuffled_label_retrain
 
 model_id = "binary_lr"
