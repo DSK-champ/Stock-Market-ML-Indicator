@@ -79,7 +79,7 @@ def test_layout_across_all_viewports(browser_instance):
             assert abs((right_col_box["y"] + right_col_box["height"]) - (main_box["y"] + main_box["height"])) < 4.0
 
         # 4. Canvas / Chart wrapper width matches container
-        chart_elem = page.locator("#live-chart-container > div").first
+        chart_elem = page.locator("#live-chart-container canvas, #live-chart-container > div").first
         if chart_elem.is_visible():
             elem_box = chart_elem.bounding_box()
             container_box = page.locator("#live-chart-container").bounding_box()

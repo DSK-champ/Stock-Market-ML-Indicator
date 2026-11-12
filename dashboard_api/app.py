@@ -35,6 +35,12 @@ def get_config() -> Dict[str, Any]:
     return data_service.get_config()
 
 
+@app.get("/dash/candles/history")
+def get_historical_candles(limit: int = Query(2000, ge=10, le=10000)) -> List[Dict[str, Any]]:
+    """Retrieve historical candles from clean.csv / master data."""
+    return data_service.get_historical_candles(limit=limit)
+
+
 @app.get("/dash/live/candles")
 def get_live_candles(limit: int = Query(1000, ge=1, le=5000)) -> List[Dict[str, Any]]:
     """Retrieve recent closed candles from candles.db."""
@@ -45,6 +51,12 @@ def get_live_candles(limit: int = Query(1000, ge=1, le=5000)) -> List[Dict[str, 
 def get_live_predictions(limit: int = Query(200, ge=1, le=1000)) -> List[Dict[str, Any]]:
     """Retrieve recent predictions from live_ledger.db enriched with bands."""
     return data_service.get_live_predictions(limit=limit)
+
+
+@app.get("/dash/live/predict_latest")
+def predict_latest_live() -> Optional[Dict[str, Any]]:
+    """Execute prediction on the latest closed candle in candles.db or clean.csv."""
+    return data_service.predict_latest_candle()
 
 
 @app.get("/dash/overview")

@@ -85,8 +85,8 @@ class DataService:
             cls._instance = cls()
         return cls._instance
 
-    def _get_clean_df(self) -> pd.DataFrame:
-        if self._clean_df is None:
+    def _get_clean_df(self, reload: bool = False) -> pd.DataFrame:
+        if self._clean_df is None or reload:
             df = pd.read_csv(CLEAN_CSV_PATH)
             df["open_time"] = pd.to_datetime(df["open_time"], utc=True)
             df = df.set_index("open_time").sort_index()
@@ -141,6 +141,24 @@ class DataService:
             },
         }
 
+    def get_historical_candles(self, limit: int = 2000) -> List[Dict[str, Any]]:
+        """Retrieve recent candles directly from clean.csv / master data."""
+        df = self._get_clean_df(reload=True)
+        tail_df = df.tail(limit).reset_index()
+        out = []
+        for _, row in tail_df.iterrows():
+            ts = row["open_time"]
+            out.append({
+                "time": int(ts.timestamp()),
+                "open_time": ts.isoformat(),
+                "open": round(float(row["open"]), 2),
+                "high": round(float(row["high"]), 2),
+                "low": round(float(row["low"]), 2),
+                "close": round(float(row["close"]), 2),
+                "volume": round(float(row["volume"]), 4),
+            })
+        return out
+
     def get_live_candles(self, limit: int = 1000) -> List[Dict[str, Any]]:
         """Retrieve recent closed candles from candles.db in read-only mode."""
         if not CANDLES_DB_PATH.exists():
@@ -185,7 +203,8 @@ class DataService:
             conn.close()
 
         if not pred_rows:
-            return []
+            latest = self.predict_latest_candle()
+            return [latest] if latest else []
 
         candles = self.get_live_candles(limit=min(1000, limit + 50))
         df_candles = pd.DataFrame(candles) if candles else pd.DataFrame()
@@ -261,6 +280,101 @@ class DataService:
             })
 
         return enriched
+
+    def predict_latest_candle(self) -> Optional[Dict[str, Any]]:
+        """Compute an immediate live prediction on the most recent closed candle."""
+        buffer_size = live_config.BUFFER_SIZE  # 3000
+
+        df = None
+        if CANDLES_DB_PATH.exists():
+            try:
+                conn = sqlite3.connect(self.candles_db_uri, uri=True, timeout=5.0)
+                candles_df = pd.read_sql_query(
+                    f"SELECT * FROM candles ORDER BY open_time DESC LIMIT {buffer_size}",
+                    conn,
+                )
+                conn.close()
+                if len(candles_df) >= live_config.MIN_BUFFER_SIZE:
+                    candles_df["open_time"] = pd.to_datetime(candles_df["open_time"], utc=True)
+                    candles_df = candles_df.set_index("open_time").sort_index()
+                    df = candles_df
+            except Exception:
+                df = None
+
+        if df is None or len(df) < live_config.MIN_BUFFER_SIZE:
+            clean_df = self._get_clean_df()
+            df = clean_df.tail(buffer_size).copy()
+
+        if len(df) == 0:
+            return None
+
+        target_dt = df.index[-1]
+        t0 = time.time()
+        pred_res = predict_one(df)
+        latency_ms = (time.time() - t0) * 1000.0
+
+        probs = pred_res["probabilities"]
+        p_up = float(probs["p_up"])
+        p_neu = float(probs["p_neutral"])
+        p_dn = float(probs["p_down"])
+        ref_close = float(pred_res["close_price"])
+
+        atr14 = compute_wilder_atr14(df, period=14)
+        band = compute_indicative_bands(
+            close_price=ref_close,
+            atr14=atr14,
+            p_up=p_up,
+            p_down=p_dn,
+            p_neutral=p_neu,
+        )
+
+        ta_info = pred_res.get("technical_analysis", {})
+        raw_trend = str(ta_info.get("trend", "uncertain"))
+        raw_phase = str(ta_info.get("market_phase", "uncertain"))
+        trend_score = float(ta_info.get("trend_score", 0.0))
+        phase_score = float(ta_info.get("breakthrough_score", 0.0))
+
+        ui_trend = TREND_MAP.get(raw_trend, raw_trend)
+        ui_phase = PHASE_MAP.get(raw_phase, raw_phase)
+        raw_action = str(pred_res["action_label"])
+        ui_label = LABEL_MAP.get(raw_action, raw_action)
+
+        argmax_idx = int(np.argmax([p_dn, p_neu, p_up]))
+        model_res_map = {0: "DOWN", 1: "NEUTRAL", 2: "UP"}
+        model_res = model_res_map[argmax_idx]
+
+        return {
+            "open_time": target_dt.isoformat(),
+            "close": ref_close,
+            "trend": ui_trend,
+            "trend_strength": round(trend_score, 4),
+            "phase": ui_phase,
+            "phase_strength": round(phase_score, 4),
+            "context_text": f"{ui_trend} | {ui_phase}",
+            "p_ml": None,
+            "model_result": model_res,
+            "p_final": {
+                "down": p_dn,
+                "neutral": p_neu,
+                "up": p_up,
+            },
+            "label": ui_label,
+            "confidence": float(pred_res["confidence"]),
+            "smart_price": band["smart_price"],
+            "upper": band["upper"],
+            "lower": band["lower"],
+            "atr14": band["atr14"],
+            "text": None,
+            "status": "PENDING",
+            "reason": None,
+            "n_imputed_features": 0,
+            "latency_ms": round(latency_ms, 2),
+            "correct": None,
+            "outcome_close": None,
+            "outcome_open": None,
+            "return_bps_label": None,
+            "return_bps_executable": None,
+        }
 
     def get_overview(self) -> List[Dict[str, Any]]:
         """Downsample complete history to 1h bars with split zones."""

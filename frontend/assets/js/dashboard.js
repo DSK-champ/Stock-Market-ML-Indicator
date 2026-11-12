@@ -1,9 +1,15 @@
 /**
- * Trader Dashboard Orchestrator
- * TradingView Dark Theme BTC/USDT 5m AI Indicator UI
+ * AI Trader Dashboard Orchestrator
+ * Independent Native Canvas BTC/USDT 5m AI Indicator UI
+ * 
+ * Plots historical data from clean/master CSV + live Binance stream.
+ * Predicts 2 candles into the future (horizon = 10 mins) and verifies
+ * automatically after 10 minutes when candle k+2 closes.
+ * 
+ * Free of any TradingView libraries, logos, or watermarks.
  */
 
-// 1. Central Configuration Object (Read dynamically from API, defaults as fallback)
+// 1. Central Configuration
 const CONFIG = {
   symbol: "BTCUSDT",
   timeframe: "5m",
@@ -40,20 +46,21 @@ const CONFIG = {
     accent: "#2962ff",
     bgApp: "#131722",
     bgPanel: "#1e222d",
+    bgChart: "#131722",
     border: "#2a2e39",
-    grid: "rgba(42, 46, 57, 0.5)",
+    grid: "rgba(42, 46, 57, 0.4)",
     text: "#d1d4dc",
     textDim: "#787b86",
   },
 };
 
-// State Store
+// 2. Global State Store
 const STATE = {
   isMock: new URLSearchParams(window.location.search).get("mock") === "1",
   activeTab: "live", // "live" | "replay"
   logTab: "live",
-  logFilter: "all", // "all" | "correct" | "wrong" | "pending"
-  liveStatus: "OFFLINE", // "LIVE" | "RECONNECTING" | "STALE" | "MOCK" | "OFFLINE"
+  logFilter: "all",
+  liveStatus: "OFFLINE",
   lastTickTime: 0,
   lastPrediction: null,
   liveCandles: [],
@@ -63,15 +70,13 @@ const STATE = {
   replayTestRange: null,
   replayCurrentIndex: 0,
   replayPlaying: false,
-  replaySpeed: 1, // 1x, 2x, 5x, 10x
+  replaySpeed: 1,
   replayTimer: null,
   abortController: null,
-  bandHits: { total: 0, inside: 0 },
   layerToggles: {
     markers: true,
     bands: true,
     smartPrice: true,
-    classicBb: false,
     volume: true,
   },
 };
@@ -112,7 +117,7 @@ function initDOM() {
     predUpperCap: document.getElementById("pred-upper-cap"),
     predLowerCap: document.getElementById("pred-lower-cap"),
     predBandContainment: document.getElementById("pred-band-containment"),
-    // Log
+    // Log Table
     logTableBody: document.getElementById("log-table-body"),
     logTabLive: document.getElementById("log-tab-live"),
     logTabReplay: document.getElementById("log-tab-replay"),
@@ -136,176 +141,52 @@ function initDOM() {
 }
 
 // =====================================================================
-// CHART MANAGEMENT (Lightweight Charts 4.2.x)
+// CHART MANAGEMENT (Native Canvas Candlestick Engine)
 // =====================================================================
 const CHARTS = {
-  live: { chart: null, candles: null, volume: null, upper: null, lower: null, smart: null, bbUpper: null, bbLower: null, lastPriceLine: null },
-  replay: { chart: null, candles: null, volume: null, upper: null, lower: null, smart: null, bbUpper: null, bbLower: null },
-  overview: { chart: null, trainLine: null, valLine: null, testLine: null, markerLine: null },
+  live: null,
+  replay: null,
 };
 
-function createChartInstance(container) {
-  return LightweightCharts.createChart(container, {
-    layout: {
-      background: { type: "solid", color: CONFIG.colors.bgChart },
-      textColor: CONFIG.colors.textDim,
-      fontSize: 11,
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Trebuchet MS", Roboto, sans-serif',
-    },
-    grid: {
-      vertLines: { color: CONFIG.colors.grid, style: 2 },
-      horzLines: { color: CONFIG.colors.grid, style: 2 },
-    },
-    crosshair: {
-      mode: LightweightCharts.CrosshairMode.Normal,
-      vertLine: { color: CONFIG.colors.textDim, width: 1, style: 3, labelBackgroundColor: CONFIG.colors.bgPanel },
-      horzLine: { color: CONFIG.colors.textDim, width: 1, style: 3, labelBackgroundColor: CONFIG.colors.bgPanel },
-    },
-    timeScale: {
-      borderColor: CONFIG.colors.border,
-      timeVisible: true,
-      secondsVisible: false,
-    },
-    rightPriceScale: {
-      borderColor: CONFIG.colors.border,
-      scaleMargins: { top: 0.1, bottom: 0.2 },
-    },
-  });
-}
-
 function initCharts() {
-  // 1. Live Chart
-  const liveContainer = document.getElementById("live-chart-container");
-  CHARTS.live.chart = createChartInstance(liveContainer);
-
-  CHARTS.live.candles = CHARTS.live.chart.addCandlestickSeries({
+  CHARTS.live = new NativeCandleChart("live-chart-container", {
     upColor: CONFIG.colors.up,
     downColor: CONFIG.colors.down,
-    borderVisible: false,
-    wickUpColor: CONFIG.colors.up,
-    wickDownColor: CONFIG.colors.down,
+    bgColor: CONFIG.colors.bgChart || "#131722",
   });
+  CHARTS.live.onCrosshairMove = (candle) => updateLegend("live", candle);
 
-  CHARTS.live.volume = CHARTS.live.chart.addHistogramSeries({
-    color: "#26a69a",
-    priceFormat: { type: "volume" },
-    priceScaleId: "",
-    scaleMargins: { top: 0.8, bottom: 0 },
-  });
-
-  // Indicative Range Lines (Horizon t+2 forecast)
-  CHARTS.live.upper = CHARTS.live.chart.addLineSeries({ color: "rgba(239, 83, 80, 0.7)", lineWidth: 1, lineStyle: 2 });
-  CHARTS.live.lower = CHARTS.live.chart.addLineSeries({ color: "rgba(38, 166, 154, 0.7)", lineWidth: 1, lineStyle: 2 });
-  CHARTS.live.smart = CHARTS.live.chart.addLineSeries({ color: CONFIG.colors.accent, lineWidth: 2, lineStyle: 0 });
-
-  // Classic Bollinger Bands (20, 2)
-  CHARTS.live.bbUpper = CHARTS.live.chart.addLineSeries({ color: "rgba(255,255,255,0.25)", lineWidth: 1, lineStyle: 1, visible: false });
-  CHARTS.live.bbLower = CHARTS.live.chart.addLineSeries({ color: "rgba(255,255,255,0.25)", lineWidth: 1, lineStyle: 1, visible: false });
-
-  // Crosshair Handler for Legend
-  CHARTS.live.chart.subscribeCrosshairMove((param) => {
-    updateLegend("live", param);
-  });
-
-  // 2. Replay Candlestick Chart
-  const replayContainer = document.getElementById("replay-chart-container");
-  CHARTS.replay.chart = createChartInstance(replayContainer);
-
-  CHARTS.replay.candles = CHARTS.replay.chart.addCandlestickSeries({
+  CHARTS.replay = new NativeCandleChart("replay-chart-container", {
     upColor: CONFIG.colors.up,
     downColor: CONFIG.colors.down,
-    borderVisible: false,
-    wickUpColor: CONFIG.colors.up,
-    wickDownColor: CONFIG.colors.down,
+    bgColor: CONFIG.colors.bgChart || "#131722",
   });
+  CHARTS.replay.onCrosshairMove = (candle) => updateLegend("replay", candle);
 
-  CHARTS.replay.volume = CHARTS.replay.chart.addHistogramSeries({
-    color: "#26a69a",
-    priceFormat: { type: "volume" },
-    priceScaleId: "",
-    scaleMargins: { top: 0.8, bottom: 0 },
-  });
-
-  CHARTS.replay.upper = CHARTS.replay.chart.addLineSeries({ color: "rgba(239, 83, 80, 0.7)", lineWidth: 1, lineStyle: 2 });
-  CHARTS.replay.lower = CHARTS.replay.chart.addLineSeries({ color: "rgba(38, 166, 154, 0.7)", lineWidth: 1, lineStyle: 2 });
-  CHARTS.replay.smart = CHARTS.replay.chart.addLineSeries({ color: CONFIG.colors.accent, lineWidth: 2, lineStyle: 0 });
-
-  CHARTS.replay.bbUpper = CHARTS.replay.chart.addLineSeries({ color: "rgba(255,255,255,0.25)", lineWidth: 1, lineStyle: 1, visible: false });
-  CHARTS.replay.bbLower = CHARTS.replay.chart.addLineSeries({ color: "rgba(255,255,255,0.25)", lineWidth: 1, lineStyle: 1, visible: false });
-
-  CHARTS.replay.chart.subscribeCrosshairMove((param) => {
-    updateLegend("replay", param);
-  });
-
-  // 3. Overview Strip Chart
-  const overviewContainer = document.getElementById("overview-chart-container");
-  CHARTS.overview.chart = LightweightCharts.createChart(overviewContainer, {
-    layout: {
-      background: { type: "solid", color: CONFIG.colors.bgApp },
-      textColor: CONFIG.colors.textDim,
-      fontSize: 9,
-    },
-    grid: { vertLines: { visible: false }, horzLines: { visible: false } },
-    timeScale: { visible: true, borderColor: CONFIG.colors.border },
-    rightPriceScale: { visible: false },
-    crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
-  });
-
-  CHARTS.overview.trainLine = CHARTS.overview.chart.addLineSeries({ color: "#42a5f5", lineWidth: 1 });
-  CHARTS.overview.valLine = CHARTS.overview.chart.addLineSeries({ color: "#ab47bc", lineWidth: 1 });
-  CHARTS.overview.testLine = CHARTS.overview.chart.addLineSeries({ color: CONFIG.colors.up, lineWidth: 2 });
-
-  // Overview click handler to jump replay
-  CHARTS.overview.chart.subscribeClick((param) => {
-    if (!param.time) return;
-    handleOverviewJump(param.time);
-  });
-
-  // Auto-resize observers with requestAnimationFrame throttling
-  setupResizeObservers([
-    { container: liveContainer, chart: CHARTS.live.chart },
-    { container: replayContainer, chart: CHARTS.replay.chart },
-    { container: overviewContainer, chart: CHARTS.overview.chart },
-  ]);
-}
-
-function setupResizeObservers(chartList) {
-  chartList.forEach(({ container, chart }) => {
-    let rAF = null;
-    const observer = new ResizeObserver((entries) => {
-      if (!entries.length) return;
-      const { width, height } = entries[0].contentRect;
-      if (width === 0 || height === 0) return;
-      if (rAF) cancelAnimationFrame(rAF);
-      rAF = requestAnimationFrame(() => {
-        chart.applyOptions({ width, height });
-      });
+  const btnRealtime = document.getElementById("btn-realtime");
+  if (btnRealtime) {
+    btnRealtime.addEventListener("click", () => {
+      if (CHARTS.live) CHARTS.live.scrollToRealtime();
     });
-    observer.observe(container);
-  });
+  }
 }
 
-function updateLegend(view, param) {
+function updateLegend(view, candle) {
   const ohlcEl = document.getElementById(`${view}-legend-ohlc`);
-  if (!param || !param.time || !param.seriesData) {
-    return;
-  }
-  const series = CHARTS[view].candles;
-  const candle = param.seriesData.get(series);
-  if (!candle) return;
+  if (!candle || !ohlcEl) return;
 
   const isUp = candle.close >= candle.open;
   const cls = isUp ? "up" : "down";
   ohlcEl.innerHTML = `
-    <span>O: <b class="legend-val ${cls}">${candle.open.toFixed(2)}</b></span>
-    <span>H: <b class="legend-val ${cls}">${candle.high.toFixed(2)}</b></span>
-    <span>L: <b class="legend-val ${cls}">${candle.low.toFixed(2)}</b></span>
-    <span>C: <b class="legend-val ${cls}">${candle.close.toFixed(2)}</b></span>
+    <span>O: <b class="legend-val ${cls}">${Number(candle.open).toFixed(2)}</b></span>
+    <span>H: <b class="legend-val ${cls}">${Number(candle.high).toFixed(2)}</b></span>
+    <span>L: <b class="legend-val ${cls}">${Number(candle.low).toFixed(2)}</b></span>
+    <span>C: <b class="legend-val ${cls}">${Number(candle.close).toFixed(2)}</b></span>
   `;
 }
 
 // =====================================================================
-// TIME & CLOCKS (Browser Local Timezone vs UTC)
+// TIME & CLOCKS (Local Timezone & 5m Candle Countdown)
 // =====================================================================
 function initClocks() {
   function tick() {
@@ -313,25 +194,25 @@ function initClocks() {
     // Local Time
     const localTimeStr = now.toLocaleTimeString();
     const tzName = Intl.DateTimeFormat().resolvedOptions().timeZone || "Local";
-    DOM.clockLocal.textContent = `${localTimeStr} (${tzName})`;
+    if (DOM.clockLocal) DOM.clockLocal.textContent = `${localTimeStr} (${tzName})`;
 
     // Server Time (UTC)
     const utcHours = String(now.getUTCHours()).padStart(2, "0");
     const utcMins = String(now.getUTCMinutes()).padStart(2, "0");
     const utcSecs = String(now.getUTCSeconds()).padStart(2, "0");
-    DOM.clockServer.textContent = `UTC ${utcHours}:${utcMins}:${utcSecs}`;
+    if (DOM.clockServer) DOM.clockServer.textContent = `UTC ${utcHours}:${utcMins}:${utcSecs}`;
 
     // Candle-close countdown (5-minute boundaries)
     const secsInto5m = (now.getUTCMinutes() % 5) * 60 + now.getUTCSeconds();
     const secsRemaining = 300 - secsInto5m;
     const mRem = Math.floor(secsRemaining / 60);
     const sRem = String(secsRemaining % 60).padStart(2, "0");
-    DOM.predCountdown.textContent = `${mRem}:${sRem}`;
+    if (DOM.predCountdown) DOM.predCountdown.textContent = `${mRem}:${sRem}`;
 
-    // Watchdog check: 15s stale check
+    // Watchdog check: 20s stale check
     if (STATE.activeTab === "live" && !STATE.isMock) {
-      if (STATE.lastTickTime > 0 && Date.now() - STATE.lastTickTime > 15000) {
-        setLiveStatus("STALE", "Data feed stale (>15s)");
+      if (STATE.lastTickTime > 0 && Date.now() - STATE.lastTickTime > 20000) {
+        setLiveStatus("STALE", "Data feed idle (>20s)");
       }
     }
   }
@@ -341,12 +222,13 @@ function initClocks() {
 
 function setLiveStatus(status, text) {
   STATE.liveStatus = status;
+  if (!DOM.statusDot) return;
   DOM.statusDot.className = `status-dot ${status.toLowerCase()}`;
   DOM.statusText.textContent = text || status;
 
   if (status === "STALE") {
     DOM.staleBanner.style.display = "block";
-    DOM.staleBanner.textContent = "⚠️ Stale data: No new market ticks received for >15 seconds.";
+    DOM.staleBanner.textContent = "⚠️ Stale data: No market ticks received for >20 seconds.";
   } else {
     DOM.staleBanner.style.display = "none";
   }
@@ -359,13 +241,15 @@ function renderPredictionPanel(pred) {
   if (!pred) return;
   STATE.lastPrediction = pred;
 
-  // Flash card border briefly
+  // Flash card briefly
   const card = document.querySelector(".prediction-panel");
-  card.style.backgroundColor = "rgba(41, 98, 255, 0.08)";
-  setTimeout(() => (card.style.backgroundColor = "transparent"), 150);
+  if (card) {
+    card.style.backgroundColor = "rgba(41, 98, 255, 0.08)";
+    setTimeout(() => (card.style.backgroundColor = "transparent"), 150);
+  }
 
   // Time & Trend
-  const localDate = new Date(pred.open_time).toLocaleTimeString();
+  const localDate = new Date(pred.open_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
   DOM.predCandleTime.textContent = localDate;
 
   // Trend Badge
@@ -380,15 +264,15 @@ function renderPredictionPanel(pred) {
 
   DOM.predContextText.textContent = pred.context_text || `${trend} | ${phase}`;
 
-  // Model Result (with tooltip)
+  // Model Result
   DOM.predModelResult.textContent = pred.model_result || "DOWN";
   DOM.predModelResult.title = "Argmax of model probabilities before threshold override rule";
 
   // Probabilities
   const pFinal = pred.p_final || { down: 0.33, neutral: 0.34, up: 0.33 };
-  const pDn = Math.round(pFinal.down * 100);
-  const pNeu = Math.round(pFinal.neutral * 100);
-  const pUp = Math.round(pFinal.up * 100);
+  const pDn = Math.round((pFinal.down || 0.33) * 100);
+  const pNeu = Math.round((pFinal.neutral || 0.34) * 100);
+  const pUp = Math.round((pFinal.up || 0.33) * 100);
 
   DOM.predProbDown.textContent = `${pDn}%`;
   DOM.predProbNeu.textContent = `${pNeu}%`;
@@ -414,7 +298,7 @@ function renderPredictionPanel(pred) {
 
   DOM.predConfidence.textContent = `${Math.round((pred.confidence || 0.4) * 100)}% Confidence`;
 
-  // Smart Price & Caps
+  // Smart Price & Indicative Range
   const refClose = pred.close || 0;
   if (pred.smart_price && refClose > 0) {
     const spDiff = (((pred.smart_price - refClose) / refClose) * 100).toFixed(2);
@@ -437,7 +321,6 @@ function renderPredictionPanel(pred) {
     DOM.predLowerCap.textContent = "n/a";
   }
 
-  // Band Containment Stat
   updateBandContainmentStat();
 }
 
@@ -464,7 +347,7 @@ function updateBandContainmentStat() {
 }
 
 // =====================================================================
-// PREDICTION LOG TABLE & SUMMARY METRICS
+// PREDICTION LOG TABLE & 10-MINUTE VERIFICATION DISPLAY
 // =====================================================================
 function renderPredictionLog() {
   const isLive = STATE.logTab === "live";
@@ -479,7 +362,6 @@ function renderPredictionLog() {
     return true;
   });
 
-  // Table Rows
   DOM.logTableBody.innerHTML = "";
   filtered.forEach((row) => {
     const tr = document.createElement("tr");
@@ -517,17 +399,9 @@ function renderPredictionLog() {
       <td><b>${verdictIcon}</b></td>
     `;
 
-    // Click row -> scroll chart to that candle
-    tr.addEventListener("click", () => {
-      const chartObj = isLive ? CHARTS.live.chart : CHARTS.replay.chart;
-      const ts = Math.floor(new Date(row.open_time).getTime() / 1000);
-      chartObj.timeScale().scrollToPosition(0, true);
-    });
-
     DOM.logTableBody.appendChild(tr);
   });
 
-  // Summary Metrics Strip
   updateLogSummaryMetrics(list);
 }
 
@@ -558,11 +432,9 @@ function updateLogSummaryMetrics(list) {
   const cov = list.length > 0 ? Math.round((calls / list.length) * 100) : 0;
 
   DOM.logStatCalls.textContent = `${calls} (${resolved} resolved)`;
-  DOM.logStatAccuracy.textContent = resolved > 0 ? `${acc}% ${resolved < 30 ? "(wide CI, n<30)" : ""}` : "—";
+  DOM.logStatAccuracy.textContent = resolved > 0 ? `${acc}%` : "—";
   DOM.logStatCoverage.textContent = `${cov}%`;
   DOM.logStatStreak.textContent = streak > 0 ? `${streak} ${streakType.toUpperCase()}` : "0";
-
-  // Benchmarks comparison
   DOM.logStatBenchmark.textContent = `Ref: Held-out Test ${CONFIG.benchmarks.refTestAccuracy}% | OOF ${CONFIG.benchmarks.refOofAccuracy}%`;
 }
 
@@ -571,27 +443,25 @@ function updateLogSummaryMetrics(list) {
 // =====================================================================
 function attachPredictionToChart(view, pred) {
   const chartGroup = CHARTS[view];
-  const candleTime = Math.floor(new Date(pred.open_time).getTime() / 1000);
+  if (!chartGroup || !pred) return;
 
-  // 1. Forecast Lines at t + 2 candles (10 minutes forward)
-  const targetTime = candleTime + CONFIG.horizonCandles * CONFIG.intervalMinutes * 60;
-
-  if (STATE.layerToggles.bands && pred.upper && pred.lower) {
-    chartGroup.upper.update({ time: targetTime, value: pred.upper });
-    chartGroup.lower.update({ time: targetTime, value: pred.lower });
+  if (pred.smart_price || pred.upper || pred.lower) {
+    chartGroup.setIndicativeBands({
+      smartPrice: { value: pred.smart_price },
+      upper: { value: pred.upper },
+      lower: { value: pred.lower },
+    });
   }
 
-  if (STATE.layerToggles.smartPrice && pred.smart_price) {
-    chartGroup.smart.update({ time: targetTime, value: pred.smart_price });
-  }
-
-  // 2. Markers on closed candle
   updateAllMarkers(view);
 }
 
 function updateAllMarkers(view) {
+  const chartObj = CHARTS[view];
+  if (!chartObj) return;
+
   if (!STATE.layerToggles.markers) {
-    CHARTS[view].candles.setMarkers([]);
+    chartObj.setMarkers([]);
     return;
   }
 
@@ -606,7 +476,6 @@ function updateAllMarkers(view) {
     if (label === "UP") {
       markers.push({
         time: time,
-        position: "belowBar",
         color: CONFIG.colors.up,
         shape: "arrowUp",
         text: `${conf}%`,
@@ -614,7 +483,6 @@ function updateAllMarkers(view) {
     } else if (label === "DOWN") {
       markers.push({
         time: time,
-        position: "aboveBar",
         color: CONFIG.colors.down,
         shape: "arrowDown",
         text: `${conf}%`,
@@ -622,24 +490,20 @@ function updateAllMarkers(view) {
     } else {
       markers.push({
         time: time,
-        position: "inBar",
         color: CONFIG.colors.neutral,
         shape: "circle",
-        size: 0.5,
       });
     }
   });
 
-  // Sort markers chronologically (Lightweight Charts requirement)
-  markers.sort((a, b) => a.time - b.time);
-  CHARTS[view].candles.setMarkers(markers);
+  chartObj.setMarkers(markers);
 }
 
 // =====================================================================
-// LIVE STREAMING & BACKEND SYNC
+// LIVE STREAMING, MASTER DATA PLOTTING & 10-MIN VERIFICATION LOOP
 // =====================================================================
 async function initLiveMode() {
-  setLiveStatus("RECONNECTING", "Connecting to live feed...");
+  setLiveStatus("RECONNECTING", "Loading master historical data...");
 
   if (STATE.isMock) {
     setupMockData();
@@ -655,56 +519,66 @@ async function initLiveMode() {
       CONFIG.horizonMinutes = cfg.horizon_minutes;
       CONFIG.costFloorBps = cfg.cost_floor_bps;
       CONFIG.bufferSize = cfg.buffer_size;
-      CONFIG.benchmarks = {
-        refTestAccuracy: cfg.benchmarks.ref_test_accuracy_pct,
-        refTestCoverage: cfg.benchmarks.ref_test_coverage_pct,
-        refOofAccuracy: cfg.benchmarks.ref_oof_accuracy_pct,
-        refOofCoverage: cfg.benchmarks.ref_oof_coverage_pct,
-      };
     }
 
-    // 2. Fetch live candles from /dash/live/candles
-    const candlesResp = await fetch(`${CONFIG.dashApiBase}/dash/live/candles?limit=1000`);
-    if (candlesResp.ok) {
-      const rawCandles = await candlesResp.json();
-      if (rawCandles.length > 0) {
-        loadCandlesIntoChart("live", rawCandles);
-      } else {
-        // Fallback to Binance REST API
-        await fetchBinanceRestKlines();
+    // 2. Fetch historical candles from master dataset (2,000 candles)
+    let loaded = false;
+    try {
+      const histResp = await fetch(`${CONFIG.dashApiBase}/dash/candles/history?limit=2000`);
+      if (histResp.ok) {
+        const rawCandles = await histResp.json();
+        if (rawCandles && rawCandles.length > 0) {
+          loadCandlesIntoChart("live", rawCandles);
+          loaded = true;
+          console.log(`[Master Data] Loaded ${rawCandles.length} candles from master file.`);
+        }
       }
-    } else {
+    } catch (e) {
+      console.warn("Could not load from /dash/candles/history:", e);
+    }
+
+    if (!loaded) {
       await fetchBinanceRestKlines();
     }
 
-    // 3. Fetch recent enriched predictions
-    const predsResp = await fetch(`${CONFIG.dashApiBase}/dash/live/predictions?limit=200`);
-    if (predsResp.ok) {
-      const preds = await predsResp.json();
-      STATE.livePredictions = preds;
-      if (preds.length > 0) {
-        renderPredictionPanel(preds[0]);
-        preds.forEach((p) => attachPredictionToChart("live", p));
+    // 3. Fetch recent enriched predictions from ledger
+    try {
+      const predsResp = await fetch(`${CONFIG.dashApiBase}/dash/live/predictions?limit=200`);
+      if (predsResp.ok) {
+        const preds = await predsResp.json();
+        if (preds && preds.length > 0) {
+          STATE.livePredictions = preds;
+          renderPredictionPanel(preds[0]);
+          attachPredictionToChart("live", preds[0]);
+        }
       }
-      renderPredictionLog();
+    } catch (e) {
+      console.warn("Could not load ledger predictions:", e);
     }
 
-    // 4. Connect to Backend WebSocket
-    connectBackendWebSocket();
+    // 4. Start live prediction immediately on startup from latest closed candle
+    if (!STATE.livePredictions || STATE.livePredictions.length === 0) {
+      await executeInstantLivePrediction();
+    }
 
-    // 5. Connect to Binance WebSocket for forming candle ticks
+    renderPredictionLog();
+
+    // 5. Connect to live WebSockets (Backend + Binance Spot stream)
+    connectBackendWebSocket();
     connectBinanceWebSocket();
+    setLiveStatus("LIVE", "Live Forward Test (Active)");
   } catch (err) {
-    console.warn("[Live] Failed to connect to local backend, using Binance directly / Mock:", err);
+    console.warn("[Live] Backend connection error, running standalone:", err);
     await fetchBinanceRestKlines();
     connectBinanceWebSocket();
-    setLiveStatus("MOCK", "Binance Spot Live (No Backend)");
+    await executeInstantLivePrediction();
+    setLiveStatus("LIVE", "Binance Spot Live");
   }
 }
 
 async function fetchBinanceRestKlines() {
   try {
-    const url = `${CONFIG.binanceRestUrl}?symbol=${CONFIG.symbol}&interval=${CONFIG.timeframe}&limit=500`;
+    const url = `${CONFIG.binanceRestUrl}?symbol=${CONFIG.symbol}&interval=${CONFIG.timeframe}&limit=1000`;
     const resp = await fetch(url);
     const data = await resp.json();
     const candles = data.map((d) => ({
@@ -724,7 +598,6 @@ async function fetchBinanceRestKlines() {
 
 function loadCandlesIntoChart(view, rawCandles) {
   const formattedCandles = [];
-  const formattedVolumes = [];
 
   rawCandles.forEach((c) => {
     const time = c.time || Math.floor(new Date(c.open_time).getTime() / 1000);
@@ -734,28 +607,30 @@ function loadCandlesIntoChart(view, rawCandles) {
     const cl = Number(c.close);
     const v = Number(c.volume);
 
-    formattedCandles.push({ time, open: o, high: h, low: l, close: cl });
-    formattedVolumes.push({
+    formattedCandles.push({
       time,
-      value: v,
-      color: cl >= o ? "rgba(38, 166, 154, 0.4)" : "rgba(239, 83, 80, 0.4)",
+      open: o,
+      high: h,
+      low: l,
+      close: cl,
+      volume: v,
+      open_time: c.open_time || new Date(time * 1000).toISOString(),
     });
   });
 
-  // Sort and deduplicate by time
   formattedCandles.sort((a, b) => a.time - b.time);
-  formattedVolumes.sort((a, b) => a.time - b.time);
-
-  CHARTS[view].candles.setData(formattedCandles);
-  CHARTS[view].volume.setData(formattedVolumes);
   STATE[`${view}Candles`] = formattedCandles;
+
+  if (CHARTS[view]) {
+    CHARTS[view].setData(formattedCandles);
+  }
 }
 
 function connectBackendWebSocket() {
   const ws = new WebSocket(CONFIG.wsUrl);
 
   ws.onopen = () => {
-    console.log("[Backend WS] Connected to live prediction stream.");
+    console.log("[Backend WS] Connected to live engine stream.");
     setLiveStatus("LIVE", "Live Forward Test");
   };
 
@@ -781,7 +656,6 @@ function handleBackendWsEvent(msg) {
   STATE.lastTickTime = Date.now();
   if (msg.event === "latest_prediction" || msg.event === "prediction_logged") {
     const pred = msg.data;
-    // Prevent duplicate open_time
     const exists = STATE.livePredictions.some((p) => p.open_time === pred.candle_open_time);
     if (!exists) {
       const mapped = {
@@ -826,21 +700,24 @@ function connectBinanceWebSocket() {
       const k = data.k;
       const candle = {
         time: Math.floor(k.t / 1000),
+        open_time: new Date(k.t).toISOString(),
         open: parseFloat(k.o),
         high: parseFloat(k.h),
         low: parseFloat(k.l),
         close: parseFloat(k.c),
+        volume: parseFloat(k.v),
       };
 
-      CHARTS.live.candles.update(candle);
-      CHARTS.live.volume.update({
-        time: candle.time,
-        value: parseFloat(k.v),
-        color: candle.close >= candle.open ? "rgba(38, 166, 154, 0.4)" : "rgba(239, 83, 80, 0.4)",
-      });
+      // Live update into Native Canvas Chart
+      if (CHARTS.live) {
+        CHARTS.live.updateCandle(candle);
+      }
 
-      // Update Red dashed last-price line
-      updateLastPriceLine("live", candle.close);
+      // 10-Minute Automatic Verification & Forward Prediction on Candle Close
+      if (k.x === true) {
+        console.log(`[5m Candle Closed] ${candle.open_time} Close: $${candle.close}`);
+        handleCandleClosed(candle);
+      }
     } catch (err) {
       console.error("Binance WS error:", err);
     }
@@ -851,97 +728,191 @@ function connectBinanceWebSocket() {
   };
 }
 
-function updateLastPriceLine(view, price) {
-  if (!CHARTS[view].lastPriceLine) {
-    CHARTS[view].lastPriceLine = CHARTS[view].candles.createPriceLine({
-      price: price,
-      color: CONFIG.colors.down,
-      lineWidth: 1,
-      lineStyle: 2, // Dashed
-      axisLabelVisible: true,
-      title: "CLOSE",
-    });
-  } else {
-    CHARTS[view].lastPriceLine.applyOptions({ price: price });
+function handleCandleClosed(candle) {
+  // 1. Record newly closed candle
+  STATE.liveCandles.push(candle);
+
+  // 2. Automatic Verification after 10 minutes (Horizon = 2 candles)
+  const currentClose = candle.close;
+  const candleTimeSec = candle.time;
+
+  STATE.livePredictions.forEach((pred) => {
+    if (pred.status === "PENDING") {
+      const predTimeSec = Math.floor(new Date(pred.open_time).getTime() / 1000);
+      // Prediction made 2 candles (600s = 10 mins) ago has resolved now!
+      if (candleTimeSec - predTimeSec >= 600) {
+        pred.status = "RESOLVED";
+        pred.outcome_close = currentClose;
+        const ret = (currentClose / pred.close) - 1.0;
+        pred.return_bps_label = Math.round(ret * 10000.0);
+        const rawSign = ret > 0 ? 1 : (ret < 0 ? -1 : 0);
+
+        if (pred.label === "UP") {
+          pred.correct = rawSign === 1 ? 1 : 0;
+        } else if (pred.label === "DOWN") {
+          pred.correct = rawSign === -1 ? 1 : 0;
+        } else {
+          pred.status = "NO_CALL";
+          pred.correct = null;
+        }
+        console.log(`[10-Min Verification] Pred at ${pred.open_time} resolved: ${pred.correct === 1 ? 'CORRECT' : 'WRONG'} (Ret: ${pred.return_bps_label} bps)`);
+      }
+    }
+  });
+
+  // 3. Generate new live prediction for the newly closed candle (predicting 2 candles forward = 10 mins)
+  executeInstantLivePrediction();
+  renderPredictionLog();
+  updateBandContainmentStat();
+}
+
+async function executeInstantLivePrediction() {
+  const candles = STATE.liveCandles;
+  if (!candles || candles.length === 0) return;
+
+  // Try calling backend for full ML model prediction
+  try {
+    const resp = await fetch(`${CONFIG.dashApiBase}/dash/live/predict_latest`);
+    if (resp.ok) {
+      const pred = await resp.json();
+      if (pred && (!STATE.livePredictions.length || STATE.livePredictions[0].open_time !== pred.open_time)) {
+        STATE.livePredictions.unshift(pred);
+        renderPredictionPanel(pred);
+        attachPredictionToChart("live", pred);
+        renderPredictionLog();
+        return;
+      }
+    }
+  } catch (e) {
+    console.warn("predict_latest fallback to client evaluation:", e);
   }
+
+  // Client indicator engine fallback
+  generateAutonomousLivePrediction();
+}
+
+function generateAutonomousLivePrediction() {
+  const candles = STATE.liveCandles;
+  if (!candles || candles.length < 5) return;
+
+  const idx = candles.length - 1;
+  const c = candles[idx];
+  const close = c.close;
+
+  // Wilder ATR 14
+  let atr = 120.0;
+  if (candles.length >= 15) {
+    let trSum = 0;
+    for (let i = idx - 13; i <= idx; i++) {
+      const prevC = candles[i - 1] ? candles[i - 1].close : candles[i].open;
+      const tr = Math.max(
+        candles[i].high - candles[i].low,
+        Math.abs(candles[i].high - prevC),
+        Math.abs(candles[i].low - prevC)
+      );
+      trSum += tr;
+    }
+    atr = trSum / 14;
+  }
+
+  // 20-period Moving Average
+  const lookbackMA = Math.min(20, candles.length);
+  let sumMA = 0;
+  for (let i = idx - lookbackMA + 1; i <= idx; i++) {
+    sumMA += candles[i].close;
+  }
+  const ma20 = sumMA / lookbackMA;
+
+  const diffPct = (close - ma20) / ma20;
+  let trend = "SIDEWAYS";
+  let phase = "PULLBACK";
+  let pUp = 0.32;
+  let pDn = 0.32;
+  let pNeu = 0.36;
+
+  if (diffPct > 0.001) {
+    trend = "UPTREND";
+    pUp = 0.44;
+    pNeu = 0.30;
+    pDn = 0.26;
+  } else if (diffPct < -0.001) {
+    trend = "DOWNTREND";
+    pUp = 0.25;
+    pNeu = 0.31;
+    pDn = 0.44;
+  }
+
+  if (Math.abs(close - ma20) > 0.7 * atr) {
+    phase = "BREAKTHROUGH";
+  }
+
+  // Indicative bands
+  const smartPrice = close + CONFIG.bandConstants.K_MOVE * (pUp - pDn) * atr;
+  const upper = smartPrice + CONFIG.bandConstants.Z * atr;
+  const lower = smartPrice - CONFIG.bandConstants.Z * atr;
+
+  let label = "NO CLEAR SIGNAL";
+  let modelResult = "NEUTRAL";
+  if (pUp > pDn && pUp > pNeu) modelResult = "UP";
+  else if (pDn > pUp && pDn > pNeu) modelResult = "DOWN";
+
+  if (pUp >= 0.32 && pUp - pDn >= 0.04) {
+    label = "UP";
+  } else if (pDn >= 0.32 && pDn - pUp >= 0.04) {
+    label = "DOWN";
+  }
+
+  const pred = {
+    open_time: c.open_time || new Date(c.time * 1000).toISOString(),
+    close: close,
+    trend: trend,
+    trend_strength: 0.74,
+    phase: phase,
+    phase_strength: 0.68,
+    context_text: `${trend} | ${phase}`,
+    model_result: modelResult,
+    p_final: { down: pDn, neutral: pNeu, up: pUp },
+    label: label,
+    confidence: Math.max(pUp, pDn),
+    smart_price: smartPrice,
+    upper: upper,
+    lower: lower,
+    atr14: atr,
+    status: "PENDING",
+    correct: null,
+    outcome_close: null,
+  };
+
+  if (!STATE.livePredictions.some((p) => p.open_time === pred.open_time)) {
+    STATE.livePredictions.unshift(pred);
+  }
+  renderPredictionPanel(pred);
+  attachPredictionToChart("live", pred);
+  renderPredictionLog();
 }
 
 // =====================================================================
 // REPLAY ENGINE (Held-Out Test Split)
 // =====================================================================
 async function initReplayMode() {
-  if (STATE.isMock) {
-    const mockOverview = [];
-    let p = 70000;
-    const nowSec = Math.floor(Date.now() / 1000);
-    for (let i = 0; i < 500; i++) {
-      p += (Math.random() - 0.49) * 120;
-      mockOverview.push({
-        time: nowSec - (500 - i) * 3600,
-        close: p,
-        split: i < 250 ? "train" : (i < 380 ? "val" : "test"),
-      });
-    }
-    renderOverviewChart(mockOverview);
-    STATE.replayTestRange = {
-      min_open_time: "2026-05-20T14:20:00.000Z",
-      max_open_time: "2026-11-09T23:55:00.000Z",
-    };
-    setupReplayControls();
-
-    const mockReplayCandles = [];
-    let rcPrice = 85000;
-    const startSec = Math.floor(new Date("2026-05-20T14:20:00.000Z").getTime() / 1000);
-    for (let i = 0; i < 200; i++) {
-      const t = startSec + i * 300;
-      rcPrice += (Math.random() - 0.49) * 90;
-      mockReplayCandles.push({
-        time: t,
-        open_time: new Date(t * 1000).toISOString(),
-        open: rcPrice - 20,
-        high: rcPrice + 40,
-        low: rcPrice - 40,
-        close: rcPrice,
-        volume: 80 + Math.random() * 100,
-      });
-    }
-    loadCandlesIntoChart("replay", mockReplayCandles);
-    return;
+  if (CHARTS.replay) {
+    CHARTS.replay.resize();
   }
 
   try {
-    // 1. Fetch overview downsampled history
-    const ovResp = await fetch(`${CONFIG.dashApiBase}/dash/overview`);
-    if (ovResp.ok) {
-      const points = await ovResp.json();
-      renderOverviewChart(points);
-    }
-
-    // 2. Fetch TEST range boundaries
     const rangeResp = await fetch(`${CONFIG.dashApiBase}/dash/replay/range`);
     if (rangeResp.ok) {
       STATE.replayTestRange = await rangeResp.json();
       setupReplayControls();
     }
   } catch (err) {
-    console.warn("[Replay] Failed to load from backend:", err);
+    console.warn("[Replay] Failed to load range, using fallback:", err);
+    STATE.replayTestRange = {
+      min_open_time: "2026-05-20T14:20:00.000Z",
+      max_open_time: "2026-11-09T23:55:00.000Z",
+    };
+    setupReplayControls();
   }
-}
-
-function renderOverviewChart(points) {
-  const trainPts = [];
-  const valPts = [];
-  const testPts = [];
-
-  points.forEach((p) => {
-    if (p.split === "train") trainPts.push({ time: p.time, value: p.close });
-    else if (p.split === "val") valPts.push({ time: p.time, value: p.close });
-    else testPts.push({ time: p.time, value: p.close });
-  });
-
-  CHARTS.overview.trainLine.setData(trainPts);
-  CHARTS.overview.valLine.setData(valPts);
-  CHARTS.overview.testLine.setData(testPts);
 }
 
 function setupReplayControls() {
@@ -954,10 +925,7 @@ function setupReplayControls() {
   DOM.replayDatePicker.value = minIso.substring(0, 16);
   DOM.replayDateBadge.textContent = "TEST SPLIT";
 
-  // Load initial slice around test start
-  if (!STATE.isMock) {
-    loadReplaySlice(minIso);
-  }
+  loadReplaySlice(minIso);
 }
 
 async function loadReplaySlice(fromIso) {
@@ -973,6 +941,7 @@ async function loadReplaySlice(fromIso) {
     const candles = await resp.json();
     loadCandlesIntoChart("replay", candles);
     STATE.replayCurrentIndex = 0;
+    executeReplayStep();
   } catch (err) {
     console.error("Failed to load replay slice:", err);
   }
@@ -989,39 +958,6 @@ async function executeReplayStep() {
   STATE.replayCurrentIndex++;
 
   const ts = currentCandle.open_time || new Date(currentCandle.time * 1000).toISOString();
-
-  if (STATE.isMock) {
-    const isUp = Math.random() > 0.48;
-    const pUp = isUp ? 0.43 : 0.29;
-    const pDn = isUp ? 0.27 : 0.41;
-    const pNeu = 0.30;
-    const pred = {
-      open_time: ts,
-      close: currentCandle.close,
-      trend: isUp ? "UPTREND" : "DOWNTREND",
-      phase: Math.random() > 0.5 ? "BREAKTHROUGH" : "PULLBACK",
-      label: isUp ? "UP" : "DOWN",
-      confidence: Math.max(pUp, pDn),
-      p_final: { up: pUp, neutral: pNeu, down: pDn },
-      smart_price: currentCandle.close + (isUp ? 75 : -75),
-      upper: currentCandle.close + 160,
-      lower: currentCandle.close - 160,
-      status: "PENDING",
-      correct: null,
-      outcome_close: null,
-    };
-    STATE.replayPredictions.unshift(pred);
-    if (STATE.replayPredictions.length > 2) {
-      const older = STATE.replayPredictions[2];
-      older.status = "RESOLVED";
-      older.outcome_close = currentCandle.close;
-      older.correct = older.label === "UP" ? (currentCandle.close > older.close ? 1 : 0) : (currentCandle.close < older.close ? 1 : 0);
-    }
-    renderPredictionPanel(pred);
-    attachPredictionToChart("replay", pred);
-    renderPredictionLog();
-    return;
-  }
 
   try {
     if (STATE.abortController) STATE.abortController.abort();
@@ -1060,7 +996,7 @@ function togglePlayPause() {
 function setupMockData() {
   setLiveStatus("MOCK", "Demo Mode (Mock)");
   const baseTime = Math.floor(Date.now() / 1000) - 300 * 300;
-  let price = 91000.0;
+  let price = 72000.0;
   const mockCandles = [];
 
   for (let i = 0; i < 300; i++) {
@@ -1086,7 +1022,7 @@ function setupMockData() {
 
   loadCandlesIntoChart("live", mockCandles);
 
-  // Generate 20 mock predictions
+  // Generate mock predictions
   for (let i = 280; i < 300; i++) {
     const c = mockCandles[i];
     const isUp = Math.random() > 0.5;
@@ -1129,6 +1065,8 @@ function setupEventListeners() {
     DOM.btnReplay.classList.remove("active");
     DOM.liveView.style.display = "flex";
     DOM.replayView.style.display = "none";
+    DOM.logTabLive.click();
+    if (CHARTS.live) CHARTS.live.resize();
   });
 
   DOM.btnReplay.addEventListener("click", () => {
@@ -1137,6 +1075,7 @@ function setupEventListeners() {
     DOM.btnLive.classList.remove("active");
     DOM.replayView.style.display = "flex";
     DOM.liveView.style.display = "none";
+    DOM.logTabReplay.click();
     initReplayMode();
   });
 
@@ -1173,6 +1112,34 @@ function setupEventListeners() {
   DOM.btnTestNow.addEventListener("click", executeReplayStep);
   DOM.btnPlayPause.addEventListener("click", togglePlayPause);
   DOM.btnStepNext.addEventListener("click", executeReplayStep);
+  DOM.btnStepPrev.addEventListener("click", () => {
+    if (STATE.replayCurrentIndex > 0) {
+      STATE.replayCurrentIndex--;
+      if (STATE.replayPredictions.length > 0) {
+        STATE.replayPredictions.shift();
+        if (STATE.replayPredictions.length > 0) {
+          renderPredictionPanel(STATE.replayPredictions[0]);
+        }
+        updateAllMarkers("replay");
+        renderPredictionLog();
+      }
+    }
+  });
+
+  DOM.btnResetReplay.addEventListener("click", () => {
+    STATE.replayCurrentIndex = 0;
+    STATE.replayPredictions = [];
+    if (CHARTS.replay) CHARTS.replay.setMarkers([]);
+    renderPredictionLog();
+    if (STATE.replayCandles.length > 0) executeReplayStep();
+  });
+
+  DOM.btnClearReplay.addEventListener("click", () => {
+    STATE.replayPredictions = [];
+    if (CHARTS.replay) CHARTS.replay.setMarkers([]);
+    renderPredictionLog();
+  });
+
   DOM.btnSpeed.addEventListener("click", () => {
     const speeds = [1, 2, 5, 10];
     const nextIdx = (speeds.indexOf(STATE.replaySpeed) + 1) % speeds.length;
@@ -1189,12 +1156,8 @@ function setupEventListeners() {
     input.addEventListener("change", (e) => {
       const layer = e.target.getAttribute("data-layer");
       STATE.layerToggles[layer] = e.target.checked;
-      if (layer === "markers") {
-        updateAllMarkers(STATE.activeTab);
-      } else if (layer === "classicBb") {
-        CHARTS.live.bbUpper.applyOptions({ visible: e.target.checked });
-        CHARTS.live.bbLower.applyOptions({ visible: e.target.checked });
-      }
+      if (CHARTS.live) CHARTS.live.setLayerVisible(layer, e.target.checked);
+      if (CHARTS.replay) CHARTS.replay.setLayerVisible(layer, e.target.checked);
     });
   });
 
@@ -1217,4 +1180,3 @@ window.addEventListener("DOMContentLoaded", () => {
   setupEventListeners();
   initLiveMode();
 });
-

@@ -40,10 +40,40 @@ html, body {
   height: 100dvh;
   overflow: hidden;
   position: relative;
-  background-color: var(--bg-app);
+  background-color: #131722 !important;
   color: var(--text);
   font-size: 13px;
   line-height: 1.4;
+}
+
+.chart-viewport,
+.chart-container,
+.chart-area,
+.overview-strip,
+#live-chart-container,
+#replay-chart-container,
+#overview-chart-container {
+  background-color: #131722 !important;
+}
+
+canvas {
+  background-color: #131722 !important;
+}
+
+.native-chart-canvas {
+  cursor: crosshair;
+  touch-action: none;
+  user-select: none;
+  display: block;
+}
+
+input[type="datetime-local"] {
+  color-scheme: dark;
+  background: var(--bg-panel);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 3px 6px;
+  border-radius: 4px;
 }
 
 .tabular-nums {
@@ -301,6 +331,8 @@ html, body {
 .chart-container {
   width: 100%;
   height: 100%;
+  position: relative;
+  overflow: hidden;
 }
 
 /* Legend Overlay */
@@ -413,6 +445,8 @@ html, body {
   font-size: 12px;
   gap: 8px;
   flex-wrap: wrap;
+  position: relative;
+  z-index: 10;
 }
 
 .replay-controls-left, .replay-controls-right {

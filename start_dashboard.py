@@ -55,7 +55,18 @@ def main():
     print_banner(args.mode, args.mock)
 
     procs = []
-    py_bin = sys.executable
+    
+    # Auto-detect project virtual environment python (Windows & Linux/macOS)
+    venv_win = BASE_DIR / ".venv" / "Scripts" / "python.exe"
+    venv_nix = BASE_DIR / ".venv" / "bin" / "python"
+    if venv_win.exists():
+        py_bin = str(venv_win)
+    elif venv_nix.exists():
+        py_bin = str(venv_nix)
+    else:
+        py_bin = sys.executable
+    
+    print(f" Using Python interpreter: {py_bin}\n")
 
     try:
         # 1. Start Frontend Static Server (Port 8080)
@@ -129,3 +140,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
