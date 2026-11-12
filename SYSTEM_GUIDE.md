@@ -341,3 +341,4 @@ pytest ML/tests/test_trading_engine.py ML/tests/test_final_evaluation.py ML/test
 ```
 - **Total Tests:** 21 passed in 34.70s.
 - **Test Coverage:** Model bundle loading, single-candle prediction formatting, probability simplex verification ($\sum P = 1.0$), backtesting fee accounting, and walk-forward cross-validation integrity.
+

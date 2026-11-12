@@ -1,0 +1,160 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+
+		<title>TradingView Trading Terminal demo</title>
+
+		<!-- Fix for iOS Safari zooming bug -->
+		<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,minimum-scale=1.0">
+		<script type="text/javascript" src="charting_library/charting_library.standalone.js"></script>
+		<script type="text/javascript" src="custom-indicators.js"></script>
+		<script type="text/javascript" src="binance.js"></script>
+		<style>
+			:root {
+				--right-col-w: clamp(300px, 26vw, 420px);
+				--prediction-bg: #131722;
+				--prediction-border: #2a2e39;
+				--prediction-muted: #9598a1;
+			}
+			#custom-panel-toggle {
+				position: fixed; top: 176px; right: 0; z-index: 1000000;
+				width: 40px; height: 40px; padding: 0; display: grid; place-items: center;
+				border: 0; border-top: 1px solid #2a2e39; border-bottom: 1px solid #2a2e39;
+				background: #131722; color: #9598a1; cursor: pointer;
+			}
+			#custom-panel-toggle:hover, #custom-panel-toggle[aria-expanded="true"], #blank-page-button:hover { color: #d1d4dc; background: #1e222d; }
+			#custom-panel-toggle svg, #blank-page-button svg { width: 20px; height: 20px; }
+			#blank-page-button {
+				position: fixed; top: 216px; right: 0; z-index: 1000000;
+				width: 40px; height: 40px; padding: 0; display: grid; place-items: center;
+				border: 0; border-bottom: 1px solid #2a2e39;
+				background: #131722; color: #9598a1; cursor: pointer; text-decoration: none;
+			}
+			#custom-empty-panel {
+				position: fixed; top: 0; right: 40px; bottom: 0; z-index: 999999;
+				width: var(--right-col-w); box-sizing: border-box; overflow: hidden;
+				display: flex; flex-direction: column; min-width: 250px;
+				background: var(--prediction-bg); border-left: 1px solid var(--prediction-border);
+			}
+			#custom-panel-resize-handle {
+				position: absolute; top: 0; bottom: 0; left: 0; z-index: 1;
+				width: 14px; cursor: ew-resize; touch-action: none;
+				border-left: 2px solid #4c5363; box-sizing: border-box;
+				background: rgba(76, 83, 99, 0.16);
+			}
+			#custom-panel-resize-handle:hover,
+			#custom-panel-resize-handle:focus-visible {
+				background: rgba(41, 98, 255, 0.35); border-left-color: #2962ff; outline: none;
+			}
+			#custom-empty-panel[hidden] { display: none; }
+		</style>
+		<script type="text/javascript" src="custom-panel.js"></script>
+
+
+		<script type="text/javascript">
+			window.tvWidgetReady = new Promise(function(resolve) {
+				window.resolveTVWidgetReady = resolve;
+			});
+			window.predictionPanelOpen = false;
+			window.closePredictionPanel = function() {
+				var panel = document.getElementById("custom-empty-panel");
+				var button = document.getElementById("custom-panel-toggle");
+				if (panel) panel.hidden = true;
+				if (button) button.setAttribute("aria-expanded", "false");
+				window.predictionPanelOpen = false;
+			};
+			window.preparePredictionChart = async function() {
+				var widget = await window.tvWidgetReady;
+				var chart = widget.activeChart();
+				window.alert("Setting the chart to BTCUSDT at 5 minutes for the prediction panel.");
+				if (!String(chart.symbol()).replace(/[^a-z0-9]/gi, "").toUpperCase().endsWith("BTCUSDT")) {
+					await new Promise(function(resolve) { chart.setSymbol("BTCUSDT", resolve); });
+				}
+				if (chart.resolution() !== "5") {
+					await new Promise(function(resolve) { chart.setResolution("5", resolve); });
+				}
+			};
+
+			function getParameterByName(name) {
+				name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+				var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+					results = regex.exec(location.search);
+				return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+			}
+
+			function initOnReady() {
+				
+				var widget = window.tvWidget = new TradingView.widget({
+					debug: true, // uncomment this line to see Library errors and warnings in the console
+					fullscreen: true,
+					symbol: 'BTCUSDT',
+					interval: '5',
+					timezone: 'Asia/Kolkata',
+					container: "tv_chart_container",
+					//	BEWARE: no trailing slash is expected in feed URL
+					//datafeed: new Datafeeds.UDFCompatibleDatafeed(datafeedUrl, undefined, {
+					//	maxResponseLength: 1000,
+					//	expectedOrder: 'latestFirst',
+					//}),
+					datafeed: new BinanceDatafeed({debug:true}),
+					library_path: "charting_library/",
+					custom_indicators_getter: getCustomIndicators,
+					locale: getParameterByName('lang') || "en",
+					overrides: {
+						"mainSeriesProperties.showCountdown": true,
+					},
+
+					disabled_features: [
+						"save_chart_properties_to_local_storage",
+						"chart_crosshair_menu",
+						"order_panel",
+						"trading_account_manager"
+					],
+					enabled_features: ["study_templates"],
+					charts_storage_url: 'https://saveload.tradingview.com',
+					charts_storage_api_version: "1.1",
+					client_id: 'trading_platform_demo',
+					user_id: 'public_user',
+					theme: getParameterByName('theme') || "dark",
+
+					widgetbar: {
+						details: true,
+						news: false,
+						watchlist: true,
+						datawindow: true,
+						watchlist_settings: {
+							default_symbols: []
+						}
+					},
+					debug : true
+				});
+				widget.onChartReady(function() {
+					window.resolveTVWidgetReady(widget);
+					var chart = widget.activeChart();
+					function closePredictionOnChartChange() {
+						if (window.predictionPanelOpen) window.closePredictionPanel();
+					}
+					chart.onSymbolChanged().subscribe(null, closePredictionOnChartChange);
+					chart.onIntervalChanged().subscribe(null, closePredictionOnChartChange);
+				});
+			};
+
+			window.addEventListener('DOMContentLoaded', initOnReady, false);
+		</script>
+
+	</head>
+
+	<body style="margin:0px;">
+		<div id="tv_chart_container"></div>
+		<button id="custom-panel-toggle" type="button" aria-label="Custom panel" aria-expanded="false" title="Custom panel">
+			<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4" width="17" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 4v16" stroke="currentColor" stroke-width="1.6"/><path d="M11 8h6M11 12h6M11 16h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+		</button>
+		<a id="blank-page-button" href="blank.html" aria-label="Open blank page" title="Blank page">
+			<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3.5" width="14" height="17" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 8h8M8 11h8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+		</a>
+		<aside id="custom-empty-panel" aria-label="Custom panel" hidden>
+			<div id="custom-panel-resize-handle" role="separator" aria-label="Resize panel" aria-orientation="vertical" tabindex="0"></div>
+		</aside>
+	</body>
+
+</html>
