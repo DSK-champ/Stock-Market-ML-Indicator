@@ -163,7 +163,7 @@ class PredictionLedger:
 
         with self._get_connection() as conn:
             pending_rows = conn.execute("""
-                SELECT * FROM predictions WHERE status = 'PENDING' ORDER BY candle_open_time ASC
+                SELECT * FROM predictions WHERE correct IS NULL ORDER BY candle_open_time ASC
             """).fetchall()
 
         if not pending_rows:
@@ -213,26 +213,25 @@ class PredictionLedger:
             else:
                 target_2_s1 = 0.0
 
-            # Determine Verdict
+            # Determine Verdict (assign definitive CORRECT or WRONG verdict to all resolved rows)
             action = int(pred["action"])
-            if action in [1, -1]:
-                if raw_sign_2 == 0.0:
-                    status = "VOID"
-                    correct = None
-                    reason = "Zero raw forward return"
-                elif action == int(raw_sign_2):
-                    status = "RESOLVED"
-                    correct = 1
-                    reason = "Direction matched raw_sign_2"
-                else:
-                    status = "RESOLVED"
-                    correct = 0
-                    reason = "Direction opposite of raw_sign_2"
+            if action not in [1, -1]:
+                p_up = float(pred.get("p_up") or 0.33)
+                p_dn = float(pred.get("p_down") or 0.33)
+                action = 1 if p_up >= p_dn else -1
+
+            if raw_sign_2 == 0.0:
+                status = "RESOLVED"
+                correct = 0
+                reason = "Zero raw forward return"
+            elif action == int(raw_sign_2):
+                status = "RESOLVED"
+                correct = 1
+                reason = "Direction matched raw_sign_2"
             else:
-                # NEUTRAL call
-                status = "NO_CALL"
-                correct = None
-                reason = "Neutral call (no active directional call)"
+                status = "RESOLVED"
+                correct = 0
+                reason = "Direction opposite of raw_sign_2"
 
             now_str = datetime.now(timezone.utc).isoformat()
 

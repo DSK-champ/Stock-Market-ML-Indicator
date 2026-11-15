@@ -5,8 +5,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>BTC/USDT 5m — AI Trader Dashboard</title>
-  <link rel="stylesheet" href="assets/css/dashboard.css">
-  <script src="assets/js/native_chart.js"></script>
+  <link rel="stylesheet" href="assets/css/dashboard.css?v=1.2">
+  <script src="assets/js/native_chart.js?v=1.1"></script>
 </head>
 
 <body>
@@ -28,6 +28,12 @@
           <span id="status-dot" class="status-dot live"></span>
           <span id="status-text">Connecting...</span>
         </div>
+        <a id="btn-back-index" href="index.html" class="btn-back-index" role="button" aria-label="Back to index page" title="Back to index.html">
+          <svg class="btn-back-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+          <span class="btn-back-text">Back to Index</span>
+        </a>
       </div>
 
       <div class="header-right">
@@ -52,27 +58,82 @@
 
       <!-- Center Chart Viewport -->
       <section class="chart-area" aria-label="Chart Area">
-        <!-- Layer Overlays Bar -->
+        <!-- Chart Toolbar: Indicator Settings & Candle Countdown -->
         <div class="chart-toolbar">
-          <div class="layer-toggles">
-            <label class="layer-toggle">
-              <input type="checkbox" data-layer="markers" checked> Markers
-            </label>
-            <label class="layer-toggle">
-              <input type="checkbox" data-layer="bands" checked> Indicative range
-            </label>
-            <label class="layer-toggle">
-              <input type="checkbox" data-layer="smartPrice" checked> Smart price
-            </label>
-            <label class="layer-toggle">
-              <input type="checkbox" data-layer="classicBb"> Classic BB
-            </label>
-            <label class="layer-toggle">
-              <input type="checkbox" data-layer="volume" checked> Volume
-            </label>
+          <div class="toolbar-left-group">
+            <button id="btn-indicator-settings" class="indicator-settings-btn" title="Configure Indicator Overlays">
+              <span class="icon">⚙</span>
+              <span>Indicator Settings</span>
+              <span class="indicator-badge" id="active-indicators-count">4 active</span>
+            </button>
           </div>
           <div id="countdown-label" style="color: var(--text-dim);">
             Next Close: <b id="pred-countdown" class="tabular-nums" style="color: #fff;">00:00</b>
+          </div>
+        </div>
+
+        <!-- Indicator Settings Dropdown / Popover -->
+        <div id="indicator-settings-popover" class="indicator-settings-popover" role="dialog" aria-modal="true" aria-label="Indicator Settings">
+          <div class="settings-popover-header">
+            <div class="settings-title-group">
+              <span class="settings-icon">⚙</span>
+              <h3 class="settings-title">Indicator Settings</h3>
+            </div>
+            <button id="btn-close-indicator-settings" class="btn-icon" aria-label="Close Settings">✕</button>
+          </div>
+          <div class="settings-popover-subtitle">
+            Configure visible technical layers & AI indicator overlays on the chart
+          </div>
+          <div class="settings-items-list">
+            <label class="settings-item">
+              <div class="settings-item-checkbox">
+                <input type="checkbox" data-layer="bands" checked autocomplete="off">
+              </div>
+              <div class="settings-item-text">
+                <div class="settings-item-name">Adaptive Channel</div>
+                <div class="settings-item-desc">Full-chart continuous volatility channel (20-period baseline ±2.0σ envelope)</div>
+              </div>
+            </label>
+
+            <label class="settings-item">
+              <div class="settings-item-checkbox">
+                <input type="checkbox" data-layer="markers" checked autocomplete="off">
+              </div>
+              <div class="settings-item-text">
+                <div class="settings-item-name">AI Directional Signals</div>
+                <div class="settings-item-desc">Machine learning trade arrows (UP / DOWN) predicted at candle close for horizon N=2 (10 min)</div>
+              </div>
+            </label>
+
+            <label class="settings-item">
+              <div class="settings-item-checkbox">
+                <input type="checkbox" data-layer="actualLine" autocomplete="off">
+              </div>
+              <div class="settings-item-text">
+                <div class="settings-item-name">Actual Price Line (Body Midpoints)</div>
+                <div class="settings-item-desc">Continuous golden trajectory connecting the exact center of candle bodies</div>
+              </div>
+            </label>
+
+            <label class="settings-item">
+              <div class="settings-item-checkbox">
+                <input type="checkbox" data-layer="smartPrice" checked autocomplete="off">
+              </div>
+              <div class="settings-item-text">
+                <div class="settings-item-name">Predicted Directions Line & Forecast</div>
+                <div class="settings-item-desc">Persistent prediction path and anchored forecast rays smartly scaled by accuracy</div>
+              </div>
+            </label>
+
+            <label class="settings-item">
+              <div class="settings-item-checkbox">
+                <input type="checkbox" data-layer="volume" checked autocomplete="off">
+              </div>
+              <div class="settings-item-text">
+                <div class="settings-item-name">Volume Histogram</div>
+                <div class="settings-item-desc">Trading volume bars at chart bottom color-coded by buying and selling pressure</div>
+              </div>
+            </label>
           </div>
         </div>
 
@@ -90,9 +151,9 @@
               <span>H: <b class="legend-val">—</b></span>
               <span>L: <b class="legend-val">—</b></span>
               <span>C: <b class="legend-val">—</b></span>
+              <span>V: <b class="legend-val">—</b></span>
             </div>
           </div>
-          <button id="btn-realtime" class="realtime-btn" title="Go to real-time">▶ Realtime</button>
         </div>
 
         <!-- Replay Chart Container -->
@@ -119,11 +180,25 @@
             </div>
             <div class="replay-controls-right">
               <span id="replay-date-badge" class="badge up">TEST SPLIT</span>
-              <input type="datetime-local" id="replay-date-picker" class="btn-ctrl" style="cursor: pointer;">
+              <input type="date" id="replay-date-picker" class="btn-ctrl" style="cursor: pointer; color: #fff; background: #1e222d; border: 1px solid #363c4e; border-radius: 4px; padding: 3px 6px;" title="Select Replay Date (Test Partition)">
             </div>
           </div>
 
-          <div id="replay-chart-container" class="chart-container" style="flex: 1; min-height: 0;"></div>
+          <div style="position: relative; flex: 1; min-height: 0; display: flex;">
+            <div id="replay-chart-container" class="chart-container" style="flex: 1; min-height: 0;"></div>
+            <div class="chart-legend">
+              <div class="legend-symbol-row">
+                <span>Bitcoin / TetherUS · 5 · Binance (Replay)</span>
+              </div>
+              <div id="replay-legend-ohlc" class="legend-ohlc-row tabular-nums">
+                <span>O: <b class="legend-val">—</b></span>
+                <span>H: <b class="legend-val">—</b></span>
+                <span>L: <b class="legend-val">—</b></span>
+                <span>C: <b class="legend-val">—</b></span>
+                <span>V: <b class="legend-val">—</b></span>
+              </div>
+            </div>
+          </div>
 
           <div class="replay-footnote">
             ℹ Replay is a demonstration on held-out data. Do not use it to tune the model.
@@ -137,28 +212,28 @@
         <section class="prediction-panel" aria-label="Model Prediction Panel">
           <div class="panel-header">
             <span class="panel-title">Prediction</span>
-            <span id="pred-candle-time" class="panel-subtitle tabular-nums">—</span>
+            <span id="pred-source-badge" class="badge up" style="margin-left: 6px; font-size: 9px; padding: 1px 5px;">LIVE</span>
+            <span id="pred-candle-time" class="panel-subtitle tabular-nums" style="margin-left: auto;">—</span>
           </div>
 
-          <!-- Trend & Phase -->
-          <div class="panel-row">
-            <span class="panel-label">Trend</span>
-            <span id="pred-trend-badge" class="badge neutral">—</span>
-          </div>
-          <div class="panel-row">
-            <span class="panel-label">Phase</span>
-            <span id="pred-phase-badge" class="badge neutral">—</span>
-          </div>
-          <div class="panel-row">
-            <span class="panel-label">Context</span>
-            <b id="pred-context-text" style="color: var(--text);">—</b>
-          </div>
-
-          <!-- Model Argmax Result -->
-          <div class="panel-row">
-            <span class="panel-label">Model result</span>
-            <span id="pred-model-result" class="badge neutral"
-              title="Argmax of blended probabilities before override rule">—</span>
+          <!-- The 4 Core Name Tags: 2x2 Grid -->
+          <div class="tags-grid-2x2">
+            <div class="tag-cell">
+              <span class="tag-cell-label">Market</span>
+              <span id="pred-market-badge" class="badge bullish">BULLISH</span>
+            </div>
+            <div class="tag-cell">
+              <span class="tag-cell-label">Trend</span>
+              <span id="pred-trend-badge" class="badge uptrend">UPTREND</span>
+            </div>
+            <div class="tag-cell">
+              <span class="tag-cell-label">Phase</span>
+              <span id="pred-phase-badge" class="badge impulse">IMPULSE</span>
+            </div>
+            <div class="tag-cell">
+              <span class="tag-cell-label">Price Action</span>
+              <span id="pred-price-action-badge" class="badge neutral">NEUTRAL</span>
+            </div>
           </div>
 
           <!-- 3-Class Probabilities -->
@@ -175,27 +250,29 @@
             </div>
           </div>
 
-          <!-- FINAL DECISION -->
+          <!-- FINAL DECISION (PRICE ACTION) -->
           <div class="decision-card">
-            <div id="pred-final-badge" class="decision-badge-large badge neutral">NO CLEAR SIGNAL</div>
+            <div id="pred-final-badge" class="decision-badge-large badge neutral">NEUTRAL</div>
             <div id="pred-confidence" class="decision-confidence tabular-nums">—</div>
             <div class="uncalibrated-note">confidence is not calibrated</div>
           </div>
 
-          <!-- Indicative Targets -->
-          <div class="panel-row">
-            <span class="panel-label">Smart price</span>
-            <b id="pred-smart-price" class="tabular-nums" style="color: var(--accent);">—</b>
+          <!-- Indicative Targets: 1x3 Side-by-Side Row -->
+          <div class="targets-row-1x3">
+            <div class="target-cell">
+              <span class="target-label">Lower Cap</span>
+              <b id="pred-lower-cap" class="target-val up tabular-nums">—</b>
+            </div>
+            <div class="target-cell">
+              <span class="target-label">Smart Prediction</span>
+              <b id="pred-smart-price" class="target-val accent tabular-nums">—</b>
+            </div>
+            <div class="target-cell">
+              <span class="target-label">Upper Cap</span>
+              <b id="pred-upper-cap" class="target-val down tabular-nums">—</b>
+            </div>
           </div>
-          <div class="panel-row">
-            <span class="panel-label">Upper cap</span>
-            <b id="pred-upper-cap" class="tabular-nums" style="color: var(--down);">—</b>
-          </div>
-          <div class="panel-row">
-            <span class="panel-label">Lower cap</span>
-            <b id="pred-lower-cap" class="tabular-nums" style="color: var(--up);">—</b>
-          </div>
-          <div class="panel-row" style="font-size: 10px; color: var(--text-dim);">
+          <div class="panel-row" style="font-size: 10px; color: var(--text-dim); margin-top: 2px;">
             <span id="pred-band-containment">Awaiting resolutions...</span>
           </div>
         </section>
@@ -206,21 +283,24 @@
             <div class="log-tabs">
               <button id="log-tab-live" class="log-tab active">Live</button>
               <button id="log-tab-replay" class="log-tab">Replay</button>
+              <button id="log-tab-features" class="log-tab">Features</button>
             </div>
-            <div>
+            <div id="log-actions-live-replay">
               <button id="btn-export-csv" class="btn-ctrl" style="padding: 2px 6px; font-size: 10px;">Export
                 CSV</button>
               <button id="btn-clear-replay" class="btn-ctrl" style="padding: 2px 6px; font-size: 10px;">Clear</button>
             </div>
+            <div id="log-actions-features" style="display: none;">
+              <button id="btn-export-features" class="btn-ctrl" style="padding: 2px 6px; font-size: 10px;">Export JSON</button>
+            </div>
           </div>
 
           <!-- Summary Strip -->
-          <div class="log-summary-strip">
+          <div class="log-summary-strip" id="log-summary-strip">
             <div class="summary-stats-row">
               <span>Calls: <b id="log-stat-calls" class="tabular-nums">—</b></span>
               <span>Acc: <b id="log-stat-accuracy" class="tabular-nums" style="color: var(--up);">—</b></span>
               <span>Cov: <b id="log-stat-coverage" class="tabular-nums">—</b></span>
-              <span>Streak: <b id="log-stat-streak" class="tabular-nums">—</b></span>
             </div>
             <div id="log-stat-benchmark" style="font-size: 10px; color: var(--text-dim);">
               Ref: Held-out Test 51.90% | OOF 52.16%
@@ -228,7 +308,7 @@
           </div>
 
           <!-- Filter Pills -->
-          <div class="log-filters-bar">
+          <div class="log-filters-bar" id="log-filters-bar">
             <div class="filter-pills">
               <button class="filter-pill active" data-filter="all">All</button>
               <button class="filter-pill" data-filter="correct">Correct</button>
@@ -238,32 +318,111 @@
           </div>
 
           <!-- Scrollable Table -->
-          <div class="log-table-container">
+          <div class="log-table-container" id="log-table-container">
             <table class="log-table">
               <thead>
                 <tr>
                   <th>Time</th>
-                  <th>Signal</th>
-                  <th>Conf</th>
-                  <th>State</th>
-                  <th>Signal $</th>
-                  <th>Outcome $</th>
-                  <th>Verdict</th>
+                  <th>Price Action</th>
+                  <th style="text-align: center;">Verdict</th>
+                  <th style="text-align: right;">Confidence</th>
+                  <th style="text-align: right;">Probability</th>
+                  <th>Market</th>
+                  <th>Trend</th>
+                  <th>Phase</th>
                 </tr>
               </thead>
               <tbody id="log-table-body"></tbody>
             </table>
           </div>
-        </section>
-      </aside>
 
-      <!-- Far Right Icon Strip -->
-      <aside class="right-strip" aria-label="Right Strip Toolbar">
-        <div class="tool-icon active" title="Signals">⚡</div>
-        <div class="tool-icon" title="Alerts">🔔</div>
-        <div class="tool-icon" title="Data Feed">📡</div>
-        <div class="tool-icon" title="Scorecard">📊</div>
-        <div class="tool-icon" title="Settings">⚙</div>
+          <!-- Panel 2C: Features Engineering & Input Catalog View -->
+          <div id="features-panel-view" class="features-panel-view" style="display: none;">
+            <!-- Pipeline Architecture / How We Do Feature Engineering Card -->
+            <div class="features-pipeline-banner">
+              <div class="pipeline-header">
+                <button id="btn-toggle-pipeline-details" class="btn-ctrl" style="padding: 3px 8px; font-size: 10.5px;">How Features Are Calculated / Pipeline Workflow ▼</button>
+              </div>
+              <div id="pipeline-details-content" class="pipeline-details-collapsed">
+                <div class="pipeline-nav-bar">
+                  <span class="pipeline-nav-hint">Steps:</span>
+                  <div class="pipeline-step-pills" id="pipeline-step-pills">
+                    <button class="step-pill active" data-step="1">1. Ingestion</button>
+                    <button class="step-pill" data-step="2">2. Anti-Leakage</button>
+                    <button class="step-pill" data-step="3">3. Stationarity</button>
+                    <button class="step-pill" data-step="4">4. Extraction</button>
+                    <button class="step-pill" data-step="5">5. Vector</button>
+                  </div>
+                </div>
+                <div class="pipeline-steps-scroll" id="pipeline-steps-scroll">
+                  <div class="pipeline-steps-grid" id="pipeline-steps-container">
+                    <!-- Steps dynamically populated from PIPELINE_STAGES -->
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Features Search & Counter Toolbar -->
+            <div class="features-toolbar">
+              <div class="features-search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="features-search-input" placeholder="Filter Horizon-2 features by name, math formula, or description..." autocomplete="off" />
+                <button id="btn-clear-features-search" class="btn-clear-search" style="display: none;">✕</button>
+              </div>
+              <div class="features-count-label">
+                Showing <b id="features-visible-count">101</b> / 101 Horizon-2 features
+              </div>
+            </div>
+
+            <!-- Category & Model Scope Filter Pills -->
+            <div class="features-categories-bar">
+              <div class="model-scope-row">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="model-scope-label">Active Model Scope:</span>
+                  <div id="features-model-pills" class="filter-pills">
+                    <button class="filter-pill active" data-model="all" title="Dedicated Horizon-2 feature set (all different horizon 3, 6, 12 features removed)">Horizon-2 Features (101)</button>
+                    <button class="filter-pill" data-model="linear" title="Linear models decorrelated feature subset">Linear LR (41)</button>
+                    <button class="filter-pill" data-model="meta" title="Meta-Model Combiner stacks 15 inputs: 9 model probability outputs + 6 continuous TA indicators">Meta-Model (15)</button>
+                  </div>
+                </div>
+              </div>
+              <div id="features-category-pills" class="filter-pills category-pills-scrollable">
+                <button class="filter-pill active" data-cat="all">All Groups (101)</button>
+                <button class="filter-pill" data-cat="returns">Returns (2)</button>
+                <button class="filter-pill" data-cat="volatility">Volatility (12)</button>
+                <button class="filter-pill" data-cat="momentum">Momentum (13)</button>
+                <button class="filter-pill" data-cat="ma_structure">Moving Averages (36)</button>
+                <button class="filter-pill" data-cat="order_flow">Order Flow & Volume (4)</button>
+                <button class="filter-pill" data-cat="structure">Market Structure (15)</button>
+                <button class="filter-pill" data-cat="candle_shape">Candle Shape (6)</button>
+                <button class="filter-pill" data-cat="mtf_1h">MTF 1H (3)</button>
+                <button class="filter-pill" data-cat="time">Time & Seasonal (10)</button>
+              </div>
+            </div>
+
+            <!-- Features Table -->
+            <div class="features-table-container" id="features-table-container">
+              <table class="features-table">
+                <thead>
+                  <tr>
+                    <th style="width: 32px; text-align: center;">#</th>
+                    <th>Feature Name</th>
+                    <th style="text-align: right; min-width: 90px;">Calculated Value</th>
+                    <th>Category</th>
+                    <th>Active Models</th>
+                    <th>Engineering Formula</th>
+                    <th>Lookback Window</th>
+                    <th>Scale / Unit</th>
+                    <th>What It Measures (Model Purpose)</th>
+                  </tr>
+                </thead>
+                <tbody id="features-table-body">
+                  <!-- Dynamically populated from FEATURES_CATALOG -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
       </aside>
     </main>
 
@@ -307,9 +466,9 @@
         <p>The prediction horizon is strictly <b>2 candles (10 minutes)</b>. Predictions refer to the price change from
           the signal candle close to the close of candle $k+2$.</p>
 
-        <h4>5. Indicative Range Heuristic</h4>
-        <p>The upper and lower dashed lines are visual heuristics calculated from Wilder's 14-period ATR and directional
-          model probabilities. They are indicative bounds, not guaranteed prediction intervals.</p>
+        <h4>5. Adaptive Channel & Price Targets</h4>
+        <p>The continuous adaptive channel envelopes normal volatility dynamics across all candles. In addition, forward
+          projected price target rays are derived from 14-period ATR and directional model probabilities for candle $k+2$.</p>
 
         <h4>6. When NOT to Trust the Signal</h4>
         <ul>
@@ -326,7 +485,8 @@
     </div>
   </div>
 
-  <script src="assets/js/dashboard.js"></script>
+  <script src="assets/js/features_data.js?v=1.1"></script>
+  <script src="assets/js/dashboard.js?v=1.4"></script>
 </body>
 
 </html>

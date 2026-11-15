@@ -134,11 +134,11 @@ class BinanceKlineStream:
             await asyncio.sleep(sleep_time)
             backoff = min(backoff * 2.0, config.MAX_RECONNECT_BACKOFF)
 
-            # Backfill any missed candles after reconnection
+            # Audit and repair any gaps across the entire dataset after reconnection
             try:
-                self.candle_store.backfill_from_rest(limit=10)
+                self.candle_store.validate_and_repair_continuity()
             except Exception as e:
-                print(f"[WARN] Post-reconnect backfill failed: {e}")
+                print(f"[WARN] Post-reconnect audit/repair failed: {e}")
 
     async def _handle_kline_event(self, msg: Dict[str, Any]) -> None:
         """Parse, validate, and process incoming kline event."""

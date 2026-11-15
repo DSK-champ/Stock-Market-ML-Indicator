@@ -20,6 +20,7 @@ flowchart TD
     subgraph Backend Layer
         B --> C["backend/engine.py (predict_one)"]
         C --> D["ML/src/trading_engine.py (TradingEngine Singleton)"]
+        C --> D["ML/src/trading_engine.py (TradingEngine Singleton)"]
     end
 
     subgraph Feature Engineering

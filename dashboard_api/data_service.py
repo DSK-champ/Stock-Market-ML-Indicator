@@ -42,8 +42,8 @@ TREND_MAP = {
     "UPTREND": "UPTREND",
     "BEARISH": "DOWNTREND",
     "DOWNTREND": "DOWNTREND",
-    "SIDEWAYS": "SIDEWAYS",
-    "uncertain": "SIDEWAYS",
+    "SIDEWAYS": "UPTREND",
+    "uncertain": "UPTREND",
 }
 
 PHASE_MAP = {
@@ -71,6 +71,7 @@ class DataService:
         self.candles_db_uri = f"file:{CANDLES_DB_PATH.resolve().as_posix()}?mode=ro"
         self.ledger_db_uri = f"file:{LIVE_LEDGER_DB_PATH.resolve().as_posix()}?mode=ro"
         self._clean_df: Optional[pd.DataFrame] = None
+        self._offline_test_df: Optional[pd.DataFrame] = None
         self._overview_cache: Optional[List[Dict[str, Any]]] = None
         self._prediction_cache: Dict[str, Dict[str, Any]] = {}
 
@@ -92,6 +93,16 @@ class DataService:
             df = df.set_index("open_time").sort_index()
             self._clean_df = df
         return self._clean_df
+
+    def _get_offline_test_df(self) -> Optional[pd.DataFrame]:
+        if self._offline_test_df is None:
+            csv_path = ml_config.RESULTS_DIR / "horizon_2_test.csv"
+            if csv_path.exists():
+                df = pd.read_csv(csv_path)
+                df["open_time"] = pd.to_datetime(df["open_time"], utc=True)
+                df = df.set_index("open_time").sort_index()
+                self._offline_test_df = df
+        return self._offline_test_df
 
     def get_config(self) -> Dict[str, Any]:
         """Compile complete configuration and vocabulary definitions."""
@@ -142,8 +153,32 @@ class DataService:
         }
 
     def get_historical_candles(self, limit: int = 2000) -> List[Dict[str, Any]]:
-        """Retrieve recent candles directly from clean.csv / master data."""
-        df = self._get_clean_df(reload=True)
+        """Retrieve recent candles combining clean.csv master history with candles.db live data."""
+        clean_df = self._get_clean_df()
+
+        # Check if live candles exist in candles.db to provide unbroken data up to the current instant
+        if CANDLES_DB_PATH.exists():
+            try:
+                conn = sqlite3.connect(self.candles_db_uri, uri=True, timeout=5.0)
+                db_df = pd.read_sql_query(
+                    "SELECT open_time, open, high, low, close, volume FROM candles ORDER BY open_time ASC",
+                    conn,
+                )
+                conn.close()
+                if not db_df.empty:
+                    db_df["open_time"] = pd.to_datetime(db_df["open_time"], utc=True)
+                    db_df = db_df.set_index("open_time")
+                    earliest_live = db_df.index[0]
+                    clean_prior = clean_df[clean_df.index < earliest_live]
+                    df = pd.concat([clean_prior, db_df]).sort_index()
+                else:
+                    df = clean_df
+            except Exception as e:
+                logger.warning(f"Failed to stitch candles.db in get_historical_candles: {e}")
+                df = clean_df
+        else:
+            df = clean_df
+
         tail_df = df.tail(limit).reset_index()
         out = []
         for _, row in tail_df.iterrows():
@@ -242,9 +277,50 @@ class DataService:
             raw_action = str(row["action_label"])
             ui_label = LABEL_MAP.get(raw_action, raw_action)
             raw_trend = str(row["trend"])
-            ui_trend = TREND_MAP.get(raw_trend, raw_trend)
+            ui_trend = TREND_MAP.get(raw_trend, "UPTREND" if p_up >= p_dn else "DOWNTREND")
+            if ui_trend not in ["UPTREND", "DOWNTREND"]:
+                ui_trend = "UPTREND" if p_up >= p_dn else "DOWNTREND"
             raw_phase = str(row["market_phase"])
             ui_phase = PHASE_MAP.get(raw_phase, raw_phase)
+
+            # Ensure canonical directional label
+            if ui_label not in ["UP", "DOWN"]:
+                ui_label = "UP" if p_up >= p_dn else "DOWN"
+
+            correct_val = row.get("correct")
+            outcome_cl = row.get("outcome_close")
+            outcome_op = row.get("outcome_open")
+            ret_bps_lbl = row.get("return_bps_label")
+            status_val = str(row["status"])
+
+            # Automatic Verdict Resolution: If candle k+2 (10 minutes later) exists, evaluate verdict
+            target_dt = ts_dt + pd.Timedelta(minutes=10)
+            if not df_candles.empty:
+                cand_k2 = None
+                if target_dt in df_candles.index:
+                    cand_k2 = df_candles.loc[target_dt]
+                else:
+                    after_df = df_candles[df_candles.index >= target_dt]
+                    if not after_df.empty:
+                        cand_k2 = after_df.iloc[0]
+
+                if cand_k2 is not None:
+                    if isinstance(cand_k2, pd.DataFrame):
+                        cand_k2 = cand_k2.iloc[-1]
+                    outcome_cl = round(float(cand_k2["close"]), 2)
+                    outcome_op = round(float(cand_k2["open"]), 2)
+                    ret = (outcome_cl / ref_close) - 1.0 if ref_close > 0 else 0.0
+                    ret_bps_lbl = round(ret * 10000.0, 1)
+
+                    if ui_label == "UP":
+                        correct_val = 1 if ret > 0 else 0
+                    else:
+                        correct_val = 1 if ret < 0 else 0
+                    status_val = "RESOLVED"
+                elif correct_val is None:
+                    status_val = "PENDING"
+            elif correct_val is None:
+                status_val = "PENDING"
 
             enriched.append({
                 "open_time": ts_str,
@@ -262,20 +338,20 @@ class DataService:
                     "up": p_up,
                 },
                 "label": ui_label,
-                "confidence": float(row["confidence"]),
+                "confidence": float(row["confidence"]) if float(row["confidence"]) > 0 else round(max(p_up, p_dn), 4),
                 "smart_price": band["smart_price"],
                 "upper": band["upper"],
                 "lower": band["lower"],
                 "atr14": band["atr14"],
                 "text": None,
-                "status": str(row["status"]),
+                "status": status_val,
                 "reason": row["status_reason"],
                 "n_imputed_features": int(row.get("n_imputed_features") or 0),
                 "latency_ms": float(row.get("compute_latency_ms") or 0.0),
-                "correct": row.get("correct"),
-                "outcome_close": row.get("outcome_close"),
-                "outcome_open": row.get("outcome_open"),
-                "return_bps_label": row.get("return_bps_label"),
+                "correct": correct_val,
+                "outcome_close": outcome_cl,
+                "outcome_open": outcome_op,
+                "return_bps_label": ret_bps_lbl,
                 "return_bps_executable": row.get("return_bps_executable"),
             })
 
@@ -334,7 +410,9 @@ class DataService:
         trend_score = float(ta_info.get("trend_score", 0.0))
         phase_score = float(ta_info.get("breakthrough_score", 0.0))
 
-        ui_trend = TREND_MAP.get(raw_trend, raw_trend)
+        ui_trend = TREND_MAP.get(raw_trend, "UPTREND" if p_up >= p_dn else "DOWNTREND")
+        if ui_trend not in ["UPTREND", "DOWNTREND"]:
+            ui_trend = "UPTREND" if p_up >= p_dn else "DOWNTREND"
         ui_phase = PHASE_MAP.get(raw_phase, raw_phase)
         raw_action = str(pred_res["action_label"])
         ui_label = LABEL_MAP.get(raw_action, raw_action)
@@ -442,6 +520,44 @@ class DataService:
             })
         return out
 
+    def get_latest_features(self) -> Dict[str, Any]:
+        """Compute and return the full 136 engineered causal features for the latest closed candle."""
+        df = self._get_clean_df()
+        if CANDLES_DB_PATH.exists():
+            try:
+                conn = sqlite3.connect(self.candles_db_uri, uri=True, timeout=5.0)
+                candles_df = pd.read_sql_query(
+                    """
+                    SELECT open_time, open, high, low, close, volume,
+                           taker_buy_base_volume, number_of_trades
+                    FROM candles
+                    ORDER BY open_time DESC
+                    LIMIT 2500
+                    """,
+                    conn,
+                )
+                conn.close()
+                if not candles_df.empty and len(candles_df) >= 200:
+                    candles_df["open_time"] = pd.to_datetime(candles_df["open_time"], utc=True)
+                    df = candles_df.set_index("open_time").sort_index()
+            except Exception:
+                pass
+
+        from src.features import build_features
+        sample_df = df.tail(2500).copy()
+        feats = build_features(sample_df)
+        last_row = feats.iloc[-1].to_dict()
+        last_ts = sample_df.index[-1].isoformat()
+        last_close = float(sample_df["close"].iloc[-1])
+
+        clean_feats = {k: round(float(v), 6) if pd.notna(v) else 0.0 for k, v in last_row.items()}
+        return {
+            "open_time": last_ts,
+            "close": last_close,
+            "count": len(clean_feats),
+            "features": clean_feats,
+        }
+
     def predict_replay_candle(self, ts: str) -> Dict[str, Any]:
         """Execute single-candle replay prediction with 3,000-candle lookback."""
         if ts in self._prediction_cache:
@@ -491,7 +607,9 @@ class DataService:
         trend_score = float(ta_info.get("trend_score", 0.0))
         phase_score = float(ta_info.get("breakthrough_score", 0.0))
 
-        ui_trend = TREND_MAP.get(raw_trend, raw_trend)
+        ui_trend = TREND_MAP.get(raw_trend, "UPTREND" if p_up >= p_dn else "DOWNTREND")
+        if ui_trend not in ["UPTREND", "DOWNTREND"]:
+            ui_trend = "UPTREND" if p_up >= p_dn else "DOWNTREND"
         ui_phase = PHASE_MAP.get(raw_phase, raw_phase)
         raw_action = str(pred_res["action_label"])
         ui_label = LABEL_MAP.get(raw_action, raw_action)

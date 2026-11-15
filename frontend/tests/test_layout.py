@@ -56,21 +56,19 @@ def test_layout_across_all_viewports(browser_instance):
             right_col_box = page.locator(".right-column").bounding_box()
             pred_panel_box = page.locator(".prediction-panel").bounding_box()
             pred_log_box = page.locator(".prediction-log").bounding_box()
-            right_strip_box = page.locator(".right-strip").bounding_box()
 
             assert right_col_box is not None
             assert pred_panel_box is not None
             assert pred_log_box is not None
-            assert right_strip_box is not None
+            assert page.locator(".right-strip").count() == 0, "Right strip toolbar should be removed"
 
             # Identical left and right edges
             assert abs(pred_panel_box["x"] - right_col_box["x"]) < 2.0
             assert abs(pred_log_box["x"] - right_col_box["x"]) < 2.0
             assert abs((pred_panel_box["x"] + pred_panel_box["width"]) - (right_col_box["x"] + right_col_box["width"])) < 2.0
 
-            # Right strip not covered
-            assert right_strip_box["x"] >= right_col_box["x"] + right_col_box["width"] - 2
-            assert right_strip_box["width"] > 30
+            # Right column extends cleanly to the right edge of main row
+            assert abs((right_col_box["x"] + right_col_box["width"]) - (main_box["x"] + main_box["width"])) < 2.0
 
             # Panel top >= header bottom
             assert pred_panel_box["y"] >= header_box["y"] + header_box["height"] - 1

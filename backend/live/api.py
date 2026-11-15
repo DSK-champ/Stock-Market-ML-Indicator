@@ -1,4 +1,5 @@
 """Async REST and WebSocket API server for live indicators and metrics."""
+"""Async REST and WebSocket API server for live indicators and metrics."""
 
 from typing import Dict, Any, Optional, Set, List
 import asyncio
@@ -46,10 +47,35 @@ class LiveApiServer:
         # Register event callback from predictor
         self.predictor.add_callback(self.broadcast_event)
 
+    def _enrich_pred(self, pred: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+        if not pred:
+            return None
+        enriched = dict(pred)
+        if not enriched.get("ref_close") and enriched.get("candle_open_time"):
+            c = self.candle_store.get_candle(str(enriched["candle_open_time"]))
+            if c and c.get("close"):
+                ref_close = float(c["close"])
+                enriched["ref_close"] = ref_close
+                p_up = float(enriched.get("p_up", 0.33))
+                p_dn = float(enriched.get("p_down", 0.33))
+                p_neu = float(enriched.get("p_neutral", 0.34))
+                atr = ref_close * 0.0035
+                sqrt2 = 1.41421356
+                smart = ref_close + (p_up - p_dn) * atr * sqrt2 * 0.5
+                half = 1.28 * atr * sqrt2 * (0.75 + 0.5 * (1.0 - p_neu))
+                enriched["smart_price"] = round(smart, 2)
+                enriched["upper"] = round(smart + half, 2)
+                enriched["lower"] = round(smart - half, 2)
+                enriched["atr14"] = round(atr, 2)
+        return enriched
+
     def broadcast_event(self, event_type: str, payload: Dict[str, Any]) -> None:
         """Broadcast live event to all connected WebSocket clients."""
         if not self.ws_clients:
             return
+
+        if event_type in ["new_prediction", "latest_prediction"]:
+            payload = self._enrich_pred(payload) or payload
 
         msg = json.dumps({"event": event_type, "data": payload, "timestamp": datetime.now(timezone.utc).isoformat()})
         asyncio.create_task(self._send_to_all(msg))
@@ -72,7 +98,7 @@ class LiveApiServer:
             initial_status = self.get_status_dict()
             await websocket.send(json.dumps({"event": "initial_status", "data": initial_status}))
 
-            latest_pred = self.ledger.get_latest()
+            latest_pred = self._enrich_pred(self.ledger.get_latest())
             if latest_pred:
                 await websocket.send(json.dumps({"event": "latest_prediction", "data": latest_pred}))
 
@@ -148,7 +174,7 @@ class LiveApiServer:
                 return Response(200, "OK", cors_headers, json.dumps(data).encode("utf-8"))
 
             elif path == "/api/live/latest":
-                latest = self.ledger.get_latest()
+                latest = self._enrich_pred(self.ledger.get_latest())
                 resp_data: Dict[str, Any] = {"latest_prediction": latest}
                 if latest:
                     pred_time = pd.to_datetime(latest["candle_open_time"], utc=True)
@@ -164,6 +190,26 @@ class LiveApiServer:
                 since = query.get("since", [None])[0]
                 preds = self.ledger.get_predictions(limit=limit, status=status, since=since)
                 return Response(200, "OK", cors_headers, json.dumps({"count": len(preds), "predictions": preds}).encode("utf-8"))
+
+            elif path == "/api/live/sync":
+                res = self.candle_store.validate_and_repair_continuity()
+                return Response(200, "OK", cors_headers, json.dumps(res).encode("utf-8"))
+
+            elif path == "/api/live/candles":
+                limit = int(query.get("limit", [1000])[0])
+                df_recent = self.candle_store.get_recent_candles(limit=limit)
+                candles_list = []
+                for ts, row in df_recent.iterrows():
+                    candles_list.append({
+                        "time": int(ts.timestamp()),
+                        "open_time": ts.isoformat(),
+                        "open": round(float(row["open"]), 2),
+                        "high": round(float(row["high"]), 2),
+                        "low": round(float(row["low"]), 2),
+                        "close": round(float(row["close"]), 2),
+                        "volume": round(float(row["volume"]), 4),
+                    })
+                return Response(200, "OK", cors_headers, json.dumps(candles_list).encode("utf-8"))
 
             elif path == "/api/live/metrics":
                 metrics = self.metrics_calc.compute_metrics()

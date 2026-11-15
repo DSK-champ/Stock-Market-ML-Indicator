@@ -47,6 +47,14 @@ def get_live_candles(limit: int = Query(1000, ge=1, le=5000)) -> List[Dict[str, 
     return data_service.get_live_candles(limit=limit)
 
 
+@app.get("/dash/candles/sync")
+def sync_candles() -> Dict[str, Any]:
+    """Audit SQLite candles for skipped intervals and repair every gap from Binance."""
+    from backend.live.candle_store import CandleStore
+    store = CandleStore()
+    return store.validate_and_repair_continuity()
+
+
 @app.get("/dash/live/predictions")
 def get_live_predictions(limit: int = Query(200, ge=1, le=1000)) -> List[Dict[str, Any]]:
     """Retrieve recent predictions from live_ledger.db enriched with bands."""
@@ -57,6 +65,12 @@ def get_live_predictions(limit: int = Query(200, ge=1, le=1000)) -> List[Dict[st
 def predict_latest_live() -> Optional[Dict[str, Any]]:
     """Execute prediction on the latest closed candle in candles.db or clean.csv."""
     return data_service.predict_latest_candle()
+
+
+@app.get("/dash/features/latest")
+def get_latest_features() -> Dict[str, Any]:
+    """Retrieve full 136 engineered feature values for the most recent closed candle."""
+    return data_service.get_latest_features()
 
 
 @app.get("/dash/overview")

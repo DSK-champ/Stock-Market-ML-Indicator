@@ -244,6 +244,153 @@ class CandleStore:
         print(f"[OK] Backfilled {stored_count} closed candles successfully with pagination.")
         return stored_count
 
+    def fetch_binance_range(self, start_ms: int, end_ms: Optional[int] = None, max_candles: int = 1000) -> List[Dict[str, Any]]:
+        """Fetch closed klines from Binance Public REST API within a specific timestamp window."""
+        url = f"{config.REST_BASE_URL}/klines"
+        all_candles: List[Dict[str, Any]] = []
+        curr_start = start_ms
+        now_ms = int(time.time() * 1000)
+
+        while True:
+            params: Dict[str, Any] = {
+                "symbol": config.SYMBOL,
+                "interval": config.INTERVAL,
+                "startTime": curr_start,
+                "limit": min(1000, max_candles - len(all_candles)),
+            }
+            if end_ms is not None:
+                params["endTime"] = end_ms
+
+            try:
+                res = requests.get(url, params=params, timeout=10).json()
+            except Exception as e:
+                print(f"[WARN] Binance REST range fetch error: {e}")
+                break
+
+            if not isinstance(res, list) or len(res) == 0:
+                break
+
+            page_added = 0
+            for k in res:
+                open_ms = int(k[0])
+                close_ms = int(k[6])
+                if close_ms > now_ms:
+                    continue
+                o_dt = pd.to_datetime(open_ms, unit="ms", utc=True).strftime("%Y-%m-%d %H:%M:%S+00:00")
+                c_dt = pd.to_datetime(close_ms, unit="ms", utc=True).strftime("%Y-%m-%d %H:%M:%S+00:00")
+                all_candles.append({
+                    "open_time": o_dt,
+                    "open_time_ms": open_ms,
+                    "open": float(k[1]),
+                    "high": float(k[2]),
+                    "low": float(k[3]),
+                    "close": float(k[4]),
+                    "volume": float(k[5]),
+                    "quote_volume": float(k[7]),
+                    "number_of_trades": float(k[8]),
+                    "taker_buy_base_volume": float(k[9]),
+                    "taker_buy_quote_volume": float(k[10]),
+                    "close_time": c_dt,
+                })
+                page_added += 1
+
+            if page_added == 0 or len(all_candles) >= max_candles or len(res) < 1000:
+                break
+
+            latest_open_ms = max(int(k[0]) for k in res)
+            curr_start = latest_open_ms + config.INTERVAL_MS
+            if end_ms is not None and curr_start > end_ms:
+                break
+
+        return all_candles
+
+    def validate_and_repair_continuity(self, limit: int = config.BUFFER_SIZE) -> Dict[str, Any]:
+        """Audit SQLite candles for skipped intervals and repair every gap from Binance."""
+        with self._get_connection() as conn:
+            query = "SELECT open_time, open, high, low, close FROM candles ORDER BY open_time ASC"
+            df = pd.read_sql_query(query, conn)
+
+        if df.empty:
+            count = self.backfill_from_rest(limit=limit)
+            return {"gaps_found": 0, "candles_repaired": count, "is_continuous": True}
+
+        df["dt"] = pd.to_datetime(df["open_time"], utc=True)
+        df["diff"] = df["dt"].diff()
+        # Any step greater than 5 minutes (300 seconds) indicates skipped candles!
+        gaps = df[df["diff"] > pd.Timedelta(minutes=5)]
+        
+        repaired_count = 0
+        now_ms = int(time.time() * 1000)
+
+        # 1. Repair internal gaps
+        if not gaps.empty:
+            print(f"[CANDLE AUDIT] Detected {len(gaps)} continuity break(s) in candles.db. Repairing from Binance...")
+            for idx, row in gaps.iterrows():
+                prev_dt = df.loc[idx - 1, "dt"]
+                curr_dt = row["dt"]
+                start_ms = int((prev_dt + pd.Timedelta(minutes=5)).timestamp() * 1000)
+                end_ms = int((curr_dt - pd.Timedelta(seconds=1)).timestamp() * 1000)
+                missing_est = int((curr_dt - prev_dt).total_seconds() / 300) - 1
+
+                print(f"[CANDLE AUDIT] Filling break: {missing_est} skipped candles between {prev_dt} and {curr_dt}...")
+                gap_candles = self.fetch_binance_range(start_ms=start_ms, end_ms=end_ms, max_candles=missing_est + 10)
+                
+                with self._get_connection() as conn:
+                    for c in gap_candles:
+                        conn.execute("""
+                            INSERT OR REPLACE INTO candles (
+                                open_time, open, high, low, close, volume,
+                                quote_volume, number_of_trades, taker_buy_base_volume, taker_buy_quote_volume,
+                                close_time, received_at, source, is_reconciled
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+                        """, (
+                            c["open_time"], c["open"], c["high"], c["low"], c["close"], c["volume"],
+                            c["quote_volume"], c["number_of_trades"], c["taker_buy_base_volume"], c["taker_buy_quote_volume"],
+                            c["close_time"], datetime.now(timezone.utc).isoformat(), "REST_GAPFILL"
+                        ))
+                        repaired_count += 1
+                    conn.commit()
+
+        # 2. Repair tail gap up to current moment
+        max_dt = df["dt"].max()
+        tail_start_ms = int((max_dt + pd.Timedelta(minutes=5)).timestamp() * 1000)
+        if now_ms - tail_start_ms >= 300000:
+            tail_missing = int((now_ms - tail_start_ms) / 300000)
+            print(f"[CANDLE AUDIT] Tail data is {tail_missing} candles behind current time. Fetching latest from Binance...")
+            tail_candles = self.fetch_binance_range(start_ms=tail_start_ms, max_candles=tail_missing + 10)
+            with self._get_connection() as conn:
+                for c in tail_candles:
+                    conn.execute("""
+                        INSERT OR REPLACE INTO candles (
+                            open_time, open, high, low, close, volume,
+                            quote_volume, number_of_trades, taker_buy_base_volume, taker_buy_quote_volume,
+                            close_time, received_at, source, is_reconciled
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+                    """, (
+                        c["open_time"], c["open"], c["high"], c["low"], c["close"], c["volume"],
+                        c["quote_volume"], c["number_of_trades"], c["taker_buy_base_volume"], c["taker_buy_quote_volume"],
+                        c["close_time"], datetime.now(timezone.utc).isoformat(), "REST_TAIL"
+                    ))
+                    repaired_count += 1
+                conn.commit()
+
+        # 3. Post-repair validation assertion
+        with self._get_connection() as conn:
+            df_check = pd.read_sql_query("SELECT open_time FROM candles ORDER BY open_time ASC", conn)
+        df_check["dt"] = pd.to_datetime(df_check["open_time"], utc=True)
+        remaining_gaps = len(df_check[df_check["dt"].diff() > pd.Timedelta(minutes=5)])
+        is_continuous = (remaining_gaps == 0)
+
+        print(f"[CANDLE AUDIT COMPLETE] Repaired {repaired_count} candles across {len(gaps)} break(s). Total candles: {len(df_check)}. Unbroken continuous: {is_continuous}.")
+        return {
+            "gaps_found": len(gaps),
+            "candles_repaired": repaired_count,
+            "total_candles": len(df_check),
+            "remaining_gaps": remaining_gaps,
+            "is_continuous": is_continuous,
+            "latest_open_time": df_check["open_time"].iloc[-1] if not df_check.empty else None,
+        }
+
     def reconcile_candle(self, open_time_iso: str) -> bool:
         """Reconcile WebSocket candle against Binance REST truth 3 seconds after close."""
         try:
