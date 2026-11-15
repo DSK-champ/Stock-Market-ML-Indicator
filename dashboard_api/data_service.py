@@ -24,6 +24,11 @@ from backend.live import config as live_config
 from src import config as ml_config
 from backend.engine import predict_one, TradingEngine
 from dashboard_api.bands import compute_wilder_atr14, compute_indicative_bands
+from dashboard_api.insights import (
+    compute_shown_action,
+    InsightsStore,
+    compute_empirical_band,
+)
 
 CLEAN_CSV_PATH = ML_DIR / "data" / "processed" / "clean.csv"
 CANDLES_DB_PATH = BASE_DIR / "backend" / "data" / "candles.db"
@@ -74,6 +79,7 @@ class DataService:
         self._offline_test_df: Optional[pd.DataFrame] = None
         self._overview_cache: Optional[List[Dict[str, Any]]] = None
         self._prediction_cache: Dict[str, Dict[str, Any]] = {}
+        self.insights_store = InsightsStore()
 
         # Test boundaries
         test_bounds = ml_config.SPLIT_BOUNDARIES["test"]
@@ -262,7 +268,7 @@ class DataService:
                 if len(slice_df) >= 15:
                     atr14 = compute_wilder_atr14(slice_df, period=14)
 
-            band = compute_indicative_bands(
+            band = compute_empirical_band(
                 close_price=ref_close,
                 atr14=atr14,
                 p_up=p_up,
@@ -329,6 +335,31 @@ class DataService:
                 elif correct_val is None:
                     status_val = "PENDING"
 
+            # Compute shown_action via display-layer policy (F1)
+            shown_act, abstention_reason = compute_shown_action(
+                ledger_action=ui_label,
+                p_up=p_up,
+                p_down=p_dn,
+                p_neutral=p_neu,
+                status=status_val,
+            )
+
+            try:
+                self.insights_store.record_insight(
+                    candle_open_time=ts_str,
+                    shown_action=shown_act,
+                    ledger_action=ui_label,
+                    delta=0.015,
+                    m=0.015,
+                    abstention_reason=abstention_reason,
+                    p_up=p_up,
+                    p_down=p_dn,
+                    p_neutral=p_neu,
+                    status=status_val,
+                )
+            except Exception:
+                pass
+
             raw_conf = row.get("confidence")
             conf_val = float(raw_conf) if raw_conf is not None else None
 
@@ -347,12 +378,17 @@ class DataService:
                     "neutral": p_neu,
                     "up": p_up,
                 },
-                "label": ui_label,
+                "label": shown_act,
+                "shown_action": shown_act,
+                "ledger_action": ui_label,
+                "abstention_reason": abstention_reason,
                 "confidence": conf_val,
                 "smart_price": band["smart_price"],
                 "upper": band["upper"],
                 "lower": band["lower"],
                 "atr14": band["atr14"],
+                "vol_tercile": band.get("vol_tercile"),
+                "neu_tercile": band.get("neu_tercile"),
                 "text": None,
                 "status": status_val,
                 "reason": row["status_reason"],
@@ -406,7 +442,7 @@ class DataService:
         ref_close = float(pred_res["close_price"])
 
         atr14 = compute_wilder_atr14(df, period=14)
-        band = compute_indicative_bands(
+        band = compute_empirical_band(
             close_price=ref_close,
             atr14=atr14,
             p_up=p_up,
@@ -427,6 +463,14 @@ class DataService:
         raw_action = str(pred_res["action_label"])
         ui_label = LABEL_MAP.get(raw_action, raw_action)
 
+        shown_act, abstention_reason = compute_shown_action(
+            ledger_action=ui_label,
+            p_up=p_up,
+            p_down=p_dn,
+            p_neutral=p_neu,
+            status="PENDING",
+        )
+
         argmax_idx = int(np.argmax([p_dn, p_neu, p_up]))
         model_res_map = {0: "DOWN", 1: "NEUTRAL", 2: "UP"}
         model_res = model_res_map[argmax_idx]
@@ -446,12 +490,17 @@ class DataService:
                 "neutral": p_neu,
                 "up": p_up,
             },
-            "label": ui_label,
+            "label": shown_act,
+            "shown_action": shown_act,
+            "ledger_action": ui_label,
+            "abstention_reason": abstention_reason,
             "confidence": float(pred_res["confidence"]),
             "smart_price": band["smart_price"],
             "upper": band["upper"],
             "lower": band["lower"],
             "atr14": band["atr14"],
+            "vol_tercile": band.get("vol_tercile"),
+            "neu_tercile": band.get("neu_tercile"),
             "text": None,
             "status": "PENDING",
             "reason": None,
@@ -603,7 +652,7 @@ class DataService:
         ref_close = float(pred_res["close_price"])
 
         atr14 = compute_wilder_atr14(buffer_df, period=14)
-        band = compute_indicative_bands(
+        band = compute_empirical_band(
             close_price=ref_close,
             atr14=atr14,
             p_up=p_up,
@@ -623,6 +672,14 @@ class DataService:
         ui_phase = PHASE_MAP.get(raw_phase, raw_phase)
         raw_action = str(pred_res["action_label"])
         ui_label = LABEL_MAP.get(raw_action, raw_action)
+
+        shown_act, abstention_reason = compute_shown_action(
+            ledger_action=ui_label,
+            p_up=p_up,
+            p_down=p_dn,
+            p_neutral=p_neu,
+            status="PENDING",
+        )
 
         argmax_idx = int(np.argmax([p_dn, p_neu, p_up]))
         model_res_map = {0: "DOWN", 1: "NEUTRAL", 2: "UP"}
@@ -682,12 +739,17 @@ class DataService:
                 "neutral": p_neu,
                 "up": p_up,
             },
-            "label": ui_label,
+            "label": shown_act,
+            "shown_action": shown_act,
+            "ledger_action": ui_label,
+            "abstention_reason": abstention_reason,
             "confidence": float(pred_res["confidence"]),
             "smart_price": band["smart_price"],
             "upper": band["upper"],
             "lower": band["lower"],
             "atr14": band["atr14"],
+            "vol_tercile": band.get("vol_tercile"),
+            "neu_tercile": band.get("neu_tercile"),
             "text": None,
             "status": status,
             "reason": reason,
