@@ -33,8 +33,8 @@ LIVE_LEDGER_DB_PATH = BASE_DIR / "backend" / "data" / "live_ledger.db"
 LABEL_MAP = {
     "LONG": "UP",
     "SHORT": "DOWN",
-    "NEUTRAL": "NO CLEAR SIGNAL",
-    "NO_SIGNAL": "NO CLEAR SIGNAL",
+    "NEUTRAL": "NEUTRAL",
+    "NO_SIGNAL": "NO_SIGNAL",
 }
 
 TREND_MAP = {
@@ -283,44 +283,54 @@ class DataService:
             raw_phase = str(row["market_phase"])
             ui_phase = PHASE_MAP.get(raw_phase, raw_phase)
 
-            # Ensure canonical directional label
-            if ui_label not in ["UP", "DOWN"]:
-                ui_label = "UP" if p_up >= p_dn else "DOWN"
-
             correct_val = row.get("correct")
             outcome_cl = row.get("outcome_close")
             outcome_op = row.get("outcome_open")
             ret_bps_lbl = row.get("return_bps_label")
             status_val = str(row["status"])
 
-            # Automatic Verdict Resolution: If candle k+2 (10 minutes later) exists, evaluate verdict
-            target_dt = ts_dt + pd.Timedelta(minutes=10)
-            if not df_candles.empty:
-                cand_k2 = None
-                if target_dt in df_candles.index:
-                    cand_k2 = df_candles.loc[target_dt]
-                else:
-                    after_df = df_candles[df_candles.index >= target_dt]
-                    if not after_df.empty:
-                        cand_k2 = after_df.iloc[0]
-
-                if cand_k2 is not None:
-                    if isinstance(cand_k2, pd.DataFrame):
-                        cand_k2 = cand_k2.iloc[-1]
-                    outcome_cl = round(float(cand_k2["close"]), 2)
-                    outcome_op = round(float(cand_k2["open"]), 2)
-                    ret = (outcome_cl / ref_close) - 1.0 if ref_close > 0 else 0.0
-                    ret_bps_lbl = round(ret * 10000.0, 1)
-
-                    if ui_label == "UP":
-                        correct_val = 1 if ret > 0 else 0
+            # NO_SIGNAL handling: never graded, shows status_reason
+            if status_val == "NO_SIGNAL" or raw_action == "NO_SIGNAL":
+                reason_str = str(row.get("status_reason") or "No signal")
+                status_val = f"NO SIGNAL: {reason_str}"
+                ui_label = "NO_SIGNAL"
+                correct_val = None
+            elif ui_label not in ["UP", "DOWN"]:
+                # NEUTRAL is never graded
+                correct_val = None
+            else:
+                # Directional UP / DOWN
+                target_dt = ts_dt + pd.Timedelta(minutes=10)
+                if not df_candles.empty:
+                    cand_k2 = None
+                    if target_dt in df_candles.index:
+                        cand_k2 = df_candles.loc[target_dt]
                     else:
-                        correct_val = 1 if ret < 0 else 0
-                    status_val = "RESOLVED"
+                        after_df = df_candles[df_candles.index >= target_dt]
+                        if not after_df.empty:
+                            cand_k2 = after_df.iloc[0]
+
+                    if cand_k2 is not None:
+                        if isinstance(cand_k2, pd.DataFrame):
+                            cand_k2 = cand_k2.iloc[-1]
+                        outcome_cl = round(float(cand_k2["close"]), 2)
+                        outcome_op = round(float(cand_k2["open"]), 2)
+                        ret = (outcome_cl / ref_close) - 1.0 if ref_close > 0 else 0.0
+                        ret_bps_lbl = round(ret * 10000.0, 1)
+
+                        if ret == 0.0:
+                            correct_val = None
+                            status_val = "VOID"
+                        else:
+                            correct_val = 1 if (ret > 0 if ui_label == "UP" else ret < 0) else 0
+                            status_val = "RESOLVED"
+                    elif correct_val is None:
+                        status_val = "PENDING"
                 elif correct_val is None:
                     status_val = "PENDING"
-            elif correct_val is None:
-                status_val = "PENDING"
+
+            raw_conf = row.get("confidence")
+            conf_val = float(raw_conf) if raw_conf is not None else None
 
             enriched.append({
                 "open_time": ts_str,
@@ -338,7 +348,7 @@ class DataService:
                     "up": p_up,
                 },
                 "label": ui_label,
-                "confidence": float(row["confidence"]) if float(row["confidence"]) > 0 else round(max(p_up, p_dn), 4),
+                "confidence": conf_val,
                 "smart_price": band["smart_price"],
                 "upper": band["upper"],
                 "lower": band["lower"],
