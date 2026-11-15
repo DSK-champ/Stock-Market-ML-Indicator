@@ -175,11 +175,11 @@
     }
     if (DOM.predPhaseBadge) {
       DOM.predPhaseBadge.textContent = tagPhase;
-      DOM.predPhaseBadge.className = `badge ${tagPhase.toLowerCase()}`;
+      DOM.predPhaseBadge.className = `badge ${tagPhase.toLowerCase().replace(/[^a-z0-9_-]/g, "-")}`;
     }
     if (DOM.predPriceActionBadge) {
       DOM.predPriceActionBadge.textContent = tagPriceAction;
-      DOM.predPriceActionBadge.className = `badge ${tagPriceAction.toLowerCase()}`;
+      DOM.predPriceActionBadge.className = `badge ${tagPriceAction.toLowerCase().replace(/[^a-z0-9_-]/g, "-")}`;
     }
 
     // Probabilities
@@ -199,7 +199,7 @@
     // Final Decision Badge
     if (DOM.predFinalBadge) {
       DOM.predFinalBadge.textContent = tagPriceAction;
-      DOM.predFinalBadge.className = `decision-badge-large badge ${tagPriceAction.toLowerCase()}`;
+      DOM.predFinalBadge.className = `decision-badge-large badge ${tagPriceAction.toLowerCase().replace(/[^a-z0-9_-]/g, "-")}`;
     }
     if (DOM.predConfidence) {
       const confVal = pred.confidence ?? null;
@@ -296,15 +296,20 @@
       const timeSec = getCandleUnixSec(row.open_time || row.candle_open_time);
       const timeStr = timeSec ? new Date(timeSec * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "N/A";
 
+      const actionBadgeCls = tagPriceAction.toLowerCase().replace(/[^a-z0-9_-]/g, "-");
+      const marketBadgeCls = tagMarket.toLowerCase().replace(/[^a-z0-9_-]/g, "-");
+      const trendBadgeCls = tagTrend.toLowerCase().replace(/[^a-z0-9_-]/g, "-");
+      const phaseBadgeCls = tagPhase.toLowerCase().replace(/[^a-z0-9_-]/g, "-");
+
       tr.innerHTML = `
         <td class="tabular-nums">${timeStr}</td>
-        <td><span class="badge ${tagPriceAction.toLowerCase()}">${tagPriceAction}</span></td>
+        <td><span class="badge ${actionBadgeCls}">${tagPriceAction}</span></td>
         <td style="text-align: center;">${verdictHtml}</td>
         <td class="tabular-nums" style="text-align: right;">${confPctStr}</td>
         <td class="tabular-nums" style="text-align: right;">${probPctStr}</td>
-        <td><span class="badge ${tagMarket.toLowerCase()}">${tagMarket}</span></td>
-        <td><span class="badge ${tagTrend.toLowerCase()}">${tagTrend}</span></td>
-        <td><span class="badge ${tagPhase.toLowerCase()}">${tagPhase}</span></td>
+        <td><span class="badge ${marketBadgeCls}">${tagMarket}</span></td>
+        <td><span class="badge ${trendBadgeCls}">${tagTrend}</span></td>
+        <td><span class="badge ${phaseBadgeCls}">${tagPhase}</span></td>
       `;
 
       tr.addEventListener("click", () => {
