@@ -860,6 +860,7 @@ class NativeCandleChart {
 
     // Guard: each candle timestamp can ONLY receive at most one marker!
     const drawnCandleTimes = new Set();
+    const showText = this.visibleCount < 30; // F5: Text only when fewer than 30 candles visible
 
     this.markers.forEach((m) => {
       if (!m || m.time == null || drawnCandleTimes.has(m.time)) return;
@@ -871,7 +872,7 @@ class NativeCandleChart {
       const x = getX(entry.idx);
       const c = entry.candle;
 
-      ctx.font = "bold 10px sans-serif";
+      ctx.font = "bold 9px sans-serif";
       ctx.textAlign = "center";
 
       if (m.shape === "arrowUp") {
@@ -883,8 +884,8 @@ class NativeCandleChart {
         ctx.lineTo(x + 5, y + 4);
         ctx.closePath();
         ctx.fill();
-        if (m.text) {
-          ctx.fillText(m.text, x, y + 15);
+        if (showText && m.text) {
+          ctx.fillText(m.text, x, y + 14);
         }
       } else if (m.shape === "arrowDown") {
         const y = getY(c.high) - 16;
@@ -895,14 +896,15 @@ class NativeCandleChart {
         ctx.lineTo(x + 5, y - 4);
         ctx.closePath();
         ctx.fill();
-        if (m.text) {
-          ctx.fillText(m.text, x, y - 10);
+        if (showText && m.text) {
+          ctx.fillText(m.text, x, y - 9);
         }
       } else {
+        // F5: Dim dot for abstentions
         const y = getY((c.open + c.close) / 2);
-        ctx.fillStyle = this.options.textColor;
+        ctx.fillStyle = m.color || "rgba(149, 152, 161, 0.45)";
         ctx.beginPath();
-        ctx.arc(x, y, 3, 0, Math.PI * 2);
+        ctx.arc(x, y, 2.5, 0, Math.PI * 2);
         ctx.fill();
       }
     });
@@ -1011,7 +1013,10 @@ class NativeCandleChart {
 
       // Compute raw smart price delta
       let smartPrice = p.smart_price != null ? Number(p.smart_price) : null;
-      const isCallUp = (p.label === "UP" || (p.action && String(p.action).toUpperCase() === "UP"));
+      const rawShown = String(p.shown_action || p.label || p.action || "").toUpperCase();
+      const isActionable = (rawShown === "UP" || rawShown === "DOWN");
+      const isCallUp = (rawShown === "UP" || (!rawShown && (p.label === "UP" || (p.action && String(p.action).toUpperCase() === "UP"))));
+
       if (smartPrice == null) {
         smartPrice = basePrice + (isCallUp ? 1 : -1) * (basePrice * 0.0035);
       }
@@ -1021,6 +1026,24 @@ class NativeCandleChart {
 
       const isPending = (p.status === "PENDING" || p.correct == null);
       const isCorrect = (p.correct === 1);
+
+      // F3: When neutral or no clear signal, render central ray as dashed grey line
+      if (!isActionable) {
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(targetX, startY); // flat or subtle baseline
+        ctx.strokeStyle = "rgba(149, 152, 161, 0.45)";
+        ctx.lineWidth = 1.0;
+        ctx.setLineDash([3, 3]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.fillStyle = "rgba(149, 152, 161, 0.45)";
+        ctx.beginPath();
+        ctx.arc(targetX, startY, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+        return;
+      }
 
       // Smart direction plotting:
       // - If right: plot that point (full smartPrice)
@@ -1306,6 +1329,33 @@ class NativeCandleChart {
       ctx.fillStyle = "#ffffff";
       ctx.textAlign = "center";
       ctx.fillText(timeStr, Math.round(candleCenterX), this.chartHeight + 14);
+    }
+
+    // F5: Confidence & signal in crosshair tooltip
+    if (hoveredCandle && this.markers && this.markers.length > 0) {
+      const marker = this.markers.find((m) => m.time === hoveredCandle.time);
+      if (marker) {
+        ctx.save();
+        ctx.font = "bold 10px sans-serif";
+        const actionLabel = marker.shown_action || marker.action || "SIGNAL";
+        const confText = marker.confidence != null ? `${Math.round(marker.confidence * 100)}%` : (marker.text || "");
+        const tipStr = `${actionLabel}${confText ? " (" + confText + ")" : ""}`;
+        const mWidth = ctx.measureText(tipStr).width;
+        const tipW = mWidth + 14;
+        const tipX = Math.min(this.chartWidth - tipW - 8, Math.max(8, candleCenterX - tipW / 2));
+        const tipY = Math.max(8, y - 28);
+
+        ctx.fillStyle = "#1e222d";
+        ctx.fillRect(tipX, tipY, tipW, 18);
+        ctx.strokeStyle = marker.shape === "arrowUp" ? this.options.upColor : (marker.shape === "arrowDown" ? this.options.downColor : "#4c5363");
+        ctx.lineWidth = 1.2;
+        ctx.strokeRect(tipX, tipY, tipW, 18);
+
+        ctx.fillStyle = "#ffffff";
+        ctx.textAlign = "center";
+        ctx.fillText(tipStr, tipX + tipW / 2, tipY + 13);
+        ctx.restore();
+      }
     }
 
     if (this.onCrosshairMove) {

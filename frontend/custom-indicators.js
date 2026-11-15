@@ -97,7 +97,7 @@ function getCustomIndicators(PineJS) {
 				var plottedPath = NaN;
 
 				if (mlPred) {
-					var action = String(mlPred.action || mlPred.label || "").toUpperCase();
+					var action = String(mlPred.shown_action || mlPred.action || mlPred.label || "").toUpperCase();
 					var isUp = (action === "UP" || action === "LONG" || action === "1");
 					var isDown = (action === "DOWN" || action === "SHORT" || action === "-1");
 					var isNeu = (!isUp && !isDown);

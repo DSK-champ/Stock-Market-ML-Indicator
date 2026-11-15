@@ -43,10 +43,13 @@
       return "IMPULSE";
     },
     toPriceAction(val) {
-      const s = String(val || "").toUpperCase();
+      if (!val) return "NO CLEAR SIGNAL";
+      const s = String(val).toUpperCase();
       if (s === "1" || s === "UP" || s === "LONG") return "UP";
       if (s === "-1" || s === "DOWN" || s === "SHORT") return "DOWN";
-      return "NEUTRAL";
+      if (s === "NO_CLEAR_SIGNAL" || s === "NO CLEAR SIGNAL" || s.startsWith("NO SIGNAL")) return "NO CLEAR SIGNAL";
+      if (s === "0" || s === "NEUTRAL") return "NEUTRAL";
+      return s;
     },
   };
 
@@ -75,6 +78,7 @@
       probBarUp: document.getElementById("prob-bar-up"),
       predFinalBadge: document.getElementById("pred-final-badge"),
       predConfidence: document.getElementById("pred-confidence"),
+      predModelLean: document.getElementById("pred-model-lean"),
       predLowerCap: document.getElementById("pred-lower-cap"),
       predSmartPrice: document.getElementById("pred-smart-price"),
       predUpperCap: document.getElementById("pred-upper-cap"),
@@ -124,17 +128,20 @@
         const ret = (refClose > 0 && outcomeClose != null) ? ((outcomeClose / refClose) - 1.0) : 0.0;
         const rawSign = ret > 0 ? 1 : (ret < 0 ? -1 : 0);
 
-        let action = CANONICAL_TAGS.toPriceAction(pred.label || pred.action || pred.action_label);
-        if (action !== "UP" && action !== "DOWN") {
-          const pUp = pred.p_final ? Number(pred.p_final.up || 0) : 0;
-          const pDn = pred.p_final ? Number(pred.p_final.down || 0) : 0;
-          const trend = CANONICAL_TAGS.toTrend(pred.trend);
-          action = (pUp >= pDn || trend === "UPTREND") ? "UP" : "DOWN";
-          pred.label = action;
+        const shownAct = CANONICAL_TAGS.toPriceAction(pred.shown_action || pred.label || pred.action || pred.action_label);
+        if (shownAct !== "UP" && shownAct !== "DOWN") {
+          pred.correct = null;
+          pred.status = pred.status && String(pred.status).startsWith("NO SIGNAL") ? pred.status : "RESOLVED";
+          continue;
         }
 
-        const isCallUp = action === "UP";
-        pred.correct = isCallUp ? (rawSign === 1 ? 1 : 0) : (rawSign === -1 ? 1 : 0);
+        const isCallUp = shownAct === "UP";
+        if (rawSign === 0) {
+          pred.correct = null;
+          pred.status = "VOID";
+        } else {
+          pred.correct = isCallUp ? (rawSign === 1 ? 1 : 0) : (rawSign === -1 ? 1 : 0);
+        }
       }
     }
   }
@@ -155,7 +162,7 @@
 
     const tagTrend = CANONICAL_TAGS.toTrend(pred.trend);
     const tagPhase = CANONICAL_TAGS.toPhase(pred.phase || pred.market_phase);
-    const tagPriceAction = CANONICAL_TAGS.toPriceAction(pred.label || pred.action || pred.action_label);
+    const tagPriceAction = CANONICAL_TAGS.toPriceAction(pred.shown_action || pred.label || pred.action || pred.action_label);
     const tagMarket = CANONICAL_TAGS.toMarket(pred.market || tagTrend, tagPriceAction);
 
     if (DOM.predMarketBadge) {
@@ -197,6 +204,12 @@
     if (DOM.predConfidence) {
       const confVal = pred.confidence ?? null;
       DOM.predConfidence.textContent = confVal !== null ? `${Math.round(confVal * 100)}% Confidence` : "— Confidence";
+    }
+
+    if (DOM.predModelLean) {
+      const rawAct = String(pred.ledger_action || pred.action_label || "NEUTRAL").toUpperCase();
+      const rawConf = pred.confidence != null ? `${Math.round(pred.confidence * 100)}%` : "—";
+      DOM.predModelLean.textContent = `${rawAct} (${rawConf})`;
     }
 
     // Targets
@@ -369,7 +382,8 @@
         const sec = getCandleUnixSec(p.open_time || p.candle_open_time);
         if (sec) {
           const entry = {
-            action: CANONICAL_TAGS.toPriceAction(p.label || p.action),
+            action: CANONICAL_TAGS.toPriceAction(p.shown_action || p.label || p.action),
+            shown_action: CANONICAL_TAGS.toPriceAction(p.shown_action || p.label || p.action),
             correct: p.correct,
             status: p.status,
             smart_price: p.smart_price,

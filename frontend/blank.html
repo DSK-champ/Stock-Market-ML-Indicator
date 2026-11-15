@@ -254,7 +254,14 @@
           <div class="decision-card">
             <div id="pred-final-badge" class="decision-badge-large badge neutral">NEUTRAL</div>
             <div id="pred-confidence" class="decision-confidence tabular-nums">—</div>
-            <div class="uncalibrated-note">confidence is not calibrated</div>
+            <div class="uncalibrated-note">(context, not validated)</div>
+          </div>
+
+          <!-- Model Lean (Raw Ledger Action) -->
+          <div class="model-lean-card" id="pred-model-lean-card">
+            <span class="model-lean-label">Model lean:</span>
+            <span id="pred-model-lean" class="model-lean-val">—</span>
+            <span class="context-note">(context, not validated)</span>
           </div>
 
           <!-- Indicative Targets: 1x3 Side-by-Side Row -->
@@ -274,6 +281,36 @@
           </div>
           <div class="panel-row" style="font-size: 10px; color: var(--text-dim); margin-top: 2px;">
             <span id="pred-band-containment">Awaiting resolutions...</span>
+          </div>
+
+          <!-- Trust & Telemetry Panel (F6) -->
+          <div class="trust-panel" id="trust-panel">
+            <div class="trust-panel-header">
+              <span class="trust-title">System Health & Abstention Guard</span>
+              <span id="trust-gap-count" class="trust-gaps-badge">0 gaps / 24h</span>
+            </div>
+            <div class="trust-chips-grid">
+              <div class="trust-chip" id="chip-gap-fallback" title="Candle gap fallback occurred">
+                <span class="chip-dot"></span>
+                <span class="chip-label">GAP-FALLBACK ROW</span>
+                <span class="chip-count" id="count-gap-fallback">0</span>
+              </div>
+              <div class="trust-chip" id="chip-below-threshold" title="Max probability difference below delta display threshold">
+                <span class="chip-dot"></span>
+                <span class="chip-label">BELOW DISPLAY THRESHOLD</span>
+                <span class="chip-count" id="count-below-threshold">0</span>
+              </div>
+              <div class="trust-chip" id="chip-margin-violation" title="Directional margin |p_up - p_down| < m">
+                <span class="chip-dot"></span>
+                <span class="chip-label">MARGIN VIOLATION</span>
+                <span class="chip-count" id="count-margin-violation">0</span>
+              </div>
+              <div class="trust-chip" id="chip-context-disagreement" title="Model and Context Blend disagree on direction">
+                <span class="chip-dot"></span>
+                <span class="chip-label">MODEL / CONTEXT DISAGREEMENT</span>
+                <span class="chip-count" id="count-context-disagreement">0</span>
+              </div>
+            </div>
           </div>
         </section>
 

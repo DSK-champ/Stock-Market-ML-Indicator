@@ -125,10 +125,17 @@ function initDOM() {
     probBarUp: document.getElementById("prob-bar-up"),
     predFinalBadge: document.getElementById("pred-final-badge"),
     predConfidence: document.getElementById("pred-confidence"),
+    predModelLean: document.getElementById("pred-model-lean"),
     predSmartPrice: document.getElementById("pred-smart-price"),
     predUpperCap: document.getElementById("pred-upper-cap"),
     predLowerCap: document.getElementById("pred-lower-cap"),
     predBandContainment: document.getElementById("pred-band-containment"),
+    // Trust & Telemetry Panel (F6)
+    trustGapCount: document.getElementById("trust-gap-count"),
+    countGapFallback: document.getElementById("count-gap-fallback"),
+    countBelowThreshold: document.getElementById("count-below-threshold"),
+    countMarginViolation: document.getElementById("count-margin-violation"),
+    countContextDisagreement: document.getElementById("count-context-disagreement"),
     // Log Table
     logTableBody: document.getElementById("log-table-body"),
     logTabLive: document.getElementById("log-tab-live"),
@@ -343,14 +350,29 @@ const CANONICAL_TAGS = {
     return "IMPULSE";
   },
 
-  // price action : UP / DOWN / NEUTRAL
+  // price action : UP / DOWN / NEUTRAL / NO CLEAR SIGNAL
   toPriceAction(val) {
-    const s = String(val || "").toUpperCase();
+    if (!val) return "NO CLEAR SIGNAL";
+    const s = String(val).toUpperCase();
     if (s === "1" || s === "UP" || s === "LONG") return "UP";
     if (s === "-1" || s === "DOWN" || s === "SHORT") return "DOWN";
-    return "NEUTRAL";
+    if (s === "NO_CLEAR_SIGNAL" || s === "NO CLEAR SIGNAL" || s.startsWith("NO SIGNAL")) return "NO CLEAR SIGNAL";
+    if (s === "0" || s === "NEUTRAL") return "NEUTRAL";
+    return s;
   },
 };
+
+function computeWilsonInterval(successes, total, z = 1.96) {
+  if (total <= 0) return [0, 0];
+  const p = successes / total;
+  const z2 = z * z;
+  const denom = 1 + z2 / total;
+  const center = (p + z2 / (2 * total)) / denom;
+  const margin = (z * Math.sqrt((p * (1 - p) + z2 / (4 * total)) / total)) / denom;
+  const lower = Math.max(0, center - margin);
+  const upper = Math.min(1, center + margin);
+  return [Math.round(lower * 1000) / 10, Math.round(upper * 1000) / 10];
+}
 
 // =====================================================================
 // PREDICTION PANEL RENDERING
@@ -380,7 +402,7 @@ function renderPredictionPanel(pred) {
   // Exact Canonical Name Tags:
   const tagTrend = CANONICAL_TAGS.toTrend(pred.trend);
   const tagPhase = CANONICAL_TAGS.toPhase(pred.phase || pred.market_phase);
-  const tagPriceAction = CANONICAL_TAGS.toPriceAction(pred.label || pred.action || pred.action_label);
+  const tagPriceAction = CANONICAL_TAGS.toPriceAction(pred.shown_action || pred.label || pred.action || pred.action_label);
   const tagMarket = CANONICAL_TAGS.toMarket(pred.market || tagTrend, tagPriceAction);
 
   if (DOM.predMarketBadge) {
@@ -417,10 +439,20 @@ function renderPredictionPanel(pred) {
   DOM.probBarNeu.style.width = pNeu !== null ? `${pNeu}%` : "0%";
   DOM.probBarUp.style.width = pUp !== null ? `${pUp}%` : "0%";
 
-  // Final Decision Badge (Price Action: UP / DOWN / NEUTRAL)
+  // Final Decision Badge (Price Action: UP / DOWN / NO CLEAR SIGNAL / NEUTRAL)
   if (DOM.predFinalBadge) {
     DOM.predFinalBadge.textContent = tagPriceAction;
-    DOM.predFinalBadge.className = `decision-badge-large badge ${tagPriceAction.toLowerCase()}`;
+    let badgeClass = "badge neutral";
+    if (tagPriceAction === "UP") badgeClass = "badge up";
+    else if (tagPriceAction === "DOWN") badgeClass = "badge down";
+    DOM.predFinalBadge.className = `decision-badge-large ${badgeClass}`;
+  }
+
+  // Model Lean Card (Raw Ledger Action)
+  if (DOM.predModelLean) {
+    const rawAct = String(pred.ledger_action || pred.action_label || "NEUTRAL").toUpperCase();
+    const rawConf = pred.confidence != null ? `${Math.round(pred.confidence * 100)}%` : "—";
+    DOM.predModelLean.textContent = `${rawAct} (${rawConf})`;
   }
 
   const confVal = pred.confidence ?? null;
@@ -492,6 +524,7 @@ function renderPredictionPanel(pred) {
   }
 
   updateBandContainmentStat();
+  updateTrustPanelTelemetry(STATE.activeTab === "live" ? STATE.livePredictions : STATE.replayPredictions, STATE.activeTab === "live" ? STATE.liveCandles : STATE.replayCandles);
 }
 
 function updateBandContainmentStat() {
@@ -510,10 +543,67 @@ function updateBandContainmentStat() {
 
   if (totalResolved > 0) {
     const pct = Math.round((insideCount / totalResolved) * 100);
-    DOM.predBandContainment.textContent = `Contained in ${pct}% of ${totalResolved} cases`;
+    const [wLow, wHigh] = computeWilsonInterval(insideCount, totalResolved);
+    DOM.predBandContainment.textContent = `Contained in ${pct}% of ${totalResolved} cases (Wilson 95% CI: [${wLow}%, ${wHigh}%])`;
   } else {
     DOM.predBandContainment.textContent = "Awaiting resolutions...";
   }
+}
+
+function updateTrustPanelTelemetry(list, candles) {
+  if (!DOM.countGapFallback || !list) return;
+
+  let gapFallbackCount = 0;
+  let belowThresholdCount = 0;
+  let marginViolationCount = 0;
+  let contextDisagreementCount = 0;
+
+  list.forEach((p) => {
+    const reason = p.abstention_reason || "";
+    const status = String(p.status || "");
+    if (status.startsWith("NO SIGNAL") || reason === "status_not_ok" || status === "NO_SIGNAL") {
+      gapFallbackCount++;
+    } else if (reason === "below_delta_threshold") {
+      belowThresholdCount++;
+    } else if (reason === "margin_violation") {
+      marginViolationCount++;
+    }
+
+    const modRes = String(p.model_result || "").toUpperCase();
+    const legAct = String(p.ledger_action || p.action_label || "").toUpperCase();
+    if (modRes && legAct && modRes !== legAct && modRes !== "NEUTRAL") {
+      contextDisagreementCount++;
+    }
+  });
+
+  // Calculate gaps in last 24h (last 288 5m candles)
+  let gaps24h = 0;
+  const recentCandles = (candles && candles.length > 0) ? candles.slice(-288) : [];
+  for (let i = 1; i < recentCandles.length; i++) {
+    const tPrev = recentCandles[i - 1].time || getCandleUnixSec(recentCandles[i - 1].open_time);
+    const tCur = recentCandles[i].time || getCandleUnixSec(recentCandles[i].open_time);
+    if (tPrev && tCur && (tCur - tPrev > 300)) {
+      gaps24h++;
+    }
+  }
+
+  DOM.countGapFallback.textContent = gapFallbackCount;
+  DOM.countBelowThreshold.textContent = belowThresholdCount;
+  DOM.countMarginViolation.textContent = marginViolationCount;
+  DOM.countContextDisagreement.textContent = contextDisagreementCount;
+
+  if (DOM.trustGapCount) {
+    DOM.trustGapCount.textContent = `${gaps24h} gap${gaps24h === 1 ? "" : "s"} / 24h`;
+  }
+
+  const chipGap = document.getElementById("chip-gap-fallback");
+  if (chipGap) chipGap.classList.toggle("alert", gapFallbackCount > 0);
+  const chipThresh = document.getElementById("chip-below-threshold");
+  if (chipThresh) chipThresh.classList.toggle("alert", belowThresholdCount > 0);
+  const chipMargin = document.getElementById("chip-margin-violation");
+  if (chipMargin) chipMargin.classList.toggle("alert", marginViolationCount > 0);
+  const chipDis = document.getElementById("chip-context-disagreement");
+  if (chipDis) chipDis.classList.toggle("alert", contextDisagreementCount > 0);
 }
 
 // =====================================================================
@@ -572,18 +662,24 @@ function validateAndResolveVerdicts(list, candles) {
     pred.return_bps_label = Math.round(ret * 10000.0);
     const rawSign = ret > 0 ? 1 : (ret < 0 ? -1 : 0);
 
-    let action = CANONICAL_TAGS.toPriceAction(pred.label || pred.action || pred.action_label);
-    if (action !== "UP" && action !== "DOWN") {
-      const pUp = pred.p_final ? Number(pred.p_final.up || 0) : 0;
-      const pDn = pred.p_final ? Number(pred.p_final.down || 0) : 0;
-      const trend = CANONICAL_TAGS.toTrend(pred.trend);
-      action = (pUp >= pDn || trend === "UPTREND") ? "UP" : "DOWN";
-      pred.label = action;
+    const shownAct = CANONICAL_TAGS.toPriceAction(pred.shown_action || pred.label || pred.action || pred.action_label);
+    if (shownAct !== "UP" && shownAct !== "DOWN") {
+      // Non-directional (NEUTRAL, NO CLEAR SIGNAL, NO SIGNAL): never graded
+      pred.correct = null;
+      if (!pred.status || !String(pred.status).startsWith("NO SIGNAL")) {
+        pred.status = "RESOLVED";
+      }
+      continue;
     }
 
-    const isCallUp = action === "UP";
-    pred.correct = isCallUp ? (rawSign === 1 ? 1 : 0) : (rawSign === -1 ? 1 : 0);
-    pred.status = "RESOLVED";
+    const isCallUp = shownAct === "UP";
+    if (rawSign === 0) {
+      pred.correct = null;
+      pred.status = "VOID";
+    } else {
+      pred.correct = isCallUp ? (rawSign === 1 ? 1 : 0) : (rawSign === -1 ? 1 : 0);
+      pred.status = "RESOLVED";
+    }
   }
 }
 
@@ -687,7 +783,8 @@ function updateLogSummaryMetrics(list) {
 
   for (let i = 0; i < list.length; i++) {
     const p = list[i];
-    if (p.label === "UP" || p.label === "DOWN") {
+    const act = CANONICAL_TAGS.toPriceAction(p.shown_action || p.label);
+    if (act === "UP" || act === "DOWN") {
       calls++;
       if (p.status === "RESOLVED") {
         if (p.correct === 1) {
@@ -702,10 +799,11 @@ function updateLogSummaryMetrics(list) {
   const resolved = correct + wrong;
   const acc = resolved > 0 ? ((correct / resolved) * 100).toFixed(1) : "—";
   const cov = list.length > 0 ? Math.round((calls / list.length) * 100) : 0;
+  const [wLow, wHigh] = resolved > 0 ? computeWilsonInterval(correct, resolved) : [0, 0];
 
   DOM.logStatCalls.textContent = `${calls} (${resolved} resolved)`;
-  DOM.logStatAccuracy.textContent = resolved > 0 ? `${acc}%` : "—";
-  DOM.logStatCoverage.textContent = `${cov}%`;
+  DOM.logStatAccuracy.textContent = resolved > 0 ? `${acc}% [${wLow}%, ${wHigh}%]` : "—";
+  DOM.logStatCoverage.textContent = `${cov}% (${calls}/${list.length})`;
   DOM.logStatBenchmark.textContent = `Ref: Held-out Test ${CONFIG.benchmarks.refTestAccuracy}% | OOF ${CONFIG.benchmarks.refOofAccuracy}%`;
 }
 
@@ -984,12 +1082,19 @@ function attachPredictionToChart(view, pred) {
     chartGroup.setPredictions(list);
   }
 
-  if (pred.smart_price || pred.upper || pred.lower) {
+  const shownAct = CANONICAL_TAGS.toPriceAction(pred.shown_action || pred.label || pred.action || pred.action_label);
+  const isActionable = (shownAct === "UP" || shownAct === "DOWN");
+
+  if (isActionable && (pred.smart_price || pred.upper || pred.lower)) {
     chartGroup.setIndicativeBands({
       smartPrice: { value: pred.smart_price },
       upper: { value: pred.upper },
       lower: { value: pred.lower },
+      action: shownAct,
     });
+  } else {
+    // When neutral or no clear signal, indicative band overlay is transparent (null)
+    chartGroup.setIndicativeBands(null);
   }
 
   updateAllMarkers(view);
@@ -1022,7 +1127,7 @@ function updateAllMarkers(view) {
     const timeSec = getCandleUnixSec(pred.open_time);
     if (!timeSec || markerMap.has(timeSec)) return;
 
-    const action = CANONICAL_TAGS.toPriceAction(pred.label || pred.action || pred.action_label);
+    const action = CANONICAL_TAGS.toPriceAction(pred.shown_action || pred.label || pred.action || pred.action_label);
     const confVal = pred.confidence ?? null;
     const confText = confVal !== null ? `${Math.round(confVal * 100)}%` : "";
 
@@ -1032,6 +1137,9 @@ function updateAllMarkers(view) {
         color: CONFIG.colors.up,
         shape: "arrowUp",
         text: confText,
+        confidence: confVal,
+        action: "UP",
+        shown_action: "UP",
       });
     } else if (action === "DOWN") {
       markerMap.set(timeSec, {
@@ -1039,6 +1147,20 @@ function updateAllMarkers(view) {
         color: CONFIG.colors.down,
         shape: "arrowDown",
         text: confText,
+        confidence: confVal,
+        action: "DOWN",
+        shown_action: "DOWN",
+      });
+    } else {
+      // Policy F5: dim dot for abstentions
+      markerMap.set(timeSec, {
+        time: timeSec,
+        color: "rgba(149, 152, 161, 0.45)",
+        shape: "circle",
+        text: confText,
+        confidence: confVal,
+        action: action,
+        shown_action: action,
       });
     }
   });

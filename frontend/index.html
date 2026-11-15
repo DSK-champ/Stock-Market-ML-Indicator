@@ -80,18 +80,20 @@
 				min-height: 0;
 				max-width: 100%;
 				overflow-y: auto !important;
-				overflow-x: auto !important;
+				overflow-x: hidden !important;
 				scrollbar-width: thin;
 				scrollbar-color: #5c657a #181b24;
 			}
 			.index-panel-content .log-table {
-				width: max-content;
-				min-width: 100%;
+				width: 100%;
+				table-layout: fixed;
 				border-collapse: collapse;
 			}
 			.index-panel-content .log-table th,
 			.index-panel-content .log-table td {
 				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
 			}
 		</style>
 		<script type="text/javascript" src="custom-panel.js"></script>
@@ -265,8 +267,15 @@
 					<!-- FINAL DECISION (PRICE ACTION) -->
 					<div class="decision-card">
 						<div id="pred-final-badge" class="decision-badge-large badge neutral">NEUTRAL</div>
-						<div id="pred-confidence" class="decision-confidence tabular-nums">0% Confidence</div>
-						<div class="uncalibrated-note">confidence is not calibrated</div>
+						<div id="pred-confidence" class="decision-confidence tabular-nums">—</div>
+						<div class="uncalibrated-note">(context, not validated)</div>
+					</div>
+
+					<!-- Model Lean (Raw Ledger Action) -->
+					<div class="model-lean-card" id="pred-model-lean-card">
+						<span class="model-lean-label">Model lean:</span>
+						<span id="pred-model-lean" class="model-lean-val">—</span>
+						<span class="context-note">(context, not validated)</span>
 					</div>
 
 					<!-- Indicative Targets: 1x3 Side-by-Side Row -->
