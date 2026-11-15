@@ -6,13 +6,14 @@
 
 		<!-- Fix for iOS Safari zooming bug -->
 		<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,minimum-scale=1.0">
+		<link rel="stylesheet" href="assets/css/dashboard.css">
 		<script type="text/javascript" src="charting_library/charting_library.standalone.js"></script>
-		<script type="text/javascript" src="custom-indicators.js"></script>
+		<script type="text/javascript" src="custom-indicators.js?v=4"></script>
 		<script type="text/javascript" src="binance.js"></script>
 		<style>
 			:root {
-				--right-col-w: clamp(300px, 26vw, 420px);
-				--prediction-bg: #131722;
+				--right-col-w: clamp(320px, 28vw, 440px);
+				--prediction-bg: #1e222d;
 				--prediction-border: #2a2e39;
 				--prediction-muted: #9598a1;
 			}
@@ -37,7 +38,7 @@
 				background: var(--prediction-bg); border-left: 1px solid var(--prediction-border);
 			}
 			#custom-panel-resize-handle {
-				position: absolute; top: 0; bottom: 0; left: 0; z-index: 1;
+				position: absolute; top: 0; bottom: 0; left: 0; z-index: 10;
 				width: 14px; cursor: ew-resize; touch-action: none;
 				border-left: 2px solid #4c5363; box-sizing: border-box;
 				background: rgba(76, 83, 99, 0.16);
@@ -47,6 +48,51 @@
 				background: rgba(41, 98, 255, 0.35); border-left-color: #2962ff; outline: none;
 			}
 			#custom-empty-panel[hidden] { display: none; }
+			.index-panel-content {
+				margin-left: 14px;
+				height: 100%;
+				display: flex;
+				flex-direction: column;
+				overflow: hidden;
+				min-height: 0;
+				min-width: 0;
+				max-width: calc(100% - 14px);
+			}
+			.index-panel-content .prediction-panel {
+				flex: 0 0 auto;
+				border-bottom: 1px solid var(--border);
+				padding: 10px 12px;
+				background: var(--bg-panel);
+				min-width: 0;
+			}
+			.index-panel-content .prediction-log {
+				flex: 1 1 0;
+				min-height: 0;
+				display: flex;
+				flex-direction: column;
+				overflow: hidden;
+				background: var(--bg-panel);
+				min-width: 0;
+				max-width: 100%;
+			}
+			.index-panel-content .log-table-container {
+				flex: 1 1 0;
+				min-height: 0;
+				max-width: 100%;
+				overflow-y: auto !important;
+				overflow-x: auto !important;
+				scrollbar-width: thin;
+				scrollbar-color: #5c657a #181b24;
+			}
+			.index-panel-content .log-table {
+				width: max-content;
+				min-width: 100%;
+				border-collapse: collapse;
+			}
+			.index-panel-content .log-table th,
+			.index-panel-content .log-table td {
+				white-space: nowrap;
+			}
 		</style>
 		<script type="text/javascript" src="custom-panel.js"></script>
 
@@ -64,14 +110,22 @@
 				window.predictionPanelOpen = false;
 			};
 			window.preparePredictionChart = async function() {
-				var widget = await window.tvWidgetReady;
-				var chart = widget.activeChart();
-				window.alert("Setting the chart to BTCUSDT at 5 minutes for the prediction panel.");
-				if (!String(chart.symbol()).replace(/[^a-z0-9]/gi, "").toUpperCase().endsWith("BTCUSDT")) {
-					await new Promise(function(resolve) { chart.setSymbol("BTCUSDT", resolve); });
-				}
-				if (chart.resolution() !== "5") {
-					await new Promise(function(resolve) { chart.setResolution("5", resolve); });
+				try {
+					var widget = await Promise.race([
+						window.tvWidgetReady,
+						new Promise(function(resolve) { setTimeout(resolve, 800); })
+					]);
+					if (widget && typeof widget.activeChart === "function") {
+						var chart = widget.activeChart();
+						if (!String(chart.symbol()).replace(/[^a-z0-9]/gi, "").toUpperCase().endsWith("BTCUSDT")) {
+							await new Promise(function(resolve) { chart.setSymbol("BTCUSDT", resolve); });
+						}
+						if (chart.resolution() !== "5") {
+							await new Promise(function(resolve) { chart.setResolution("5", resolve); });
+						}
+					}
+				} catch (e) {
+					console.warn("preparePredictionChart non-fatal notice:", e);
 				}
 			};
 
@@ -136,6 +190,17 @@
 					}
 					chart.onSymbolChanged().subscribe(null, closePredictionOnChartChange);
 					chart.onIntervalChanged().subscribe(null, closePredictionOnChartChange);
+
+					try {
+						chart.getAllStudies().forEach(function(s) {
+							if (s.name && s.name.includes("2401CS45")) {
+								try { chart.removeEntity(s.id); } catch(e){}
+							}
+						});
+						chart.createStudy("2401CS45", false, false);
+					} catch (err) {
+						console.warn("Could not auto-apply 2401CS45 study:", err);
+					}
 				});
 			};
 
@@ -154,7 +219,121 @@
 		</a>
 		<aside id="custom-empty-panel" aria-label="Custom panel" hidden>
 			<div id="custom-panel-resize-handle" role="separator" aria-label="Resize panel" aria-orientation="vertical" tabindex="0"></div>
+			<div class="index-panel-content">
+				<!-- Live Prediction Panel -->
+				<section class="prediction-panel" aria-label="Model Prediction Panel">
+					<div class="panel-header">
+						<span class="panel-title">Prediction</span>
+						<span id="pred-source-badge" class="badge up" style="margin-left: 6px; font-size: 9px; padding: 1px 5px;">LIVE</span>
+						<span id="pred-candle-time" class="panel-subtitle tabular-nums" style="margin-left: auto;">WAITING</span>
+					</div>
+
+					<!-- The 4 Core Name Tags: 2x2 Grid -->
+					<div class="tags-grid-2x2">
+						<div class="tag-cell">
+							<span class="tag-cell-label">Market</span>
+							<span id="pred-market-badge" class="badge bullish">BULLISH</span>
+						</div>
+						<div class="tag-cell">
+							<span class="tag-cell-label">Trend</span>
+							<span id="pred-trend-badge" class="badge uptrend">UPTREND</span>
+						</div>
+						<div class="tag-cell">
+							<span class="tag-cell-label">Phase</span>
+							<span id="pred-phase-badge" class="badge impulse">IMPULSE</span>
+						</div>
+						<div class="tag-cell">
+							<span class="tag-cell-label">Price Action</span>
+							<span id="pred-price-action-badge" class="badge neutral">NEUTRAL</span>
+						</div>
+					</div>
+
+					<!-- 3-Class Probabilities -->
+					<div class="probs-container">
+						<div class="prob-labels tabular-nums">
+							<span>DOWN: <b id="pred-prob-down">0%</b></span>
+							<span>NEUTRAL: <b id="pred-prob-neu">0%</b></span>
+							<span>UP: <b id="pred-prob-up">0%</b></span>
+						</div>
+						<div class="prob-track">
+							<div id="prob-bar-down" class="prob-seg down" style="width: 33%;"></div>
+							<div id="prob-bar-neu" class="prob-seg neutral" style="width: 34%;"></div>
+							<div id="prob-bar-up" class="prob-seg up" style="width: 33%;"></div>
+						</div>
+					</div>
+
+					<!-- FINAL DECISION (PRICE ACTION) -->
+					<div class="decision-card">
+						<div id="pred-final-badge" class="decision-badge-large badge neutral">NEUTRAL</div>
+						<div id="pred-confidence" class="decision-confidence tabular-nums">0% Confidence</div>
+						<div class="uncalibrated-note">confidence is not calibrated</div>
+					</div>
+
+					<!-- Indicative Targets: 1x3 Side-by-Side Row -->
+					<div class="targets-row-1x3">
+						<div class="target-cell">
+							<span class="target-label">Lower Cap</span>
+							<b id="pred-lower-cap" class="target-val up tabular-nums">$0.00</b>
+						</div>
+						<div class="target-cell">
+							<span class="target-label">Smart Prediction</span>
+							<b id="pred-smart-price" class="target-val accent tabular-nums">$0.00</b>
+						</div>
+						<div class="target-cell">
+							<span class="target-label">Upper Cap</span>
+							<b id="pred-upper-cap" class="target-val down tabular-nums">$0.00</b>
+						</div>
+					</div>
+					<div class="panel-row" style="font-size: 10px; color: var(--text-dim); margin-top: 2px;">
+						<span id="pred-band-containment">Awaiting resolutions</span>
+					</div>
+				</section>
+
+				<!-- Live Prediction Log -->
+				<section class="prediction-log" aria-label="Prediction Ledger Log">
+					<div class="log-tabs-bar" style="display: flex; align-items: center; justify-content: space-between; padding: 6px 10px;">
+						<div style="display: flex; align-items: center; gap: 6px;">
+							<span style="font-size: 12px; font-weight: 600; color: #d1d4dc; letter-spacing: 0.3px;">Live Logs</span>
+							<span class="badge up" style="font-size: 9px; padding: 1px 5px;">LIVE</span>
+						</div>
+						<div id="log-actions-live-replay">
+							<button id="btn-export-csv" class="btn-ctrl" style="padding: 2px 6px; font-size: 10px;">Export CSV</button>
+							<button id="btn-clear-replay" class="btn-ctrl" style="padding: 2px 6px; font-size: 10px;">Clear</button>
+						</div>
+					</div>
+
+					<!-- Filter Pills -->
+					<div class="log-filters-bar" id="log-filters-bar">
+						<div class="filter-pills">
+							<button class="filter-pill active" data-filter="all">All</button>
+							<button class="filter-pill" data-filter="correct">Correct</button>
+							<button class="filter-pill" data-filter="wrong">Wrong</button>
+							<button class="filter-pill" data-filter="pending">Pending</button>
+						</div>
+					</div>
+
+					<!-- Scrollable Table -->
+					<div class="log-table-container" id="log-table-container">
+						<table class="log-table">
+							<thead>
+								<tr>
+									<th>Time</th>
+									<th>Price Action</th>
+									<th style="text-align: center;">Verdict</th>
+									<th style="text-align: right;">Confidence</th>
+									<th style="text-align: right;">Probability</th>
+									<th>Market</th>
+									<th>Trend</th>
+									<th>Phase</th>
+								</tr>
+							</thead>
+							<tbody id="log-table-body"></tbody>
+						</table>
+					</div>
+				</section>
+			</div>
 		</aside>
+		<script type="text/javascript" src="assets/js/index_live_panel.js"></script>
 	</body>
 
 </html>
