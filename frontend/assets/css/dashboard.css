@@ -966,8 +966,8 @@ input[type="datetime-local"] {
 /* Log Table Body */
 .log-table-container {
   flex: 1 1 0;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow-y: auto !important;
+  overflow-x: auto !important;
   min-height: 0;
   scrollbar-width: thin;
   scrollbar-color: #5c657a #181b24;
@@ -999,10 +999,11 @@ input[type="datetime-local"] {
 }
 
 .log-table {
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
   border-collapse: collapse;
-  font-size: 10.5px;
-  table-layout: fixed;
+  font-size: 11px;
+  table-layout: auto;
 }
 
 .log-table th {
@@ -1012,31 +1013,19 @@ input[type="datetime-local"] {
   color: var(--text-dim);
   font-weight: 600;
   text-align: left;
-  padding: 5px 4px;
+  padding: 6px 10px;
   border-bottom: 1px solid var(--border);
   user-select: none;
-  font-size: 9.5px;
+  font-size: 10px;
   text-transform: uppercase;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
+  z-index: 2;
 }
 
-.log-table th:nth-child(1) { width: 14%; }
-.log-table th:nth-child(2) { width: 14%; }
-.log-table th:nth-child(3) { width: 16%; }
-.log-table th:nth-child(4) { width: 14%; }
-.log-table th:nth-child(5) { width: 14%; }
-.log-table th:nth-child(6) { width: 9%; }
-.log-table th:nth-child(7) { width: 10%; }
-.log-table th:nth-child(8) { width: 9%; }
-
 .log-table td {
-  padding: 5px 4px;
+  padding: 6px 10px;
   border-bottom: 1px solid rgba(42, 46, 57, 0.4);
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .verdict-mark {
@@ -1715,6 +1704,49 @@ input[type="datetime-local"] {
   padding: 0 3px;
   border-radius: 2px;
   background: rgba(255, 255, 255, 0.06);
+}
+
+/* Trust Guard Popover Dialog */
+.trust-guard-popover {
+  position: absolute;
+  top: calc(var(--header-h) + 6px);
+  right: 12px;
+  width: 400px;
+  max-width: calc(100vw - 24px);
+  background: #1e222d;
+  border: 1px solid #2a2e39;
+  border-radius: 8px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.75);
+  z-index: 1000;
+  display: none;
+  flex-direction: column;
+  padding: 14px;
+  animation: fadeInDown 150ms ease;
+}
+
+.trust-guard-popover.open {
+  display: flex;
+}
+
+.trust-guard-popover .trust-chips-grid {
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.trust-guard-popover .trust-chip {
+  padding: 6px 10px;
+  font-size: 11px;
+}
+
+.trust-guard-popover .chip-label {
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.trust-guard-popover .chip-count {
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 4px;
 }
 
 
