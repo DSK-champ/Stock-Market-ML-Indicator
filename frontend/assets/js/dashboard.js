@@ -106,6 +106,9 @@ function initDOM() {
     btnGuide: document.getElementById("btn-guide"),
     btnCloseGuide: document.getElementById("btn-close-guide"),
     guideDrawer: document.getElementById("guide-drawer"),
+    btnTrustGuard: document.getElementById("btn-trust-guard"),
+    btnCloseTrustGuard: document.getElementById("btn-close-trust-guard"),
+    trustGuardPopover: document.getElementById("trust-guard-popover"),
     btnBackIndex: document.getElementById("btn-back-index"),
     // Prediction Panel
     predSourceBadge: document.getElementById("pred-source-badge"),
@@ -1716,19 +1719,26 @@ function generateAutonomousLivePrediction() {
 const _replayPredictionStore = new Map();
 
 async function prefetchSimulationPredictions(candles) {
-  for (let i = 0; i < candles.length; i++) {
-    const c = candles[i];
-    const ts = c.open_time || new Date(c.time * 1000).toISOString();
-    if (_replayPredictionStore.has(ts)) continue;
-    try {
-      const resp = await fetch(`${CONFIG.dashApiBase}/dash/replay/predict?ts=${encodeURIComponent(ts)}`);
-      if (resp.ok) {
-        const pred = await resp.json();
-        _replayPredictionStore.set(ts, pred);
+  if (!candles || candles.length === 0) return;
+  const batchSize = 4;
+  for (let i = 0; i < candles.length; i += batchSize) {
+    const chunk = candles.slice(i, i + batchSize);
+    await Promise.allSettled(chunk.map(async (c) => {
+      const ts = c.open_time || new Date(c.time * 1000).toISOString();
+      const stdTs = ts.replace("T", " ").replace("Z", "+00:00");
+      if (_replayPredictionStore.has(ts) || _replayPredictionStore.has(stdTs)) return;
+      try {
+        const resp = await fetch(`${CONFIG.dashApiBase}/dash/replay/predict?ts=${encodeURIComponent(ts)}`);
+        if (resp.ok) {
+          const pred = await resp.json();
+          _replayPredictionStore.set(ts, pred);
+          _replayPredictionStore.set(stdTs, pred);
+          if (pred.open_time) _replayPredictionStore.set(pred.open_time, pred);
+        }
+      } catch (e) {
+        // background silent catch
       }
-    } catch (e) {
-      // background silent catch
-    }
+    }));
   }
 }
 
@@ -2207,8 +2217,10 @@ async function executeReplayStep() {
       };
     } else {
       const ts = currentCandle.open_time || new Date(currentCandle.time * 1000).toISOString();
-      if (_replayPredictionStore.has(ts)) {
-        pred = JSON.parse(JSON.stringify(_replayPredictionStore.get(ts)));
+      const stdTs = ts.replace("T", " ").replace("Z", "+00:00");
+      if (_replayPredictionStore.has(ts) || _replayPredictionStore.has(stdTs)) {
+        const stored = _replayPredictionStore.get(ts) || _replayPredictionStore.get(stdTs);
+        pred = JSON.parse(JSON.stringify(stored));
         pred.status = "PENDING";
         pred.correct = null;
         pred.outcome_close = null;
@@ -2219,6 +2231,7 @@ async function executeReplayStep() {
           if (resp.ok) {
             pred = await resp.json();
             _replayPredictionStore.set(ts, pred);
+            _replayPredictionStore.set(stdTs, pred);
             pred = JSON.parse(JSON.stringify(pred));
             pred.status = "PENDING";
             pred.correct = null;
@@ -2228,6 +2241,27 @@ async function executeReplayStep() {
         } catch (e) {
           console.error("Replay step predict error:", e);
         }
+      }
+
+      // Background lookahead: fire prefetch for the next 10 simulation candles
+      if (STATE.replaySimulationCandles) {
+        const ahead = STATE.replaySimulationCandles.slice(STATE.replaySimulationIndex, STATE.replaySimulationIndex + 10);
+        ahead.forEach((ac) => {
+          const acts = ac.open_time || new Date(ac.time * 1000).toISOString();
+          const astd = acts.replace("T", " ").replace("Z", "+00:00");
+          if (!_replayPredictionStore.has(acts) && !_replayPredictionStore.has(astd)) {
+            fetch(`${CONFIG.dashApiBase}/dash/replay/predict?ts=${encodeURIComponent(acts)}`)
+              .then(r => r.ok ? r.json() : null)
+              .then(p => {
+                if (p) {
+                  _replayPredictionStore.set(acts, p);
+                  _replayPredictionStore.set(astd, p);
+                  if (p.open_time) _replayPredictionStore.set(p.open_time, p);
+                }
+              })
+              .catch(() => {});
+          }
+        });
       }
     }
 
@@ -2255,12 +2289,18 @@ async function executeReplayStep() {
   }
 }
 
+function getReplayIntervalMs() {
+  if (STATE.replaySpeed === 5) return 35;
+  if (STATE.replaySpeed === 2) return 120;
+  return 400;
+}
+
 function togglePlayPause() {
   STATE.replayPlaying = !STATE.replayPlaying;
   DOM.btnPlayPause.textContent = STATE.replayPlaying ? "⏸ Pause" : "▶ Play";
 
   if (STATE.replayPlaying) {
-    const delay = Math.max(50, Math.round(1000 / STATE.replaySpeed));
+    const delay = getReplayIntervalMs();
     // Immediately execute the first step if starting from 0 or paused
     executeReplayStep();
     STATE.replayTimer = setInterval(executeReplayStep, delay);
@@ -2364,6 +2404,32 @@ function setupEventListeners() {
   // Guide Drawer
   DOM.btnGuide.addEventListener("click", () => DOM.guideDrawer.classList.add("open"));
   DOM.btnCloseGuide.addEventListener("click", () => DOM.guideDrawer.classList.remove("open"));
+
+  // Trust Guard Popover Dialog
+  if (DOM.btnTrustGuard && DOM.trustGuardPopover) {
+    DOM.btnTrustGuard.addEventListener("click", (e) => {
+      e.stopPropagation();
+      DOM.trustGuardPopover.classList.toggle("open");
+    });
+  }
+  if (DOM.btnCloseTrustGuard && DOM.trustGuardPopover) {
+    DOM.btnCloseTrustGuard.addEventListener("click", (e) => {
+      e.stopPropagation();
+      DOM.trustGuardPopover.classList.remove("open");
+    });
+  }
+  document.addEventListener("click", (e) => {
+    if (DOM.trustGuardPopover && DOM.trustGuardPopover.classList.contains("open")) {
+      if (!DOM.trustGuardPopover.contains(e.target) && !DOM.btnTrustGuard.contains(e.target)) {
+        DOM.trustGuardPopover.classList.remove("open");
+      }
+    }
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && DOM.trustGuardPopover && DOM.trustGuardPopover.classList.contains("open")) {
+      DOM.trustGuardPopover.classList.remove("open");
+    }
+  });
 
   // Log Tab Switch
   DOM.logTabLive.addEventListener("click", () => {
@@ -2631,13 +2697,13 @@ function setupEventListeners() {
   });
 
   DOM.btnSpeed.addEventListener("click", () => {
-    const speeds = [1, 2];
+    const speeds = [1, 2, 5];
     const nextIdx = (speeds.indexOf(STATE.replaySpeed) + 1) % speeds.length;
     STATE.replaySpeed = speeds[nextIdx];
     DOM.btnSpeed.textContent = `${STATE.replaySpeed}x`;
     if (STATE.replayPlaying) {
       clearInterval(STATE.replayTimer);
-      STATE.replayTimer = setInterval(executeReplayStep, Math.max(50, Math.round(1000 / STATE.replaySpeed)));
+      STATE.replayTimer = setInterval(executeReplayStep, getReplayIntervalMs());
     }
   });
 
