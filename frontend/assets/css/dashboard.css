@@ -795,6 +795,8 @@ input[type="datetime-local"] {
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.3px;
+  white-space: nowrap;
+  display: inline-block;
 }
 
 .badge.up, .badge.uptrend, .badge.impulse, .badge.bullish {
@@ -809,7 +811,7 @@ input[type="datetime-local"] {
   border: 1px solid rgba(239, 83, 80, 0.3);
 }
 
-.badge.neutral, .badge.no_call {
+.badge.neutral, .badge.no_call, .badge.no-clear-signal, .badge.no-signal {
   background: rgba(120, 123, 134, 0.15);
   color: var(--neutral);
   border: 1px solid rgba(120, 123, 134, 0.3);
