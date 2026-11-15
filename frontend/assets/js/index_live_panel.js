@@ -176,18 +176,18 @@
     }
 
     // Probabilities
-    const pFinal = pred.p_final || { down: 0.33, neutral: 0.34, up: 0.33 };
-    const pDn = Math.round((pFinal.down || 0.33) * 100);
-    const pNeu = Math.round((pFinal.neutral || 0.34) * 100);
-    const pUp = Math.round((pFinal.up || 0.33) * 100);
+    const pFinal = pred.p_final;
+    const pDn = (pFinal && pFinal.down != null) ? Math.round(pFinal.down * 100) : null;
+    const pNeu = (pFinal && pFinal.neutral != null) ? Math.round(pFinal.neutral * 100) : null;
+    const pUp = (pFinal && pFinal.up != null) ? Math.round(pFinal.up * 100) : null;
 
-    if (DOM.predProbDown) DOM.predProbDown.textContent = `${pDn}%`;
-    if (DOM.predProbNeu) DOM.predProbNeu.textContent = `${pNeu}%`;
-    if (DOM.predProbUp) DOM.predProbUp.textContent = `${pUp}%`;
+    if (DOM.predProbDown) DOM.predProbDown.textContent = pDn !== null ? `${pDn}%` : "—";
+    if (DOM.predProbNeu) DOM.predProbNeu.textContent = pNeu !== null ? `${pNeu}%` : "—";
+    if (DOM.predProbUp) DOM.predProbUp.textContent = pUp !== null ? `${pUp}%` : "—";
 
-    if (DOM.probBarDown) DOM.probBarDown.style.width = `${pDn}%`;
-    if (DOM.probBarNeu) DOM.probBarNeu.style.width = `${pNeu}%`;
-    if (DOM.probBarUp) DOM.probBarUp.style.width = `${pUp}%`;
+    if (DOM.probBarDown) DOM.probBarDown.style.width = pDn !== null ? `${pDn}%` : "0%";
+    if (DOM.probBarNeu) DOM.probBarNeu.style.width = pNeu !== null ? `${pNeu}%` : "0%";
+    if (DOM.probBarUp) DOM.probBarUp.style.width = pUp !== null ? `${pUp}%` : "0%";
 
     // Final Decision Badge
     if (DOM.predFinalBadge) {
@@ -195,8 +195,8 @@
       DOM.predFinalBadge.className = `decision-badge-large badge ${tagPriceAction.toLowerCase()}`;
     }
     if (DOM.predConfidence) {
-      const confPct = Math.round((pred.confidence || 0.42) * 100);
-      DOM.predConfidence.textContent = `${confPct}% Confidence`;
+      const confVal = pred.confidence ?? null;
+      DOM.predConfidence.textContent = confVal !== null ? `${Math.round(confVal * 100)}% Confidence` : "— Confidence";
     }
 
     // Targets
@@ -246,17 +246,27 @@
       const tagPriceAction = CANONICAL_TAGS.toPriceAction(row.label || row.action || row.action_label);
       const tagMarket = CANONICAL_TAGS.toMarket(row.market || tagTrend, tagPriceAction);
 
-      const confPct = Math.round((row.confidence || 0.42) * 100);
-      let probPct = confPct;
+      const confVal = row.confidence ?? null;
+      const confPctStr = confVal !== null ? `${Math.round(confVal * 100)}%` : "—";
+      let probPctStr = "—";
       if (row.p_final) {
-        if (tagPriceAction === "UP") probPct = Math.round((row.p_final.up || 0.33) * 100);
-        else if (tagPriceAction === "DOWN") probPct = Math.round((row.p_final.down || 0.33) * 100);
-        else probPct = Math.round((row.p_final.neutral || 0.34) * 100);
+        let pVal = null;
+        if (tagPriceAction === "UP") pVal = row.p_final.up ?? null;
+        else if (tagPriceAction === "DOWN") pVal = row.p_final.down ?? null;
+        else pVal = row.p_final.neutral ?? null;
+        if (pVal !== null) {
+          probPctStr = `${Math.round(pVal * 100)}%`;
+        }
+      } else if (confVal !== null) {
+        probPctStr = confPctStr;
       }
 
       let verdictHtml = `<span class="verdict-mark neutral">PENDING</span>`;
       let rowClass = "";
-      if (row.correct === 1) {
+      if (row.status && String(row.status).startsWith("NO SIGNAL")) {
+        verdictHtml = `<span class="verdict-mark neutral" style="color: var(--color-text-muted); font-size: 11px;">${row.status}</span>`;
+        rowClass = "no-signal";
+      } else if (row.correct === 1) {
         verdictHtml = `<b class="verdict-mark up">CORRECT</b>`;
         rowClass = "correct";
       } else if (row.correct === 0) {
@@ -277,8 +287,8 @@
         <td class="tabular-nums">${timeStr}</td>
         <td><span class="badge ${tagPriceAction.toLowerCase()}">${tagPriceAction}</span></td>
         <td style="text-align: center;">${verdictHtml}</td>
-        <td class="tabular-nums" style="text-align: right;">${confPct}%</td>
-        <td class="tabular-nums" style="text-align: right;">${probPct}%</td>
+        <td class="tabular-nums" style="text-align: right;">${confPctStr}</td>
+        <td class="tabular-nums" style="text-align: right;">${probPctStr}</td>
         <td><span class="badge ${tagMarket.toLowerCase()}">${tagMarket}</span></td>
         <td><span class="badge ${tagTrend.toLowerCase()}">${tagTrend}</span></td>
         <td><span class="badge ${tagPhase.toLowerCase()}">${tagPhase}</span></td>

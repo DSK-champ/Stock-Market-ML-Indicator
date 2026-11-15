@@ -404,18 +404,18 @@ function renderPredictionPanel(pred) {
   }
 
   // Probabilities
-  const pFinal = pred.p_final || { down: 0.33, neutral: 0.34, up: 0.33 };
-  const pDn = Math.round((pFinal.down || 0.33) * 100);
-  const pNeu = Math.round((pFinal.neutral || 0.34) * 100);
-  const pUp = Math.round((pFinal.up || 0.33) * 100);
+  const pFinal = pred.p_final;
+  const pDn = (pFinal && pFinal.down != null) ? Math.round(pFinal.down * 100) : null;
+  const pNeu = (pFinal && pFinal.neutral != null) ? Math.round(pFinal.neutral * 100) : null;
+  const pUp = (pFinal && pFinal.up != null) ? Math.round(pFinal.up * 100) : null;
 
-  DOM.predProbDown.textContent = `${pDn}%`;
-  DOM.predProbNeu.textContent = `${pNeu}%`;
-  DOM.predProbUp.textContent = `${pUp}%`;
+  DOM.predProbDown.textContent = pDn !== null ? `${pDn}%` : "—";
+  DOM.predProbNeu.textContent = pNeu !== null ? `${pNeu}%` : "—";
+  DOM.predProbUp.textContent = pUp !== null ? `${pUp}%` : "—";
 
-  DOM.probBarDown.style.width = `${pDn}%`;
-  DOM.probBarNeu.style.width = `${pNeu}%`;
-  DOM.probBarUp.style.width = `${pUp}%`;
+  DOM.probBarDown.style.width = pDn !== null ? `${pDn}%` : "0%";
+  DOM.probBarNeu.style.width = pNeu !== null ? `${pNeu}%` : "0%";
+  DOM.probBarUp.style.width = pUp !== null ? `${pUp}%` : "0%";
 
   // Final Decision Badge (Price Action: UP / DOWN / NEUTRAL)
   if (DOM.predFinalBadge) {
@@ -423,7 +423,8 @@ function renderPredictionPanel(pred) {
     DOM.predFinalBadge.className = `decision-badge-large badge ${tagPriceAction.toLowerCase()}`;
   }
 
-  DOM.predConfidence.textContent = `${Math.round((pred.confidence || 0.4) * 100)}% Confidence`;
+  const confVal = pred.confidence ?? null;
+  DOM.predConfidence.textContent = confVal !== null ? `${Math.round(confVal * 100)}% Confidence` : "— Confidence";
 
   // Smart Price & Indicative Range (Always computed, never n/a)
   let refClose = Number(pred.close || pred.ref_close || 0);
@@ -614,18 +615,29 @@ function renderPredictionLog() {
     const tagMarket = CANONICAL_TAGS.toMarket(row.market || tagTrend, tagPriceAction);
 
     // Confidence & Probability
-    const confPct = Math.round((row.confidence || 0.45) * 100);
-    let probPct = confPct;
+    const confVal = row.confidence ?? null;
+    const confPctStr = confVal !== null ? `${Math.round(confVal * 100)}%` : "—";
+    let probPctStr = "—";
     if (row.p_final) {
-      if (tagPriceAction === "UP") probPct = Math.round((row.p_final.up || 0.33) * 100);
-      else if (tagPriceAction === "DOWN") probPct = Math.round((row.p_final.down || 0.33) * 100);
-      else probPct = Math.round((row.p_final.neutral || 0.34) * 100);
+      let pVal = null;
+      if (tagPriceAction === "UP") pVal = row.p_final.up ?? null;
+      else if (tagPriceAction === "DOWN") pVal = row.p_final.down ?? null;
+      else pVal = row.p_final.neutral ?? null;
+      if (pVal !== null) {
+        probPctStr = `${Math.round(pVal * 100)}%`;
+      }
+    } else if (confVal !== null) {
+      probPctStr = confPctStr;
     }
 
-    // Verdict label: Only first 2 rows are empty (—), all others are explicit ✓ CORRECT or ✗ WRONG
+    // Verdict label: NO_SIGNAL renders status verbatim in grey (never graded);
+    // Otherwise explicit ✓ CORRECT or ✗ WRONG, or — when pending/neutral.
     let verdictHtml = `<span class="verdict-mark neutral">—</span>`;
     let rowClass = "";
-    if (row.correct === 1) {
+    if (row.status && String(row.status).startsWith("NO SIGNAL")) {
+      verdictHtml = `<span class="verdict-mark neutral" style="color: var(--color-text-muted); font-size: 11px;">${row.status}</span>`;
+      rowClass = "no-signal";
+    } else if (row.correct === 1) {
       verdictHtml = `<b class="verdict-mark up">✓ CORRECT</b>`;
       rowClass = "correct";
     } else if (row.correct === 0) {
@@ -644,8 +656,8 @@ function renderPredictionLog() {
       <td class="tabular-nums">${timeStr}</td>
       <td><span class="badge ${tagPriceAction.toLowerCase()}">${tagPriceAction}</span></td>
       <td style="text-align: center;">${verdictHtml}</td>
-      <td class="tabular-nums" style="text-align: right;">${confPct}%</td>
-      <td class="tabular-nums" style="text-align: right;">${probPct}%</td>
+      <td class="tabular-nums" style="text-align: right;">${confPctStr}</td>
+      <td class="tabular-nums" style="text-align: right;">${probPctStr}</td>
       <td><span class="badge ${tagMarket.toLowerCase()}">${tagMarket}</span></td>
       <td><span class="badge ${tagTrend.toLowerCase()}">${tagTrend}</span></td>
       <td><span class="badge ${tagPhase.toLowerCase()}">${tagPhase}</span></td>
@@ -1011,21 +1023,22 @@ function updateAllMarkers(view) {
     if (!timeSec || markerMap.has(timeSec)) return;
 
     const action = CANONICAL_TAGS.toPriceAction(pred.label || pred.action || pred.action_label);
-    const conf = Math.round((pred.confidence || 0.45) * 100);
+    const confVal = pred.confidence ?? null;
+    const confText = confVal !== null ? `${Math.round(confVal * 100)}%` : "";
 
     if (action === "UP") {
       markerMap.set(timeSec, {
         time: timeSec,
         color: CONFIG.colors.up,
         shape: "arrowUp",
-        text: `${conf}%`,
+        text: confText,
       });
     } else if (action === "DOWN") {
       markerMap.set(timeSec, {
         time: timeSec,
         color: CONFIG.colors.down,
         shape: "arrowDown",
-        text: `${conf}%`,
+        text: confText,
       });
     }
   });
@@ -1315,18 +1328,18 @@ function handleBackendWsEvent(msg) {
     const predSec = getCandleUnixSec(pred.candle_open_time || pred.open_time);
     const existingIdx = STATE.livePredictions.findIndex((p) => getCandleUnixSec(p.open_time) === predSec);
 
-    const pUp = Number(pred.p_up != null ? pred.p_up : 0.33);
-    const pDn = Number(pred.p_down != null ? pred.p_down : 0.33);
-    const pNeu = Number(pred.p_neutral != null ? pred.p_neutral : 0.34);
+    const pUp = pred.probabilities?.p_up ?? pred.p_up ?? (pred.p_final?.up ?? null);
+    const pDn = pred.probabilities?.p_down ?? pred.p_down ?? (pred.p_final?.down ?? null);
+    const pNeu = pred.probabilities?.p_neutral ?? pred.p_neutral ?? (pred.p_final?.neutral ?? null);
     const refClose = Number(pred.ref_close || pred.close || (STATE.liveCandles.length ? STATE.liveCandles[STATE.liveCandles.length - 1].close : 0));
     const atr = Number(pred.atr14 || (refClose * 0.0035));
     const sqrt2 = Math.sqrt(2.0);
     const kMove = CONFIG.bandConstants ? CONFIG.bandConstants.K_MOVE : 0.5;
     const z = CONFIG.bandConstants ? CONFIG.bandConstants.Z : 1.28;
-    const smartPrice = pred.smart_price || (refClose > 0 ? (refClose + (pUp - pDn) * atr * sqrt2 * kMove) : null);
-    const halfWidth = z * atr * sqrt2 * (0.75 + 0.5 * (1.0 - pNeu));
-    const upper = pred.upper || (smartPrice ? smartPrice + halfWidth : null);
-    const lower = pred.lower || (smartPrice ? smartPrice - halfWidth : null);
+    const smartPrice = pred.smart_price || (refClose > 0 && pUp != null && pDn != null ? (refClose + (pUp - pDn) * atr * sqrt2 * kMove) : null);
+    const halfWidth = pNeu != null ? z * atr * sqrt2 * (0.75 + 0.5 * (1.0 - pNeu)) : 0;
+    const upper = pred.upper || (smartPrice && halfWidth > 0 ? smartPrice + halfWidth : null);
+    const lower = pred.lower || (smartPrice && halfWidth > 0 ? smartPrice - halfWidth : null);
 
     const mapped = {
       open_time: pred.candle_open_time || pred.open_time,
