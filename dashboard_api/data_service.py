@@ -623,6 +623,13 @@ class DataService:
             return self._prediction_cache[ts]
 
         target_dt = parse_utc_timestamp(ts)
+        iso_str = target_dt.isoformat()
+        std_str = str(target_dt)
+        if iso_str in self._prediction_cache:
+            return self._prediction_cache[iso_str]
+        if std_str in self._prediction_cache:
+            return self._prediction_cache[std_str]
+
         if target_dt < self.test_start_dt or target_dt > self.test_end_dt:
             raise ValueError(f"Timestamp {target_dt} is outside TEST split [{self.test_start_dt} to {self.test_end_dt}].")
 
@@ -763,6 +770,8 @@ class DataService:
         }
 
         self._prediction_cache[ts] = result
+        self._prediction_cache[iso_str] = result
+        self._prediction_cache[std_str] = result
         return result
 
     def predict_replay_range(self, from_ts: str, count: int) -> List[Dict[str, Any]]:
