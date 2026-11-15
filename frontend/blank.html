@@ -38,7 +38,53 @@
 
       <div class="header-right">
         <div id="clock-server" class="tabular-nums" style="color: var(--text-dim); font-size: 11px;">UTC 00:00:00</div>
+        <button id="btn-trust-guard" class="btn-icon" aria-label="System Health & Abstention Guard" title="System Health & Abstention Guard" style="display: inline-flex; align-items: center; justify-content: center; font-size: 13px;">🛡️</button>
         <button id="btn-guide" class="btn-icon" aria-label="System Guide & Manual" title="System Guide">ℹ</button>
+      </div>
+
+      <!-- System Health & Abstention Guard Popover Dialog -->
+      <div id="trust-guard-popover" class="trust-guard-popover" role="dialog" aria-modal="true" aria-label="System Health & Abstention Guard">
+        <div class="settings-popover-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+          <div class="settings-title-group" style="display: flex; align-items: center; gap: 6px;">
+            <span class="settings-icon">🛡️</span>
+            <h3 class="settings-title" style="font-size: 13px; margin: 0; font-weight: 700; color: #fff;">System Health & Abstention Guard</h3>
+            <span id="trust-gap-count" class="trust-gaps-badge" style="margin-left: 6px;">0 gaps / 24h</span>
+          </div>
+          <button id="btn-close-trust-guard" class="btn-icon" aria-label="Close Guard">✕</button>
+        </div>
+        <div class="settings-popover-subtitle" style="font-size: 11px; color: var(--text-dim); margin-bottom: 12px; line-height: 1.4;">
+          Live data continuity monitoring, model telemetry, and display-layer abstention filters.
+        </div>
+        
+        <div class="trust-chips-grid modal-chips">
+          <div class="trust-chip" id="chip-gap-fallback" title="Candle gap fallback occurred">
+            <span class="chip-dot"></span>
+            <span class="chip-label">GAP-FALLBACK ROW</span>
+            <span class="chip-count" id="count-gap-fallback">0</span>
+          </div>
+          <div class="trust-chip" id="chip-below-threshold" title="Max probability difference below delta display threshold">
+            <span class="chip-dot"></span>
+            <span class="chip-label">BELOW DISPLAY THRESHOLD</span>
+            <span class="chip-count" id="count-below-threshold">0</span>
+          </div>
+          <div class="trust-chip" id="chip-margin-violation" title="Directional margin |p_up - p_down| < m">
+            <span class="chip-dot"></span>
+            <span class="chip-label">MARGIN VIOLATION</span>
+            <span class="chip-count" id="count-margin-violation">0</span>
+          </div>
+          <div class="trust-chip" id="chip-context-disagreement" title="Model and Context Blend disagree on direction">
+            <span class="chip-dot"></span>
+            <span class="chip-label">MODEL / CONTEXT DISAGREEMENT</span>
+            <span class="chip-count" id="count-context-disagreement">0</span>
+          </div>
+        </div>
+
+        <div class="trust-guard-details" style="margin-top: 12px; padding-top: 10px; border-top: 1px solid #2a2e39; font-size: 11px; color: #9598a1; line-height: 1.5;">
+          <div style="margin-bottom: 6px;"><b style="color: #d1d4dc;">• GAP-FALLBACK ROW:</b> Triggered when missing market candle continuity requires fallback to zero-signal inference. Never graded in accuracy scorecard.</div>
+          <div style="margin-bottom: 6px;"><b style="color: #d1d4dc;">• BELOW DISPLAY THRESHOLD:</b> Candidate signals where max probability difference from uniform baseline is below display threshold (δ = 0.015).</div>
+          <div style="margin-bottom: 6px;"><b style="color: #d1d4dc;">• MARGIN VIOLATION:</b> Candidate signals where directional separation |p_up - p_down| &lt; m (0.015).</div>
+          <div><b style="color: #d1d4dc;">• MODEL / CONTEXT DISAGREEMENT:</b> Divergence between raw statistical model prediction and context trend filter.</div>
+        </div>
       </div>
     </header>
 
@@ -283,35 +329,6 @@
             <span id="pred-band-containment">Awaiting resolutions...</span>
           </div>
 
-          <!-- Trust & Telemetry Panel (F6) -->
-          <div class="trust-panel" id="trust-panel">
-            <div class="trust-panel-header">
-              <span class="trust-title">System Health & Abstention Guard</span>
-              <span id="trust-gap-count" class="trust-gaps-badge">0 gaps / 24h</span>
-            </div>
-            <div class="trust-chips-grid">
-              <div class="trust-chip" id="chip-gap-fallback" title="Candle gap fallback occurred">
-                <span class="chip-dot"></span>
-                <span class="chip-label">GAP-FALLBACK ROW</span>
-                <span class="chip-count" id="count-gap-fallback">0</span>
-              </div>
-              <div class="trust-chip" id="chip-below-threshold" title="Max probability difference below delta display threshold">
-                <span class="chip-dot"></span>
-                <span class="chip-label">BELOW DISPLAY THRESHOLD</span>
-                <span class="chip-count" id="count-below-threshold">0</span>
-              </div>
-              <div class="trust-chip" id="chip-margin-violation" title="Directional margin |p_up - p_down| < m">
-                <span class="chip-dot"></span>
-                <span class="chip-label">MARGIN VIOLATION</span>
-                <span class="chip-count" id="count-margin-violation">0</span>
-              </div>
-              <div class="trust-chip" id="chip-context-disagreement" title="Model and Context Blend disagree on direction">
-                <span class="chip-dot"></span>
-                <span class="chip-label">MODEL / CONTEXT DISAGREEMENT</span>
-                <span class="chip-count" id="count-context-disagreement">0</span>
-              </div>
-            </div>
-          </div>
         </section>
 
         <!-- Panel 2: Prediction Log -->
