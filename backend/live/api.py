@@ -7,6 +7,7 @@ import json
 import time
 import urllib.parse
 from datetime import datetime, timezone
+import pandas as pd
 import websockets
 from websockets.asyncio.server import serve
 from websockets.http11 import Response, Headers
@@ -54,19 +55,11 @@ class LiveApiServer:
         if not enriched.get("ref_close") and enriched.get("candle_open_time"):
             c = self.candle_store.get_candle(str(enriched["candle_open_time"]))
             if c and c.get("close"):
-                ref_close = float(c["close"])
-                enriched["ref_close"] = ref_close
-                p_up = float(enriched.get("p_up", 0.33))
-                p_dn = float(enriched.get("p_down", 0.33))
-                p_neu = float(enriched.get("p_neutral", 0.34))
-                atr = ref_close * 0.0035
-                sqrt2 = 1.41421356
-                smart = ref_close + (p_up - p_dn) * atr * sqrt2 * 0.5
-                half = 1.28 * atr * sqrt2 * (0.75 + 0.5 * (1.0 - p_neu))
-                enriched["smart_price"] = round(smart, 2)
-                enriched["upper"] = round(smart + half, 2)
-                enriched["lower"] = round(smart - half, 2)
-                enriched["atr14"] = round(atr, 2)
+                enriched["ref_close"] = float(c["close"])
+        enriched["smart_price"] = None
+        enriched["upper"] = None
+        enriched["lower"] = None
+        enriched["atr14"] = None
         return enriched
 
     def broadcast_event(self, event_type: str, payload: Dict[str, Any]) -> None:

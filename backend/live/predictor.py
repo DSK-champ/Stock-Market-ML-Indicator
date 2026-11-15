@@ -141,8 +141,10 @@ class PredictorWorker:
             self._broadcast("new_prediction", pred_record)
             return
 
-        # 2. Check for buffer gap
-        diffs = recent_df.index.to_series().diff().dropna()
+        # 2. Check for buffer gap within the feature lookback window
+        lookback_n = getattr(config, "MIN_BUFFER_SIZE", 2016)
+        feature_window = recent_df.tail(lookback_n)
+        diffs = feature_window.index.to_series().diff().dropna()
         has_gap = (diffs > pd.Timedelta(minutes=5)).any() if len(diffs) > 0 else False
         if has_gap:
             pred_record = {
