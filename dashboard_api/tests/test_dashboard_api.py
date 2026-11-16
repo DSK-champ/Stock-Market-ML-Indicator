@@ -220,3 +220,58 @@ def test_9_live_predictions_preserve_null_zero_confidence_and_verbatim_status(da
         if p.get("confidence") is not None and p["confidence"] == 0.0:
             assert p["confidence"] == 0.0, "Zero confidence must be preserved as 0.0"
 
+
+def test_10_display_state_and_shown_action_policy():
+    """Test display_state and shown_action policy:
+    1. P(neutral) 0.6 with equal P(up) and P(down) gives NEUTRAL.
+    2. Near-uniform probabilities give NO CLEAR SIGNAL.
+    3. Directional UP/DOWN calls are unchanged.
+    """
+    from dashboard_api.insights.signal_policy import compute_display_state, compute_shown_action
+
+    # 1. P(neutral) 0.6 with equal P(up) and P(down) gives NEUTRAL
+    p_up, p_dn, p_neu = 0.20, 0.20, 0.60
+    disp_neu = compute_display_state("NEUTRAL", p_up, p_dn, p_neu, status="RESOLVED")
+    act_neu, reason_neu = compute_shown_action("NEUTRAL", p_up, p_dn, p_neu, status="RESOLVED")
+    assert disp_neu == "NEUTRAL", f"Expected NEUTRAL, got {disp_neu}"
+    assert act_neu == "NEUTRAL", f"Expected NEUTRAL, got {act_neu}"
+    assert reason_neu is None
+
+    # 2. Near-uniform probabilities give NO CLEAR SIGNAL
+    # max(p) - 1/3 = 0.334 - 0.3333 = 0.0007 < delta (0.015)
+    p_up, p_dn, p_neu = 0.334, 0.333, 0.333
+    disp_uni = compute_display_state("UP", p_up, p_dn, p_neu, status="RESOLVED")
+    act_uni, reason_uni = compute_shown_action("UP", p_up, p_dn, p_neu, status="RESOLVED")
+    assert disp_uni == "NO CLEAR SIGNAL", f"Expected NO CLEAR SIGNAL, got {disp_uni}"
+    assert act_uni == "NO CLEAR SIGNAL"
+    assert reason_uni == "below_delta_threshold"
+
+    disp_uni_neu = compute_display_state("NEUTRAL", p_up, p_dn, p_neu, status="RESOLVED")
+    act_uni_neu, reason_uni_neu = compute_shown_action("NEUTRAL", p_up, p_dn, p_neu, status="RESOLVED")
+    assert disp_uni_neu == "NO CLEAR SIGNAL"
+    assert act_uni_neu == "NO CLEAR SIGNAL"
+
+    # 3. Directional lean failing margin test gives NO CLEAR SIGNAL
+    p_up, p_dn, p_neu = 0.380, 0.375, 0.245
+    disp_lean = compute_display_state("UP", p_up, p_dn, p_neu, status="RESOLVED")
+    act_lean, reason_lean = compute_shown_action("UP", p_up, p_dn, p_neu, status="RESOLVED")
+    assert disp_lean == "NO CLEAR SIGNAL"
+    assert act_lean == "NO CLEAR SIGNAL"
+    assert reason_lean == "margin_violation"
+
+    # 4. Calls are unchanged: valid UP and DOWN calls pass through
+    p_up, p_dn, p_neu = 0.45, 0.25, 0.30
+    disp_up = compute_display_state("UP", p_up, p_dn, p_neu, status="RESOLVED")
+    act_up, reason_up = compute_shown_action("UP", p_up, p_dn, p_neu, status="RESOLVED")
+    assert disp_up == "UP"
+    assert act_up == "UP"
+    assert reason_up is None
+
+    p_up, p_dn, p_neu = 0.25, 0.45, 0.30
+    disp_dn = compute_display_state("DOWN", p_up, p_dn, p_neu, status="RESOLVED")
+    act_dn, reason_dn = compute_shown_action("DOWN", p_up, p_dn, p_neu, status="RESOLVED")
+    assert disp_dn == "DOWN"
+    assert act_dn == "DOWN"
+    assert reason_dn is None
+
+
