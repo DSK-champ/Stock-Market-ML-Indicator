@@ -13,6 +13,7 @@ from backend.live.candle_store import CandleStore
 from backend.live.ledger import PredictionLedger
 from backend.engine import TradingEngine
 from src.features import build_features
+from backend.live.zone_calculator import calculate_trade_zone, evaluate_zone_resolution
 
 
 def get_git_commit() -> str:
@@ -254,6 +255,8 @@ class PredictorWorker:
             "probabilities": result["probabilities"],
             "trend": result["technical_analysis"]["trend"],
             "market_phase": result["technical_analysis"]["market_phase"],
+            "base_model_votes": result.get("base_model_votes", {}),
+            "technical_analysis": result.get("technical_analysis", {}),
             "model_version": f"TradingEngine-v2.0-N{config.HORIZON}",
             "git_commit": self.git_commit,
             "config_hash": self.config_hash,
@@ -273,4 +276,38 @@ class PredictorWorker:
         resolved_list = self.ledger.resolve_pending(self.candle_store)
         for r in resolved_list:
             self._broadcast("prediction_resolved", r)
+
+        # 7. Model-Informed Trade Zones (Additive, Strictly Zero Repainting)
+        try:
+            # 7a. Resolve Active Trade Zones
+            active_zones = self.ledger.get_active_trade_zones()
+            for az in active_zones:
+                is_exp = (str(az["target_candle_open_time"]) <= str(open_time))
+                is_flip = (
+                    (az["direction"] == "LONG" and result["action"] != 1) or
+                    (az["direction"] == "SHORT" and result["action"] != -1)
+                )
+                res_zone = evaluate_zone_resolution(
+                    az,
+                    candle,
+                    is_expiry_candle=is_exp,
+                    opposing_action_emitted=is_flip,
+                    new_confidence=result["confidence"],
+                )
+                if res_zone["status"] != "ACTIVE":
+                    self.ledger.update_trade_zone_status(
+                        res_zone["zone_id"],
+                        res_zone["status"],
+                        res_zone["exit_time"],
+                        res_zone["exit_price"],
+                        res_zone["net_bps"],
+                    )
+                    self._broadcast("trade_zone_resolved", res_zone)
+
+            # 7b. Calculate & Persist New Trade Zone on Closed Candle
+            new_zone = calculate_trade_zone(pred_record, recent_df)
+            self.ledger.record_trade_zone(new_zone)
+            self._broadcast("trade_zone_update", new_zone)
+        except Exception as e:
+            print(f"[WARN] Trade zone calculation/resolution encountered: {e}")
 

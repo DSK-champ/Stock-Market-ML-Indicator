@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>BTC/USDT 5m — AI Trader Dashboard</title>
   <link rel="stylesheet" href="assets/css/dashboard.css?v=1.2">
+  <link rel="stylesheet" href="assets/css/trade_zones.css">
   <script src="assets/js/native_chart.js?v=1.1"></script>
 </head>
 
@@ -28,11 +29,11 @@
           <span id="status-dot" class="status-dot live"></span>
           <span id="status-text">Connecting...</span>
         </div>
-        <a id="btn-back-index" href="index.html" class="btn-back-index" role="button" aria-label="Back to index page" title="Back to index.html">
+        <a id="btn-back-index" href="index.html" class="btn-back-index" role="button" aria-label="Go to Trading View" title="Go to Trading View">
           <svg class="btn-back-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M19 12H5M12 19l-7-7 7-7"/>
           </svg>
-          <span class="btn-back-text">Back to Index</span>
+          <span class="btn-back-text">Go to Trading View</span>
         </a>
       </div>
 
@@ -40,6 +41,7 @@
         <div id="clock-server" class="tabular-nums" style="color: var(--text-dim); font-size: 11px;">UTC 00:00:00</div>
         <button id="btn-trust-guard" class="btn-icon" aria-label="System Health & Abstention Guard" title="System Health & Abstention Guard" style="display: inline-flex; align-items: center; justify-content: center; font-size: 13px;">🛡️</button>
         <button id="btn-guide" class="btn-icon" aria-label="System Guide & Manual" title="System Guide">ℹ</button>
+        <button id="btn-trade-zones" class="btn-icon" aria-label="Trade Zones" title="Trade Zones" style="display: inline-flex; align-items: center; justify-content: center; font-size: 13px;">🎯</button>
       </div>
 
       <!-- System Health & Abstention Guard Popover Dialog -->
@@ -476,6 +478,166 @@
           </div>
         </section>
       </aside>
+
+      <!-- Collapsible Trade Zones Right Panel (Additive, strictly isolated) -->
+      <aside id="trade-zones-panel" class="trade-zones-panel" hidden aria-label="Trade Zones Panel">
+        <!-- Header -->
+        <div class="tz-header">
+          <div class="tz-title-group">
+            <span style="font-size: 13px;">🎯</span>
+            <span class="tz-title">Trade Zones</span>
+            <span class="badge" style="background: rgba(41,98,255,0.2); color: #2962ff; font-size: 8px; padding: 1px 4px;">N=2 (10m)</span>
+          </div>
+          <button id="btn-close-trade-zones" class="btn-icon" aria-label="Close Trade Zones" style="font-size: 11px; padding: 2px 6px;">✕</button>
+        </div>
+
+        <div class="tz-scroll-body">
+          <!-- 1. Active Signal Card -->
+          <div class="tz-card">
+            <div class="tz-card-title">
+              <span>Active Signal</span>
+              <span id="tz-expiry-countdown" style="font-size: 9px; font-weight: 600; color: #2962ff;">--:-- to expiry</span>
+            </div>
+            <div class="tz-signal-header">
+              <span id="tz-signal-badge" class="tz-badge-large neutral">NEUTRAL</span>
+              <span id="tz-confidence-val" style="font-size: 11px; font-weight: 700; color: #d1d4dc;">— Confidence</span>
+            </div>
+
+            <!-- Agreement Meter -->
+            <div class="tz-agreement-box">
+              <div style="display: flex; justify-content: space-between; font-size: 9px; color: var(--text-dim, #787b86);">
+                <span>Sub-Model Agreement</span>
+                <span id="tz-agreement-val" style="font-weight: 700; color: #d1d4dc;">—%</span>
+              </div>
+              <div class="tz-agreement-bar-track">
+                <div id="tz-agreement-fill" class="tz-agreement-bar-fill" style="width: 50%;"></div>
+              </div>
+            </div>
+
+            <!-- Regime & Status -->
+            <div class="tz-meta-row">
+              <span style="color: var(--text-dim, #787b86); font-size: 10px;">Market Regime:</span>
+              <span id="tz-regime-pill" class="tz-regime-pill">ranging</span>
+            </div>
+          </div>
+
+          <!-- 2. Levels Card -->
+          <div class="tz-card">
+            <div class="tz-card-title">
+              <span>Execution Levels</span>
+              <span style="font-size: 8px; color: var(--text-dim, #787b86);">23 bps friction floor</span>
+            </div>
+            <div class="tz-levels-grid">
+              <div class="tz-level-item" style="grid-column: span 2;">
+                <span class="tz-level-label">🟢 Entry Range</span>
+                <span id="tz-level-entry" class="tz-level-val">—</span>
+              </div>
+              <div class="tz-level-item">
+                <span class="tz-level-label">🎯 Target</span>
+                <span id="tz-level-target" class="tz-level-val target">—</span>
+              </div>
+              <div class="tz-level-item">
+                <span class="tz-level-label">🛑 Stop Loss</span>
+                <span id="tz-level-stop" class="tz-level-val stop">—</span>
+              </div>
+              <div class="tz-level-item">
+                <span class="tz-level-label">⚖ Risk / Reward</span>
+                <span id="tz-level-rr" class="tz-level-val">—</span>
+              </div>
+              <div class="tz-level-item">
+                <span class="tz-level-label">⏱️ Horizon</span>
+                <span id="tz-level-net-bps" class="tz-level-val expected">2 Candles (10m)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. Model & TA Evidence Chips (12 sub-models) -->
+          <div class="tz-card">
+            <div class="tz-card-title">
+              <span>Evidence Chips (12 Votes)</span>
+              <span style="font-size: 8px; color: var(--text-dim, #787b86);">6 Models + 6 TA</span>
+            </div>
+            <div id="tz-chips-container" class="tz-chips-container">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- 4. Switches & Tunable Multipliers -->
+          <div class="tz-card">
+            <div class="tz-card-title">Chart & Multipliers</div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <label class="tz-switch-row">
+                <span class="tz-switch-label">Show zones on chart</span>
+                <span class="tz-toggle">
+                  <input type="checkbox" id="tz-switch-show-chart" checked>
+                  <span class="tz-toggle-slider"></span>
+                </span>
+              </label>
+              <label class="tz-switch-row">
+                <span class="tz-switch-label">Active zone only</span>
+                <span class="tz-toggle">
+                  <input type="checkbox" id="tz-switch-active-only" checked>
+                  <span class="tz-toggle-slider"></span>
+                </span>
+              </label>
+
+              <!-- Tunable multipliers -->
+              <div style="font-size: 9px; color: var(--text-dim, #787b86); text-transform: uppercase; margin-top: 4px; font-weight: 700;">Multipliers (Tuned on OOF / Val)</div>
+              <div class="tz-settings-grid">
+                <div class="tz-input-wrap">
+                  <span class="tz-input-label">k_entry (ATR)</span>
+                  <input type="number" id="tz-input-k-entry" class="tz-input-field" value="0.75" step="0.05" min="0.1" max="3.0">
+                </div>
+                <div class="tz-input-wrap">
+                  <span class="tz-input-label">k_stop (Vol)</span>
+                  <input type="number" id="tz-input-k-stop" class="tz-input-field" value="1.25" step="0.05" min="0.5" max="4.0">
+                </div>
+                <div class="tz-input-wrap">
+                  <span class="tz-input-label">scale (GK)</span>
+                  <input type="number" id="tz-input-scale" class="tz-input-field" value="1.50" step="0.1" min="0.5" max="5.0">
+                </div>
+                <div class="tz-input-wrap">
+                  <span class="tz-input-label">buffer (bps)</span>
+                  <input type="number" id="tz-input-buffer" class="tz-input-field" value="5.0" step="1.0" min="0" max="20">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 5. Zone History Table -->
+          <div class="tz-card">
+            <div class="tz-card-title">
+              <span>Zone History</span>
+              <span id="tz-running-hit-rate" style="font-size: 9px; color: #00e676; font-weight: 700;">—%</span>
+            </div>
+            <div class="tz-history-wrap">
+              <div class="tz-history-stats">
+                <span>Resolved Trades</span>
+                <span id="tz-running-net-bps" style="font-weight: 700;">Wins: 0 | Losses: 0</span>
+              </div>
+              <table class="tz-history-table">
+                <thead>
+                  <tr>
+                    <th style="width: 28px; text-align: center;" title="Show zone on chart">Zone</th>
+                    <th>Time</th>
+                    <th>Dir</th>
+                    <th>Entry</th>
+                    <th style="text-align: right;">Verdict</th>
+                  </tr>
+                </thead>
+                <tbody id="tz-history-body">
+                  <!-- Dynamically populated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 6. Disclaimer -->
+          <div class="tz-disclaimer">
+            Decision-support tool for education and paper trading, not financial advice.
+          </div>
+        </div>
+      </aside>
     </main>
 
     <!-- 3. Bottom Bar -->
@@ -539,6 +701,10 @@
 
   <script src="assets/js/features_data.js?v=1.1"></script>
   <script src="assets/js/dashboard.js?v=1.4"></script>
+  <script src="assets/js/zone_config.js"></script>
+  <script src="assets/js/zone_calculator.js"></script>
+  <script src="assets/js/zone_chart_overlay.js"></script>
+  <script src="assets/js/trade_zones_panel.js"></script>
 </body>
 
 </html>

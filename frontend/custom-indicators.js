@@ -16,7 +16,13 @@ function getCustomIndicators(PineJS) {
 				{ id: "plot_3", type: "line" },
 				{ id: "plot_4", type: "shapes" },
 				{ id: "plot_5", type: "shapes" },
-				{ id: "plot_6", type: "shapes" }
+				{ id: "plot_6", type: "shapes" },
+				{ id: "plot_7", type: "line" },
+				{ id: "plot_8", type: "line" },
+				{ id: "plot_9", type: "line" },
+				{ id: "plot_10", type: "line" },
+				{ id: "plot_11", type: "line" },
+				{ id: "plot_12", type: "line" }
 			],
 			defaults: {
 				styles: {
@@ -26,10 +32,18 @@ function getCustomIndicators(PineJS) {
 					plot_3: { linestyle: 0, linewidth: 2, plottype: 0, trackPrice: false, transparency: 0, visible: true, color: "#ff9800" },
 					plot_4: { linestyle: 0, linewidth: 3, plottype: "shape_arrow_up", trackPrice: false, location: "BelowBar", transparency: 0, visible: true, color: "#26a69a" },
 					plot_5: { linestyle: 0, linewidth: 3, plottype: "shape_arrow_down", trackPrice: false, location: "AboveBar", transparency: 0, visible: true, color: "#ef5350" },
-					plot_6: { linestyle: 0, linewidth: 2, plottype: "shape_circle", trackPrice: false, location: "BelowBar", transparency: 0, visible: true, color: "#787b86" }
+					plot_6: { linestyle: 0, linewidth: 2, plottype: "shape_circle", trackPrice: false, location: "BelowBar", transparency: 0, visible: true, color: "#787b86" },
+					plot_7: { linestyle: 0, linewidth: 1, plottype: 0, trackPrice: false, transparency: 0, visible: true, color: "#00e676" },
+					plot_8: { linestyle: 0, linewidth: 1, plottype: 0, trackPrice: false, transparency: 0, visible: true, color: "#00e676" },
+					plot_9: { linestyle: 0, linewidth: 1, plottype: 0, trackPrice: false, transparency: 0, visible: true, color: "#ff1744" },
+					plot_10: { linestyle: 0, linewidth: 1, plottype: 0, trackPrice: false, transparency: 0, visible: true, color: "#ff1744" },
+					plot_11: { linestyle: 2, linewidth: 2, plottype: 0, trackPrice: false, transparency: 0, visible: true, color: "#00e676" },
+					plot_12: { linestyle: 2, linewidth: 2, plottype: 0, trackPrice: false, transparency: 0, visible: true, color: "#ff1744" }
 				},
 				filledAreasStyle: {
-					fill_0: { color: "#2962ff", transparency: 90, visible: true }
+					fill_0: { color: "#2962ff", transparency: 90, visible: true },
+					fill_entry: { color: "#00e676", transparency: 80, visible: true },
+					fill_exit: { color: "#ff1744", transparency: 80, visible: true }
 				},
 				inputs: { length: 20, mult: 2.0 }
 			},
@@ -40,17 +54,27 @@ function getCustomIndicators(PineJS) {
 				plot_3: { title: "Predicted Direction Path (Accuracy Scaled)", histogramBase: 0, joinPoints: false, isHidden: false },
 				plot_4: { title: "Marker: UP (Buy)", histogramBase: 0, joinPoints: false, isHidden: false },
 				plot_5: { title: "Marker: DOWN (Sell)", histogramBase: 0, joinPoints: false, isHidden: false },
-				plot_6: { title: "Marker: NEUTRAL", histogramBase: 0, joinPoints: false, isHidden: false }
+				plot_6: { title: "Marker: NEUTRAL", histogramBase: 0, joinPoints: false, isHidden: false },
+				plot_7: { title: "🟢 Green Entry Zone Ceiling", histogramBase: 0, joinPoints: false, isHidden: false },
+				plot_8: { title: "🟢 Green Entry Zone Floor", histogramBase: 0, joinPoints: false, isHidden: false },
+				plot_9: { title: "🔴 Red Back-Out Zone Ceiling", histogramBase: 0, joinPoints: false, isHidden: false },
+				plot_10: { title: "🔴 Red Back-Out Zone Floor", histogramBase: 0, joinPoints: false, isHidden: false },
+				plot_11: { title: "🎯 Take Profit Target (+23 bps)", histogramBase: 0, joinPoints: false, isHidden: false },
+				plot_12: { title: "🛑 Stop Loss Invalidation", histogramBase: 0, joinPoints: false, isHidden: false }
 			},
-			filledAreas: [{ id: "fill_0", objAId: "plot_1", objBId: "plot_2", type: "plot_plot", title: "Adaptive Prediction Channel" }],
+			filledAreas: [
+				{ id: "fill_0", objAId: "plot_1", objBId: "plot_2", type: "plot_plot", title: "Adaptive Prediction Channel" },
+				{ id: "fill_entry", objAId: "plot_7", objBId: "plot_8", type: "plot_plot", title: "🟢 Green Entry Zone" },
+				{ id: "fill_exit", objAId: "plot_9", objBId: "plot_10", type: "plot_plot", title: "🔴 Red Back-Out Zone" }
+			],
 			inputs: [
 				{ id: "length", name: "Length", defval: 20, type: "integer", min: 1, max: 10000 },
 				{ id: "mult", name: "StdDev Multiplier", defval: 2.0, type: "float", min: 0.001, max: 50 }
 			],
 			format: { type: "inherit" }
 		},
-		constructor: function() {
-			this.main = function(context, inputs) {
+		constructor: function () {
+			this.main = function (context, inputs) {
 				this._context = context;
 				this._input = inputs;
 				var length = this._input(0);
@@ -73,8 +97,8 @@ function getCustomIndicators(PineJS) {
 				var predMap = null;
 				if (typeof window !== "undefined") {
 					predMap = window.__ML_PREDICTIONS_MAP ||
-					          (window.parent && window.parent.__ML_PREDICTIONS_MAP) ||
-					          (window.top && window.top.__ML_PREDICTIONS_MAP);
+						(window.parent && window.parent.__ML_PREDICTIONS_MAP) ||
+						(window.top && window.top.__ML_PREDICTIONS_MAP);
 				}
 
 				var rawTime = PineJS.Std.time(this._context);
@@ -95,6 +119,12 @@ function getCustomIndicators(PineJS) {
 				var downMarker = NaN;
 				var neuMarker = NaN;
 				var plottedPath = NaN;
+				var entryUpper = NaN;
+				var entryLower = NaN;
+				var exitUpper = NaN;
+				var exitLower = NaN;
+				var tpLevel = NaN;
+				var slLevel = NaN;
 
 				if (mlPred) {
 					var action = String(mlPred.shown_action || mlPred.action || mlPred.label || "").toUpperCase();
@@ -129,9 +159,26 @@ function getCustomIndicators(PineJS) {
 					} else {
 						plottedPath = basePrice + 0.38 * delta; // moves in that direction but slightly if wrong
 					}
+
+					// 🟢 Green Entry Zone & 🔴 Red Back-Out / Stop Zone Levels
+					if (isUp) {
+						entryUpper = basePrice;
+						entryLower = basePrice - (atrVal * 0.75);
+						exitUpper = basePrice - (atrVal * 1.25);
+						exitLower = basePrice - (atrVal * 1.75);
+						tpLevel = basePrice * (1.0 + 0.0023 + 0.0005);
+						slLevel = basePrice - (atrVal * 1.25);
+					} else if (isDown) {
+						entryLower = basePrice;
+						entryUpper = basePrice + (atrVal * 0.75);
+						exitLower = basePrice + (atrVal * 1.25);
+						exitUpper = basePrice + (atrVal * 1.75);
+						tpLevel = basePrice * (1.0 - 0.0023 - 0.0005);
+						slLevel = basePrice + (atrVal * 1.25);
+					}
 				}
 
-				return [baseline, upper, lower, plottedPath, upMarker, downMarker, neuMarker];
+				return [baseline, upper, lower, plottedPath, upMarker, downMarker, neuMarker, entryUpper, entryLower, exitUpper, exitLower, tpLevel, slLevel];
 			};
 		}
 	}, {
@@ -172,8 +219,8 @@ function getCustomIndicators(PineJS) {
 			],
 			format: { type: "inherit" }
 		},
-		constructor: function() {
-			this.main = function(context, inputs) {
+		constructor: function () {
+			this.main = function (context, inputs) {
 				if (!this._loggedOnce) {
 					console.log("INSIDE MAIN typeof window:", typeof window);
 					this._loggedOnce = true;

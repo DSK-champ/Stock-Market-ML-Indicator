@@ -31,7 +31,7 @@ class NativeCandleChart {
       priceAxisWidth: 70,
       timeAxisHeight: 26,
       volumeHeightRatio: 0.18,
-      minCandlesVisible: 15,
+      minCandlesVisible: 3,
       maxCandlesVisible: 1500,
       ...options,
     };
@@ -66,6 +66,7 @@ class NativeCandleChart {
       smartPrice: true,
       actualLine: false,
       volume: true,
+      tradeZones: true,
     };
 
     // Viewport state (TradingView smooth continuous coordinates)
@@ -208,7 +209,32 @@ class NativeCandleChart {
   }
 
   setPredictions(predictions) {
-    this.predictions = Array.isArray(predictions) ? predictions.slice() : [];
+    if (!Array.isArray(predictions)) {
+      this.predictions = [];
+      this.requestRender();
+      return;
+    }
+    const seenSec = new Set();
+    const deduped = [];
+    const toSec = (ts) => {
+      if (!ts) return 0;
+      if (typeof ts === "number") return ts > 1e11 ? Math.floor(ts / 1000) : Math.floor(ts);
+      let s = String(ts).trim().replace(" ", "T");
+      if (!s.endsWith("Z") && !s.includes("+")) s += "Z";
+      const ms = Date.parse(s);
+      return isNaN(ms) ? 0 : Math.floor(ms / 1000);
+    };
+
+    for (let i = 0; i < predictions.length; i++) {
+      const p = predictions[i];
+      if (!p) continue;
+      const sec = toSec(p.open_time || p.candle_open_time);
+      if (sec && !seenSec.has(sec)) {
+        seenSec.add(sec);
+        deduped.push(p);
+      }
+    }
+    this.predictions = deduped;
     this.requestRender();
   }
 
@@ -683,9 +709,39 @@ class NativeCandleChart {
       this.drawSmartPredictedLineAndForecastRays(ctx, intStart, endIndex, getX, getY, candleSlotWidth);
     }
 
+    // 7b. Model-Informed Trade Zones (Green Entry & Red Stop Zones projected into future)
+    if (this.layers.tradeZones !== false) {
+      this.drawTradeZones(ctx, intStart, endIndex, getX, getY, candleSlotWidth, candleWidth);
+    }
+
     // 7. Last Price Line with price badge
     if (this.lastPrice) {
       this.drawLastPriceLine(ctx, getY(this.lastPrice), this.lastPrice);
+    }
+
+    // Optional Additive Overlay Plugins (e.g. Model-Informed Trade Zones)
+    if (this.overlayPlugins && this.overlayPlugins.length > 0) {
+      for (let p = 0; p < this.overlayPlugins.length; p++) {
+        try {
+          this.overlayPlugins[p](ctx, {
+            intStart,
+            endIndex,
+            getX,
+            getY,
+            getPrice,
+            candleSlotWidth,
+            candleWidth,
+            minPrice,
+            maxPrice,
+            chartWidth: this.chartWidth,
+            chartHeight: this.chartHeight,
+            candles: this.candles,
+            nativeRenderedTradeZones: (this.layers.tradeZones !== false),
+          });
+        } catch (err) {
+          console.warn("[OverlayPlugin] Error:", err);
+        }
+      }
     }
 
     // 8. Time Axis at Bottom
@@ -1192,6 +1248,279 @@ class NativeCandleChart {
 
       ctx.restore();
     }
+
+  // ===================================================================
+  // MODEL-INFORMED TRADE ZONES (ENTRY & STOP ZONES PROJECTED INTO FUTURE)
+  // ===================================================================
+  drawTradeZones(ctx, intStart, endIndex, getX, getY, candleSlotWidth, candleWidth) {
+    if (this.candles.length === 0 || !this.predictions || this.predictions.length === 0) return;
+
+    const cfg = window.ZONE_CONFIG || {};
+    if (cfg.show_on_chart === false) return;
+
+    const timeToCandleIdx = new Map();
+    for (let i = 0; i < this.candles.length; i++) {
+      timeToCandleIdx.set(this.candles[i].time, i);
+    }
+
+    const nCandles = this.candles.length;
+    const lastCandleIdx = nCandles - 1;
+
+    const toSec = (ts) => {
+      if (!ts) return 0;
+      if (typeof ts === "number") return ts > 1e11 ? Math.floor(ts / 1000) : Math.floor(ts);
+      let s = String(ts).trim().replace(" ", "T");
+      if (!s.endsWith("Z") && !s.includes("+")) s += "Z";
+      const ms = Date.parse(s);
+      return isNaN(ms) ? 0 : Math.floor(ms / 1000);
+    };
+
+    ctx.save();
+
+    // Check latest prediction index
+    let latestPredIdx = -1;
+    for (let i = 0; i < this.predictions.length; i++) {
+      const p = this.predictions[i];
+      const pSec = toSec(p.open_time || p.candle_open_time);
+      if (pSec && timeToCandleIdx.has(pSec)) {
+        latestPredIdx = i;
+        break;
+      }
+    }
+
+    const activePred = latestPredIdx !== -1 ? this.predictions[latestPredIdx] : (this.predictions[0] || null);
+    const activePredSec = activePred ? toSec(activePred.open_time || activePred.candle_open_time) : 0;
+    const selectedHistoricalTimes = window.ZONE_SELECTED_TIMES;
+
+    // Strict deduplication: A candle with the same time must NEVER be drawn twice!
+    const drawnCandleTimes = new Set();
+    const predsToDraw = [];
+
+    // 1. DYNAMICALLY ALWAYS DISPLAY THE LATEST CANDLE'S GREEN AND RED ZONES
+    if (activePred && activePredSec) {
+      if (!window.ZONE_ACTIVE_DISABLED) {
+        predsToDraw.push(activePred);
+        drawnCandleTimes.add(activePredSec);
+      }
+    }
+
+    // 2. DISPLAY HISTORICAL CANDLES ONLY IF SPECIFICALLY CHECKED/ENABLED BY THE USER
+    if (selectedHistoricalTimes && selectedHistoricalTimes.size > 0) {
+      for (let i = 0; i < this.predictions.length; i++) {
+        const p = this.predictions[i];
+        const pSec = toSec(p.open_time || p.candle_open_time);
+        if (pSec && selectedHistoricalTimes.has(pSec)) {
+          // Strict deduplication check: a candle with the same time must not exist!
+          if (!drawnCandleTimes.has(pSec)) {
+            predsToDraw.push(p);
+            drawnCandleTimes.add(pSec);
+          }
+        }
+      }
+    }
+
+    predsToDraw.forEach((p, idx) => {
+      const pSec = toSec(p.open_time || p.candle_open_time);
+      if (!pSec || !timeToCandleIdx.has(pSec)) return;
+
+      const candIdx = timeToCandleIdx.get(pSec);
+      const isLatest = (p === activePred || candIdx >= lastCandleIdx);
+      const c = this.candles[candIdx];
+      const refClose = Number(p.close || c.close);
+      const atr = Number(p.atr14 || (refClose * 0.0035));
+
+      const rawAction = String(p.shown_action || p.label || p.action || "").toUpperCase();
+      const isUp = (rawAction === "UP" || rawAction === "LONG" || rawAction === "1");
+      const isDown = (rawAction === "DOWN" || rawAction === "SHORT" || rawAction === "-1");
+      const isNeu = (!isUp && !isDown);
+
+      const startX = getX(candIdx) - candleWidth * 0.5;
+      const targetIdx = candIdx + 2;
+      let endX = targetIdx < nCandles
+        ? getX(targetIdx) + candleWidth * 0.5
+        : getX(candIdx) + (targetIdx - candIdx) * candleSlotWidth + candleWidth * 0.5;
+
+      if (isLatest) {
+        const futureX = getX(lastCandleIdx) + 2.5 * candleSlotWidth;
+        endX = Math.max(endX, futureX);
+      }
+
+      const width = Math.max(24, endX - startX);
+
+      // Outcome recoloring for resolved trades: ONLY PROFIT or LOSS, no bps!
+      let statusColor = null;
+      let outcomeLabel = null;
+      if (p.correct === 1) {
+        statusColor = "rgba(0, 230, 118, ";
+        outcomeLabel = "PROFIT";
+      } else if (p.correct === 0) {
+        statusColor = "rgba(255, 23, 68, ";
+        outcomeLabel = "LOSS";
+      } else if (p.status === "RESOLVED") {
+        statusColor = "rgba(120, 123, 134, ";
+        outcomeLabel = "EXPIRED";
+      }
+
+      if (isNeu) {
+        const yMid = getY(refClose);
+        const bHeight = Math.max(6, Math.abs(getY(refClose * 1.0012) - getY(refClose * 0.9988)));
+        ctx.fillStyle = "rgba(120, 123, 134, 0.12)";
+        ctx.fillRect(startX, yMid - bHeight * 0.5, width, bHeight);
+
+        ctx.strokeStyle = "rgba(120, 123, 134, 0.4)";
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.moveTo(startX, yMid);
+        ctx.lineTo(startX + width, yMid);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        if (isLatest) {
+          ctx.fillStyle = "#787b86";
+          ctx.font = "bold 9px sans-serif";
+          ctx.textAlign = "left";
+          ctx.fillText("⚪ NO CLEAR EDGE (23 bps hurdle)", startX + 6, yMid - 4);
+        }
+        return;
+      }
+
+      // Dynamic Entry & Stop boundaries
+      let entryUpper, entryLower, stopPrice, targetPrice;
+      const kEntry = cfg.k_entry || 0.75;
+      const kStop = cfg.k_stop || 1.25;
+      const depth = atr * kEntry;
+      const stopDist = atr * kStop;
+      const targetMove = Math.max(atr * 1.35, refClose * 0.0028);
+
+      if (isUp) {
+        entryUpper = refClose;
+        entryLower = refClose - depth;
+        stopPrice = entryLower - stopDist;
+        targetPrice = ((entryUpper + entryLower) / 2) + targetMove;
+      } else {
+        entryLower = refClose;
+        entryUpper = refClose + depth;
+        stopPrice = entryUpper + stopDist;
+        targetPrice = ((entryUpper + entryLower) / 2) - targetMove;
+      }
+
+      const yEntryTop = Math.min(getY(entryUpper), getY(entryLower));
+      const yEntryHeight = Math.max(4, Math.abs(getY(entryUpper) - getY(entryLower)));
+      const yStop = getY(stopPrice);
+      const yTarget = getY(targetPrice);
+
+      let yStopTop, yStopHeight;
+      if (isUp) {
+        yStopTop = Math.min(getY(entryLower), yStop);
+        yStopHeight = Math.max(4, Math.abs(getY(entryLower) - yStop));
+      } else {
+        yStopTop = Math.min(getY(entryUpper), yStop);
+        yStopHeight = Math.max(4, Math.abs(getY(entryUpper) - yStop));
+      }
+
+      // 1. Fill Green Entry Zone (20% opacity)
+      const entryFill = statusColor ? `${statusColor}0.20)` : (isUp ? "rgba(0, 230, 118, 0.22)" : "rgba(255, 23, 68, 0.22)");
+      ctx.fillStyle = entryFill;
+      ctx.fillRect(startX, yEntryTop, width, yEntryHeight);
+
+      ctx.strokeStyle = isUp ? "rgba(0, 230, 118, 0.65)" : "rgba(255, 23, 68, 0.65)";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(startX, yEntryTop, width, yEntryHeight);
+
+      // 2. Fill Red Stop Loss / Back-Out Zone (20% opacity)
+      const stopFill = statusColor ? `${statusColor}0.15)` : "rgba(255, 23, 68, 0.18)";
+      ctx.fillStyle = stopFill;
+      ctx.fillRect(startX, yStopTop, width, yStopHeight);
+
+      ctx.strokeStyle = "rgba(255, 23, 68, 0.55)";
+      ctx.setLineDash([3, 2]);
+      ctx.strokeRect(startX, yStopTop, width, yStopHeight);
+      ctx.setLineDash([]);
+
+      // 3. Target Line (Dashed)
+      ctx.strokeStyle = isUp ? "#00e676" : "#ff1744";
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 3]);
+      ctx.beginPath();
+      ctx.moveTo(startX, yTarget);
+      ctx.lineTo(startX + width, yTarget);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // 4. Stop Line (Dashed Red)
+      ctx.strokeStyle = "#ff1744";
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 3]);
+      ctx.beginPath();
+      ctx.moveTo(startX, yStop);
+      ctx.lineTo(startX + width, yStop);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // 5. Labels and Price Badges (projected on future/right side)
+      if (width > 60) {
+        const badgeX = Math.max(startX + 8, startX + width - 100);
+        ctx.font = "bold 9px monospace, sans-serif";
+        ctx.textAlign = "left";
+
+        // Target badge
+        ctx.fillStyle = "rgba(19, 23, 34, 0.88)";
+        ctx.fillRect(badgeX - 3, yTarget - 12, 100, 12);
+        ctx.fillStyle = isUp ? "#00e676" : "#ff1744";
+        ctx.fillText(`🎯 TARGET $${Math.round(targetPrice)}`, badgeX, yTarget - 3);
+
+        // Stop badge
+        ctx.fillStyle = "rgba(19, 23, 34, 0.88)";
+        ctx.fillRect(badgeX - 3, yStop - 12, 100, 12);
+        ctx.fillStyle = "#ff1744";
+        ctx.fillText(`🛑 STOP $${Math.round(stopPrice)}`, badgeX, yStop - 3);
+
+        // Entry label
+        const yEntryMid = (yEntryTop + yEntryTop + yEntryHeight) / 2;
+        ctx.fillStyle = "rgba(19, 23, 34, 0.88)";
+        ctx.fillRect(badgeX - 3, yEntryMid - 6, 100, 12);
+        ctx.fillStyle = "#d1d4dc";
+        ctx.fillText(`🟢 ENTRY $${Math.round(refClose)}`, badgeX, yEntryMid + 3);
+      }
+
+      // Outcome badge for resolved trades: ONLY PROFIT or LOSS
+      if (outcomeLabel) {
+        ctx.fillStyle = "rgba(19, 23, 34, 0.9)";
+        ctx.fillRect(startX + 4, yEntryTop - 13, 65, 12);
+        ctx.fillStyle = p.correct === 1 ? "#00e676" : (p.correct === 0 ? "#ff1744" : "#787b86");
+        ctx.font = "bold 9px sans-serif";
+        ctx.fillText(outcomeLabel, startX + 7, yEntryTop - 4);
+      }
+
+      // Signal Marker on Candle
+      const markerX = getX(candIdx);
+      ctx.font = "bold 9px sans-serif";
+      ctx.textAlign = "center";
+      if (isUp) {
+        const markerY = getY(c.low) + 14;
+        ctx.fillStyle = "#00e676";
+        ctx.beginPath();
+        ctx.moveTo(markerX, markerY - 5);
+        ctx.lineTo(markerX - 4, markerY + 3);
+        ctx.lineTo(markerX + 4, markerY + 3);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillText("ENTRY", markerX, markerY + 12);
+      } else {
+        const markerY = getY(c.high) - 14;
+        ctx.fillStyle = "#ff1744";
+        ctx.beginPath();
+        ctx.moveTo(markerX, markerY + 5);
+        ctx.lineTo(markerX - 4, markerY - 3);
+        ctx.lineTo(markerX + 4, markerY - 3);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillText("EXIT", markerX, markerY - 7);
+      }
+    });
+
+    ctx.restore();
+  }
 
   drawLastPriceLine(ctx, y, price) {
     let isUp = true;

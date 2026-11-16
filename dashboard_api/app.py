@@ -127,3 +127,57 @@ def health() -> Dict[str, str]:
     """Health check endpoint."""
     return {"status": "ok"}
 
+
+# =============================================================================
+# MODEL-INFORMED TRADE ZONES ENDPOINTS (ADDITIVE)
+# =============================================================================
+
+@app.get("/dash/trade_zones/config")
+def get_trade_zones_config() -> Dict[str, Any]:
+    """Return trade zones multipliers and constants."""
+    from backend.live.zone_config import DEFAULT_ZONE_CONFIG
+    return DEFAULT_ZONE_CONFIG
+
+
+@app.get("/dash/trade_zones/history")
+def get_trade_zones_history(limit: int = Query(50, ge=1, le=500)) -> Dict[str, Any]:
+    """Retrieve historical and resolved trade zones from ledger."""
+    from backend.live.ledger import PredictionLedger
+    ledger = PredictionLedger()
+    zones = ledger.get_recent_trade_zones(limit=limit)
+    return {"count": len(zones), "zones": zones}
+
+
+@app.get("/dash/trade_zones/active")
+def get_active_trade_zones() -> Dict[str, Any]:
+    """Retrieve currently active trade zones."""
+    from backend.live.ledger import PredictionLedger
+    ledger = PredictionLedger()
+    zones = ledger.get_active_trade_zones()
+    return {"active_zones": zones}
+
+
+@app.get("/dash/trade_zones/replay")
+def get_replay_trade_zone(
+    ts: str = Query(..., description="Replay candle open_time ISO"),
+    k_entry: Optional[float] = Query(None),
+    k_stop: Optional[float] = Query(None),
+    scale: Optional[float] = Query(None),
+    buffer_bps: Optional[float] = Query(None),
+) -> Dict[str, Any]:
+    """Calculate trade zone for a replay candle in the test split."""
+    from backend.live.zone_calculator import calculate_trade_zone
+    # 1. Get prediction
+    pred = data_service.predict_replay_candle(ts=ts)
+    # 2. Get recent replay candles for volatility & Dow swings
+    candles = data_service.get_replay_candles(from_ts=None, to_ts=ts, limit=50)
+    overrides = {}
+    if k_entry is not None: overrides["k_entry"] = k_entry
+    if k_stop is not None: overrides["k_stop"] = k_stop
+    if scale is not None: overrides["scale"] = scale
+    if buffer_bps is not None: overrides["buffer_bps"] = buffer_bps
+
+    zone = calculate_trade_zone(pred, candles, config_override=overrides)
+    return {"prediction": pred, "zone": zone}
+
+

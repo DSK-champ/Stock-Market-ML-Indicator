@@ -777,6 +777,9 @@ function renderPredictionLog() {
   }
 
   updateLogSummaryMetrics(list);
+  if (window.TradeZonesPanel && typeof window.TradeZonesPanel.renderAll === "function") {
+    window.TradeZonesPanel.renderAll();
+  }
 }
 
 function updateLogSummaryMetrics(list) {
@@ -1413,10 +1416,18 @@ function loadCandlesIntoChart(view, rawCandles) {
   });
 
   formattedCandles.sort((a, b) => a.time - b.time);
-  STATE[`${view}Candles`] = formattedCandles;
+  const seenTimes = new Set();
+  const dedupedCandles = [];
+  formattedCandles.forEach((c) => {
+    if (!seenTimes.has(c.time)) {
+      seenTimes.add(c.time);
+      dedupedCandles.push(c);
+    }
+  });
+  STATE[`${view}Candles`] = dedupedCandles;
 
   if (CHARTS[view]) {
-    CHARTS[view].setData(formattedCandles);
+    CHARTS[view].setData(dedupedCandles);
   }
 }
 
@@ -1500,6 +1511,24 @@ function handleBackendWsEvent(msg) {
       match.return_bps_label = res.return_bps_label;
       renderPredictionLog();
       updateBandContainmentStat();
+    }
+  } else if (msg.event === "trade_zone_update") {
+    if (window.TradeZonesPanel) {
+      window.TradeZonesPanel.onNewZone(msg.data);
+    }
+  } else if (msg.event === "trade_zone_resolved") {
+    if (window.TradeZonesPanel) {
+      window.TradeZonesPanel.onZoneResolved(msg.data);
+    }
+  } else if (msg.event === "trade_zones_sync") {
+    if (window.TradeZonesPanel && msg.data) {
+      if (msg.data.recent) {
+        window.TradeZonesPanel.historyZones = msg.data.recent;
+      }
+      if (msg.data.active && msg.data.active.length > 0) {
+        window.TradeZonesPanel.activeZone = msg.data.active[0];
+      }
+      window.TradeZonesPanel.renderAll();
     }
   }
 }
@@ -1595,8 +1624,14 @@ async function executeInstantLivePrediction() {
     const resp = await fetch(`${CONFIG.dashApiBase}/dash/live/predict_latest`);
     if (resp.ok) {
       const pred = await resp.json();
-      if (pred && (!STATE.livePredictions.length || STATE.livePredictions[0].open_time !== pred.open_time)) {
-        STATE.livePredictions.unshift(pred);
+      if (pred) {
+        const predSec = getCandleUnixSec(pred.candle_open_time || pred.open_time);
+        const existingIdx = STATE.livePredictions.findIndex((p) => getCandleUnixSec(p.open_time || p.candle_open_time) === predSec);
+        if (existingIdx >= 0) {
+          STATE.livePredictions[existingIdx] = pred;
+        } else {
+          STATE.livePredictions.unshift(pred);
+        }
         renderPredictionPanel(pred);
         attachPredictionToChart("live", pred);
         renderPredictionLog();
@@ -1785,6 +1820,12 @@ function fetchReplayPredictionAsync(ts, candle) {
       if (STATE.replayPredictions[0] && getCandleUnixSec(STATE.replayPredictions[0].open_time) === pTimeSec) {
         renderPredictionPanel(pCopy);
         attachPredictionToChart("replay", pCopy);
+
+        // Additive: Calculate Trade Zones for Replay Mode (Test Split)
+        if (window.TradeZonesPanel && window.ZoneCalculator) {
+          const replayZone = window.ZoneCalculator.calculateTradeZone(pCopy, STATE.replayCandles);
+          window.TradeZonesPanel.onNewZone(replayZone);
+        }
       }
       try {
         updateAllMarkers("replay");

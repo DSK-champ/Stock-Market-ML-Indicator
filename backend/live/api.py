@@ -95,6 +95,17 @@ class LiveApiServer:
             if latest_pred:
                 await websocket.send(json.dumps({"event": "latest_prediction", "data": latest_pred}))
 
+            # Additive: Send initial trade zones snapshot
+            try:
+                active_zones = self.ledger.get_active_trade_zones()
+                recent_zones = self.ledger.get_recent_trade_zones(limit=30)
+                await websocket.send(json.dumps({
+                    "event": "trade_zones_sync",
+                    "data": {"active": active_zones, "recent": recent_zones}
+                }))
+            except Exception:
+                pass
+
             # Keep connection alive receiving any client messages/pings
             async for _ in websocket:
                 pass
@@ -217,6 +228,19 @@ class LiveApiServer:
                 engine = TradingEngine.get_instance()
                 b_res = engine.simulate_backtest(initial_capital=10000.0, fee_bps=config.COST_FLOOR_BPS)
                 return Response(200, "OK", cors_headers, json.dumps(b_res).encode("utf-8"))
+
+            elif path == "/api/live/trade_zones/active":
+                zones = self.ledger.get_active_trade_zones()
+                return Response(200, "OK", cors_headers, json.dumps({"active_zones": zones}).encode("utf-8"))
+
+            elif path == "/api/live/trade_zones/history":
+                limit = int(query.get("limit", [50])[0])
+                zones = self.ledger.get_recent_trade_zones(limit=limit)
+                return Response(200, "OK", cors_headers, json.dumps({"count": len(zones), "zones": zones}).encode("utf-8"))
+
+            elif path == "/api/live/trade_zones/config":
+                from backend.live.zone_config import DEFAULT_ZONE_CONFIG
+                return Response(200, "OK", cors_headers, json.dumps(DEFAULT_ZONE_CONFIG).encode("utf-8"))
 
             else:
                 return Response(404, "Not Found", cors_headers, json.dumps({"error": f"Path '{path}' not found."}).encode("utf-8"))

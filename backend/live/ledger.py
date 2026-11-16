@@ -88,6 +88,42 @@ class PredictionLedger:
             if "exchange_event_time_ms" not in cols:
                 conn.execute("ALTER TABLE predictions ADD COLUMN exchange_event_time_ms INTEGER")
 
+            # Dedicated Model-Informed Trade Zones table (Additive, strictly zero repainting)
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS trade_zones (
+                    zone_id TEXT PRIMARY KEY,
+                    candle_open_time TEXT NOT NULL,
+                    target_candle_open_time TEXT NOT NULL,
+                    direction TEXT NOT NULL,
+                    ref_close REAL NOT NULL,
+                    entry_min REAL NOT NULL,
+                    entry_max REAL NOT NULL,
+                    entry_mid REAL NOT NULL,
+                    target_price REAL NOT NULL,
+                    stop_price REAL NOT NULL,
+                    risk_reward REAL NOT NULL,
+                    p_up REAL NOT NULL,
+                    p_neutral REAL NOT NULL,
+                    p_down REAL NOT NULL,
+                    confidence REAL NOT NULL,
+                    agreement_score REAL NOT NULL,
+                    regime TEXT NOT NULL,
+                    is_low_edge INTEGER NOT NULL DEFAULT 0,
+                    has_conflicts INTEGER NOT NULL DEFAULT 0,
+                    expected_net_bps REAL,
+                    status TEXT NOT NULL,
+                    exit_time TEXT,
+                    exit_price REAL,
+                    net_bps REAL,
+                    evidence_chips TEXT,
+                    multipliers TEXT,
+                    created_at TEXT NOT NULL,
+                    resolved_at TEXT
+                )
+            """)
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_trade_zones_status ON trade_zones(status)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_trade_zones_time ON trade_zones(candle_open_time)")
+
             conn.commit()
 
     def record_run_start(
@@ -309,4 +345,123 @@ class PredictionLedger:
         with self._get_connection() as conn:
             row = conn.execute("SELECT * FROM predictions ORDER BY candle_open_time DESC LIMIT 1").fetchone()
             return dict(row) if row else None
+
+    # =========================================================================
+    # MODEL-INFORMED TRADE ZONES (ADDITIVE)
+    # =========================================================================
+
+    def record_trade_zone(self, zone: Dict[str, Any]) -> None:
+        """Persist a newly formed trade zone on closed candle. Strictly zero repainting."""
+        with self._get_connection() as conn:
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO trade_zones (
+                    zone_id, candle_open_time, target_candle_open_time, direction,
+                    ref_close, entry_min, entry_max, entry_mid, target_price, stop_price,
+                    risk_reward, p_up, p_neutral, p_down, confidence, agreement_score,
+                    regime, is_low_edge, has_conflicts, expected_net_bps, status,
+                    exit_time, exit_price, net_bps, evidence_chips, multipliers,
+                    created_at, resolved_at
+                ) VALUES (
+                    ?, ?, ?, ?,
+                    ?, ?, ?, ?, ?, ?,
+                    ?, ?, ?, ?, ?, ?,
+                    ?, ?, ?, ?, ?,
+                    ?, ?, ?, ?, ?,
+                    ?, ?
+                )
+                """,
+                (
+                    zone["zone_id"],
+                    zone["candle_open_time"],
+                    zone["target_candle_open_time"],
+                    zone["direction"],
+                    zone["ref_close"],
+                    zone["entry_min"],
+                    zone["entry_max"],
+                    zone["entry_mid"],
+                    zone["target_price"],
+                    zone["stop_price"],
+                    zone["risk_reward"],
+                    zone["p_up"],
+                    zone["p_neutral"],
+                    zone["p_down"],
+                    zone["confidence"],
+                    zone["agreement_score"],
+                    zone["regime"],
+                    1 if zone.get("is_low_edge") else 0,
+                    1 if zone.get("has_conflicts") else 0,
+                    zone.get("expected_net_bps"),
+                    zone.get("status", "ACTIVE"),
+                    zone.get("exit_time"),
+                    zone.get("exit_price"),
+                    zone.get("net_bps"),
+                    json.dumps(zone.get("evidence_chips", [])),
+                    json.dumps(zone.get("multipliers", {})),
+                    datetime.now(timezone.utc).isoformat(),
+                    None,
+                ),
+            )
+            conn.commit()
+
+    def update_trade_zone_status(
+        self,
+        zone_id: str,
+        status: str,
+        exit_time: Optional[str] = None,
+        exit_price: Optional[float] = None,
+        net_bps: Optional[float] = None,
+    ) -> None:
+        """Update resolution status of a trade zone once forward candles resolve."""
+        with self._get_connection() as conn:
+            conn.execute(
+                """
+                UPDATE trade_zones
+                SET status = ?, exit_time = ?, exit_price = ?, net_bps = ?, resolved_at = ?
+                WHERE zone_id = ?
+                """,
+                (
+                    status,
+                    exit_time,
+                    exit_price,
+                    net_bps,
+                    datetime.now(timezone.utc).isoformat(),
+                    zone_id,
+                ),
+            )
+            conn.commit()
+
+    def get_active_trade_zones(self) -> List[Dict[str, Any]]:
+        """Retrieve all currently active / unresolved trade zones."""
+        with self._get_connection() as conn:
+            rows = conn.execute(
+                "SELECT * FROM trade_zones WHERE status = 'ACTIVE' ORDER BY candle_open_time DESC"
+            ).fetchall()
+            results = []
+            for r in rows:
+                d = dict(r)
+                d["evidence_chips"] = json.loads(d.get("evidence_chips") or "[]")
+                d["multipliers"] = json.loads(d.get("multipliers") or "{}")
+                results.append(d)
+            return results
+
+    def get_recent_trade_zones(self, limit: int = 50) -> List[Dict[str, Any]]:
+        """Retrieve historical and active trade zones for history table & charts."""
+        with self._get_connection() as conn:
+            rows = conn.execute(
+                "SELECT * FROM trade_zones ORDER BY candle_open_time DESC LIMIT ?", (limit,)
+            ).fetchall()
+            results = []
+            for r in rows:
+                d = dict(r)
+                d["evidence_chips"] = json.loads(d.get("evidence_chips") or "[]")
+                d["multipliers"] = json.loads(d.get("multipliers") or "{}")
+                results.append(d)
+            return results
+
+    def get_latest_trade_zone(self) -> Optional[Dict[str, Any]]:
+        """Retrieve the most recent trade zone."""
+        zones = self.get_recent_trade_zones(limit=1)
+        return zones[0] if zones else None
+
 
