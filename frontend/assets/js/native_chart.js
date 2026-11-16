@@ -1331,33 +1331,6 @@ class NativeCandleChart {
       ctx.fillText(timeStr, Math.round(candleCenterX), this.chartHeight + 14);
     }
 
-    // F5: Confidence & signal in crosshair tooltip
-    if (hoveredCandle && this.markers && this.markers.length > 0) {
-      const marker = this.markers.find((m) => m.time === hoveredCandle.time);
-      if (marker) {
-        ctx.save();
-        ctx.font = "bold 10px sans-serif";
-        const actionLabel = marker.shown_action || marker.action || "SIGNAL";
-        const confText = marker.confidence != null ? `${Math.round(marker.confidence * 100)}%` : (marker.text || "");
-        const tipStr = `${actionLabel}${confText ? " (" + confText + ")" : ""}`;
-        const mWidth = ctx.measureText(tipStr).width;
-        const tipW = mWidth + 14;
-        const tipX = Math.min(this.chartWidth - tipW - 8, Math.max(8, candleCenterX - tipW / 2));
-        const tipY = Math.max(8, y - 28);
-
-        ctx.fillStyle = "#1e222d";
-        ctx.fillRect(tipX, tipY, tipW, 18);
-        ctx.strokeStyle = marker.shape === "arrowUp" ? this.options.upColor : (marker.shape === "arrowDown" ? this.options.downColor : "#4c5363");
-        ctx.lineWidth = 1.2;
-        ctx.strokeRect(tipX, tipY, tipW, 18);
-
-        ctx.fillStyle = "#ffffff";
-        ctx.textAlign = "center";
-        ctx.fillText(tipStr, tipX + tipW / 2, tipY + 13);
-        ctx.restore();
-      }
-    }
-
     if (this.onCrosshairMove) {
       this.onCrosshairMove(hoveredCandle, hoveredBand);
     }
