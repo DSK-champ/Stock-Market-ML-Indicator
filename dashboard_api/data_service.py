@@ -663,6 +663,16 @@ class DataService:
                 f"Buffer too short: requested timestamp at index {target_pos}, need >= {buffer_size} history candles."
             )
 
+        # High-throughput batch precomputation for replay: compute and cache next 50 candles
+        try:
+            self._batch_predict_and_cache_replay_slice(start_idx=target_pos, count=50)
+            if iso_str in self._prediction_cache:
+                return self._prediction_cache[iso_str]
+            if std_str in self._prediction_cache:
+                return self._prediction_cache[std_str]
+        except Exception:
+            pass
+
         buffer_df = df.iloc[target_pos - buffer_size + 1 : target_pos + 1].copy()
         assert buffer_df.index[-1] == target_dt, "Lookback buffer endpoint mismatch"
 
@@ -800,6 +810,158 @@ class DataService:
         self._prediction_cache[std_str] = result
         return result
 
+    def _batch_predict_and_cache_replay_slice(self, start_idx: int, count: int) -> None:
+        """Batch predict and cache a sequence of candles using TradingEngine.predict_batch."""
+        df = self._get_clean_df()
+        buffer_size = live_config.BUFFER_SIZE  # 3000
+        if start_idx < buffer_size - 1:
+            return
+
+        end_idx = min(len(df), start_idx + count)
+        engine = TradingEngine.get_instance()
+        slice_df = df.iloc[start_idx - buffer_size + 1 : end_idx].copy()
+        batch_df = engine.predict_batch(slice_df)
+
+        for i in range(start_idx, end_idx):
+            c_dt = df.index[i]
+            iso_str = c_dt.isoformat()
+            std_str = str(c_dt)
+            if iso_str in self._prediction_cache:
+                continue
+
+            offset = (buffer_size - 1) + (i - start_idx)
+            b_row = batch_df.iloc[offset]
+
+            p_up = round(float(b_row["p_final_up"]), 4)
+            p_dn = round(float(b_row["p_final_down"]), 4)
+            p_neu = round(float(b_row["p_final_neutral"]), 4)
+            ref_close = round(float(df.iloc[i]["close"]), 2)
+
+            sub_buf = df.iloc[i - 100 : i + 1] if i >= 100 else df.iloc[: i + 1]
+            atr14 = compute_wilder_atr14(sub_buf, period=14)
+            band = compute_empirical_band(
+                close_price=ref_close,
+                atr14=atr14,
+                p_up=p_up,
+                p_down=p_dn,
+                p_neutral=p_neu,
+            )
+
+            raw_trend = str(b_row.get("trend", "uncertain"))
+            raw_phase = str(b_row.get("market_phase", "uncertain"))
+            trend_score = float(b_row.get("trend_strength", 0.0))
+            if np.isnan(trend_score):
+                trend_score = 0.0
+            phase_score = float(b_row.get("phase_strength", 0.0))
+            if np.isnan(phase_score):
+                phase_score = 0.0
+
+            ui_trend = TREND_MAP.get(raw_trend, "UPTREND" if p_up >= p_dn else "DOWNTREND")
+            if ui_trend not in ["UPTREND", "DOWNTREND"]:
+                ui_trend = "UPTREND" if p_up >= p_dn else "DOWNTREND"
+            ui_phase = PHASE_MAP.get(raw_phase, raw_phase)
+            raw_action = str(b_row["final_label"])
+            ui_label = LABEL_MAP.get(raw_action, raw_action)
+
+            shown_act, abstention_reason = compute_shown_action(
+                ledger_action=ui_label,
+                p_up=p_up,
+                p_down=p_dn,
+                p_neutral=p_neu,
+                status="PENDING",
+            )
+            disp_state = compute_display_state(
+                raw_action=ui_label,
+                p_up=p_up,
+                p_down=p_dn,
+                p_neutral=p_neu,
+                status="PENDING",
+            )
+
+            argmax_idx = int(np.argmax([p_dn, p_neu, p_up]))
+            model_res_map = {0: "DOWN", 1: "NEUTRAL", 2: "UP"}
+            model_res = model_res_map[argmax_idx]
+
+            outcome_close = None
+            outcome_open = None
+            correct = None
+            return_bps_label = None
+            return_bps_exec = None
+            status = "PENDING"
+            reason = None
+
+            if i + 2 < len(df):
+                c_k1 = df.iloc[i + 1]
+                c_k2 = df.iloc[i + 2]
+                outcome_close = round(float(c_k2["close"]), 2)
+                outcome_open = round(float(c_k1["open"]), 2)
+                fwd_ret = (outcome_close / ref_close) - 1.0
+                fwd_ret_exec = (outcome_close / outcome_open) - 1.0
+                return_bps_label = round(fwd_ret * 10000.0, 2)
+                return_bps_exec = round(fwd_ret_exec * 10000.0, 2)
+
+                raw_sign = 1.0 if fwd_ret > 0 else (-1.0 if fwd_ret < 0 else 0.0)
+                action_code = int(b_row["final_action"])
+
+                if action_code in [1, -1]:
+                    if raw_sign == 0.0:
+                        status = "VOID"
+                        correct = None
+                        reason = "Zero raw forward return"
+                    elif action_code == int(raw_sign):
+                        status = "RESOLVED"
+                        correct = 1
+                        reason = "Direction matched raw_sign_2"
+                    else:
+                        status = "RESOLVED"
+                        correct = 0
+                        reason = "Direction opposite of raw_sign_2"
+                else:
+                    status = "NO_CALL"
+                    correct = None
+                    reason = "Neutral call (no active directional call)"
+
+            item = {
+                "open_time": iso_str,
+                "close": ref_close,
+                "trend": ui_trend,
+                "trend_strength": round(trend_score, 4),
+                "phase": ui_phase,
+                "phase_strength": round(phase_score, 4),
+                "context_text": f"{ui_trend} | {ui_phase}",
+                "p_ml": None,
+                "model_result": model_res,
+                "p_final": {
+                    "down": p_dn,
+                    "neutral": p_neu,
+                    "up": p_up,
+                },
+                "label": shown_act,
+                "shown_action": shown_act,
+                "display_state": disp_state,
+                "ledger_action": ui_label,
+                "abstention_reason": abstention_reason,
+                "confidence": round(float(max(p_up, p_dn, p_neu)), 4),
+                "smart_price": band["smart_price"],
+                "upper": band["upper"],
+                "lower": band["lower"],
+                "atr14": band["atr14"],
+                "vol_tercile": band.get("vol_tercile"),
+                "neu_tercile": band.get("neu_tercile"),
+                "text": None,
+                "status": status,
+                "reason": reason,
+                "n_imputed_features": 0,
+                "latency_ms": 1.0,
+                "correct": correct,
+                "outcome_close": outcome_close,
+                "outcome_open": outcome_open,
+                "return_bps_label": return_bps_label,
+                "return_bps_executable": return_bps_exec,
+            }
+            self._prediction_cache[iso_str] = item
+            self._prediction_cache[std_str] = item
+
     def predict_replay_range(self, from_ts: str, count: int) -> List[Dict[str, Any]]:
         """Batch predict replay candles starting at from_ts."""
         from_dt = parse_utc_timestamp(from_ts)
@@ -810,6 +972,17 @@ class DataService:
 
         start_idx = df.index.get_loc(from_dt)
         end_idx = min(len(df), start_idx + count)
+
+        # Precompute batch if any candle in slice is uncached
+        uncached = any(
+            df.index[i].isoformat() not in self._prediction_cache and str(df.index[i]) not in self._prediction_cache
+            for i in range(start_idx, end_idx)
+        )
+        if uncached:
+            try:
+                self._batch_predict_and_cache_replay_slice(start_idx=start_idx, count=count)
+            except Exception:
+                pass
 
         results = []
         for i in range(start_idx, end_idx):
