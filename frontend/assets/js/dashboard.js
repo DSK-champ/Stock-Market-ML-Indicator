@@ -1718,28 +1718,85 @@ function generateAutonomousLivePrediction() {
 // =====================================================================
 const _replayPredictionStore = new Map();
 
+let _isBatchPrefetching = false;
+
 async function prefetchSimulationPredictions(candles) {
-  if (!candles || candles.length === 0) return;
-  const batchSize = 4;
-  for (let i = 0; i < candles.length; i += batchSize) {
-    const chunk = candles.slice(i, i + batchSize);
-    await Promise.allSettled(chunk.map(async (c) => {
+  if (!candles || candles.length === 0 || STATE.isMock || _isBatchPrefetching) return;
+  _isBatchPrefetching = true;
+  try {
+    const unpredicted = candles.filter((c) => {
       const ts = c.open_time || new Date(c.time * 1000).toISOString();
       const stdTs = ts.replace("T", " ").replace("Z", "+00:00");
-      if (_replayPredictionStore.has(ts) || _replayPredictionStore.has(stdTs)) return;
+      return !_replayPredictionStore.has(ts) && !_replayPredictionStore.has(stdTs);
+    });
+    if (unpredicted.length === 0) return;
+
+    const batchSize = 50;
+    for (let i = 0; i < unpredicted.length; i += batchSize) {
+      const firstCandle = unpredicted[i];
+      const fromTs = firstCandle.open_time || new Date(firstCandle.time * 1000).toISOString();
       try {
-        const resp = await fetch(`${CONFIG.dashApiBase}/dash/replay/predict?ts=${encodeURIComponent(ts)}`);
+        const resp = await fetch(`${CONFIG.dashApiBase}/dash/replay/predict_range?from=${encodeURIComponent(fromTs)}&count=${batchSize}`);
         if (resp.ok) {
-          const pred = await resp.json();
-          _replayPredictionStore.set(ts, pred);
-          _replayPredictionStore.set(stdTs, pred);
-          if (pred.open_time) _replayPredictionStore.set(pred.open_time, pred);
+          const preds = await resp.json();
+          preds.forEach((p) => {
+            if (p && p.open_time) {
+              const pts = p.open_time;
+              const pstd = pts.replace("T", " ").replace("Z", "+00:00");
+              _replayPredictionStore.set(pts, p);
+              _replayPredictionStore.set(pstd, p);
+            }
+          });
         }
       } catch (e) {
-        // background silent catch
+        // silent catch
       }
-    }));
+    }
+  } finally {
+    _isBatchPrefetching = false;
   }
+}
+
+function fetchReplayPredictionAsync(ts, candle) {
+  const stdTs = ts.replace("T", " ").replace("Z", "+00:00");
+  fetch(`${CONFIG.dashApiBase}/dash/replay/predict?ts=${encodeURIComponent(ts)}`)
+    .then((r) => (r.ok ? r.json() : null))
+    .then((p) => {
+      if (!p) return;
+      _replayPredictionStore.set(ts, p);
+      _replayPredictionStore.set(stdTs, p);
+      if (p.open_time) _replayPredictionStore.set(p.open_time, p);
+
+      const pCopy = JSON.parse(JSON.stringify(p));
+      pCopy.status = "PENDING";
+      pCopy.correct = null;
+      pCopy.outcome_close = null;
+      pCopy.return_bps_label = null;
+
+      const pTimeSec = getCandleUnixSec(p.open_time);
+      const existingIdx = STATE.replayPredictions.findIndex((x) => getCandleUnixSec(x.open_time) === pTimeSec);
+      if (existingIdx >= 0) {
+        STATE.replayPredictions[existingIdx] = pCopy;
+      } else {
+        STATE.replayPredictions.unshift(pCopy);
+      }
+
+      // If this candle is the latest one stepped, update the panel and active band
+      if (STATE.replayPredictions[0] && getCandleUnixSec(STATE.replayPredictions[0].open_time) === pTimeSec) {
+        renderPredictionPanel(pCopy);
+        attachPredictionToChart("replay", pCopy);
+      }
+      try {
+        updateAllMarkers("replay");
+        renderPredictionLog();
+        updateBandContainmentStat();
+      } catch (e) {
+        // safe UI update catch
+      }
+    })
+    .catch((err) => {
+      console.warn("[Replay] Async predict error for", ts, err);
+    });
 }
 
 function renderStandbyPanel(dateStr, lastWarmupCandle) {
@@ -2070,7 +2127,7 @@ async function selectReplayDate(dateStr) {
     updateBandContainmentStat();
 
     _replayPredictionStore.clear();
-    prefetchSimulationPredictions(simulation);
+    prefetchSimulationPredictions(simulation.slice(0, 50));
 
     console.log(`[Replay Standby] Loaded ${warmup.length} warmup candles up to ${standbyIso}. Ready to simulate ${simulation.length} candles starting 00:00.`);
   } catch (err) {
@@ -2148,8 +2205,8 @@ async function executeReplayStep() {
       return;
     }
 
-    // Seamless buffer extension check: keep playing without stopping!
-    if (!STATE.isMock && STATE.replaySimulationIndex >= STATE.replaySimulationCandles.length - 40) {
+    // Seamless buffer extension check: keep playing continuously without stopping!
+    if (!STATE.isMock && STATE.replaySimulationIndex >= STATE.replaySimulationCandles.length - 150) {
       fetchMoreReplayCandles();
     } else if (STATE.isMock && STATE.replaySimulationIndex >= STATE.replaySimulationCandles.length - 20) {
       const lastCandle = STATE.replaySimulationCandles[STATE.replaySimulationCandles.length - 1];
@@ -2176,21 +2233,36 @@ async function executeReplayStep() {
     }
 
     if (STATE.replaySimulationIndex >= STATE.replaySimulationCandles.length) {
-      console.log("[Replay] Reached final boundary of test split data for", STATE.replaySelectedDate);
-      if (STATE.replayPlaying) togglePlayPause();
+      const lastCandle = STATE.replaySimulationCandles[STATE.replaySimulationCandles.length - 1];
+      const lastTimeMs = lastCandle ? lastCandle.time * 1000 : 0;
+      const maxLimitMs = STATE.replayTestRange
+        ? new Date(STATE.replayTestRange.max_open_time).getTime()
+        : new Date("2026-11-09T23:55:00Z").getTime();
+
+      if (lastTimeMs >= maxLimitMs) {
+        console.log("[Replay] Reached final boundary of test split data for", STATE.replaySelectedDate);
+        if (STATE.replayPlaying) togglePlayPause();
+      } else {
+        // Temporarily awaiting next chunk of candles without toggling playback off
+        fetchMoreReplayCandles();
+      }
       return;
     }
 
     const currentCandle = STATE.replaySimulationCandles[STATE.replaySimulationIndex];
     STATE.replaySimulationIndex++;
 
-    // 1. Reveal this candle on the chart
-    if (CHARTS.replay) {
-      CHARTS.replay.updateCandle(currentCandle);
-      CHARTS.replay.scrollToRealtime();
-    }
-    if (!STATE.replayCandles.some(c => c.time === currentCandle.time)) {
-      STATE.replayCandles.push(currentCandle);
+    // 1. Reveal this candle on the chart immediately without any blocking
+    try {
+      if (CHARTS.replay) {
+        CHARTS.replay.updateCandle(currentCandle);
+        CHARTS.replay.scrollToRealtime();
+      }
+      if (!STATE.replayCandles.some(c => c.time === currentCandle.time)) {
+        STATE.replayCandles.push(currentCandle);
+      }
+    } catch (e) {
+      console.warn("[Replay] Chart update error:", e);
     }
 
     // 2. Obtain prediction for currentCandle
@@ -2226,56 +2298,39 @@ async function executeReplayStep() {
         pred.outcome_close = null;
         pred.return_bps_label = null;
       } else {
-        try {
-          const resp = await fetch(`${CONFIG.dashApiBase}/dash/replay/predict?ts=${encodeURIComponent(ts)}`);
-          if (resp.ok) {
-            pred = await resp.json();
-            _replayPredictionStore.set(ts, pred);
-            _replayPredictionStore.set(stdTs, pred);
-            pred = JSON.parse(JSON.stringify(pred));
-            pred.status = "PENDING";
-            pred.correct = null;
-            pred.outcome_close = null;
-            pred.return_bps_label = null;
-          }
-        } catch (e) {
-          console.error("Replay step predict error:", e);
-        }
+        // Asynchronously fetch prediction for currentCandle without blocking the step timer!
+        fetchReplayPredictionAsync(ts, currentCandle);
       }
 
-      // Background lookahead: fire prefetch for the next 10 simulation candles
-      if (STATE.replaySimulationCandles) {
-        const ahead = STATE.replaySimulationCandles.slice(STATE.replaySimulationIndex, STATE.replaySimulationIndex + 10);
-        ahead.forEach((ac) => {
-          const acts = ac.open_time || new Date(ac.time * 1000).toISOString();
+      // Proactive continuous prefetch: keep a sliding lookahead window of 50 candles cached
+      if (STATE.replaySimulationCandles && !_isBatchPrefetching) {
+        const ahead = STATE.replaySimulationCandles.slice(STATE.replaySimulationIndex, STATE.replaySimulationIndex + 50);
+        const uncached = ahead.some((c) => {
+          const acts = c.open_time || new Date(c.time * 1000).toISOString();
           const astd = acts.replace("T", " ").replace("Z", "+00:00");
-          if (!_replayPredictionStore.has(acts) && !_replayPredictionStore.has(astd)) {
-            fetch(`${CONFIG.dashApiBase}/dash/replay/predict?ts=${encodeURIComponent(acts)}`)
-              .then(r => r.ok ? r.json() : null)
-              .then(p => {
-                if (p) {
-                  _replayPredictionStore.set(acts, p);
-                  _replayPredictionStore.set(astd, p);
-                  if (p.open_time) _replayPredictionStore.set(p.open_time, p);
-                }
-              })
-              .catch(() => {});
-          }
+          return !_replayPredictionStore.has(acts) && !_replayPredictionStore.has(astd);
         });
+        if (uncached) {
+          prefetchSimulationPredictions(ahead);
+        }
       }
     }
 
-    // 4. Record and render prediction
+    // 4. Record and render prediction if available immediately
     if (pred) {
       STATE.replayPredictions.unshift(pred);
       renderPredictionPanel(pred);
       attachPredictionToChart("replay", pred);
     }
 
-    // 5. Update UI, markers, logs, and metrics
-    updateAllMarkers("replay");
-    renderPredictionLog();
-    updateBandContainmentStat();
+    // 5. Update UI, markers, logs, and metrics safely
+    try {
+      updateAllMarkers("replay");
+      renderPredictionLog();
+      updateBandContainmentStat();
+    } catch (e) {
+      console.warn("[Replay] UI update error:", e);
+    }
 
     // 6. Update date badge with current candle date/time and step count
     if (DOM.replayDateBadge) {
