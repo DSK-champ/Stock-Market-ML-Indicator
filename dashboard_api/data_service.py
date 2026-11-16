@@ -26,6 +26,7 @@ from backend.engine import predict_one, TradingEngine
 from dashboard_api.bands import compute_wilder_atr14, compute_indicative_bands
 from dashboard_api.insights import (
     compute_shown_action,
+    compute_display_state,
     InsightsStore,
     compute_empirical_band,
 )
@@ -343,6 +344,14 @@ class DataService:
                 p_neutral=p_neu,
                 status=status_val,
             )
+            disp_state = compute_display_state(
+                raw_action=ui_label,
+                p_up=p_up,
+                p_down=p_dn,
+                p_neutral=p_neu,
+                status=status_val,
+                status_reason=str(row.get("status_reason") or ""),
+            )
 
             try:
                 self.insights_store.record_insight(
@@ -380,6 +389,7 @@ class DataService:
                 },
                 "label": shown_act,
                 "shown_action": shown_act,
+                "display_state": disp_state,
                 "ledger_action": ui_label,
                 "abstention_reason": abstention_reason,
                 "confidence": conf_val,
@@ -470,6 +480,13 @@ class DataService:
             p_neutral=p_neu,
             status="PENDING",
         )
+        disp_state = compute_display_state(
+            raw_action=ui_label,
+            p_up=p_up,
+            p_down=p_dn,
+            p_neutral=p_neu,
+            status="PENDING",
+        )
 
         argmax_idx = int(np.argmax([p_dn, p_neu, p_up]))
         model_res_map = {0: "DOWN", 1: "NEUTRAL", 2: "UP"}
@@ -492,6 +509,7 @@ class DataService:
             },
             "label": shown_act,
             "shown_action": shown_act,
+            "display_state": disp_state,
             "ledger_action": ui_label,
             "abstention_reason": abstention_reason,
             "confidence": float(pred_res["confidence"]),
@@ -687,6 +705,13 @@ class DataService:
             p_neutral=p_neu,
             status="PENDING",
         )
+        disp_state = compute_display_state(
+            raw_action=ui_label,
+            p_up=p_up,
+            p_down=p_dn,
+            p_neutral=p_neu,
+            status="PENDING",
+        )
 
         argmax_idx = int(np.argmax([p_dn, p_neu, p_up]))
         model_res_map = {0: "DOWN", 1: "NEUTRAL", 2: "UP"}
@@ -748,6 +773,7 @@ class DataService:
             },
             "label": shown_act,
             "shown_action": shown_act,
+            "display_state": disp_state,
             "ledger_action": ui_label,
             "abstention_reason": abstention_reason,
             "confidence": float(pred_res["confidence"]),
