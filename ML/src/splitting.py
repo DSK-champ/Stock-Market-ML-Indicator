@@ -40,10 +40,11 @@ def get_real_split_indices(
         t_train_end = config.SPLIT_BOUNDARIES["train"]["end"]
         t_val_end = config.SPLIT_BOUNDARIES["val"]["end"]
         t_test_start = config.SPLIT_BOUNDARIES["test"]["start"]
+        t_test_end = config.SPLIT_BOUNDARIES["test"]["end"]
 
         train_mask = df.index <= t_train_end
         val_mask = (df.index > t_train_end) & (df.index <= t_val_end)
-        test_mask = df.index >= t_test_start
+        test_mask = (df.index >= t_test_start) & (df.index <= t_test_end)
 
         n_train = int(train_mask.sum())
         n_val = int(val_mask.sum())
@@ -52,7 +53,7 @@ def get_real_split_indices(
         return {
             "train": (0, n_train),
             "val": (n_train, n_train + n_val),
-            "test": (n_train + n_val, len(df)),
+            "test": (n_train + n_val, n_train + n_val + n_test),
         }
 
     # Proportional split for mock, synthetic, or arbitrary test DataFrames

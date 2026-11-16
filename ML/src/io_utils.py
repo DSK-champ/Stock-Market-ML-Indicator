@@ -416,6 +416,7 @@ def load_master_csv(
     val_start = config.SPLIT_BOUNDARIES["val"]["start"]
     val_end   = config.SPLIT_BOUNDARIES["val"]["end"]
     test_start = config.SPLIT_BOUNDARIES["test"]["start"]
+    test_end   = config.SPLIT_BOUNDARIES["test"]["end"]
 
     if split == "train":
         return df.loc[:train_end].copy()
@@ -424,7 +425,7 @@ def load_master_csv(
     elif split == "train_val":
         return df.loc[:val_end].copy()
     elif split == "test":
-        return df.loc[test_start:].copy()
+        return df.loc[test_start:test_end].copy()
     elif split == "all":
         return df.copy()
     else:
@@ -516,6 +517,7 @@ def load_features_csv(
     val_start = config.SPLIT_BOUNDARIES["val"]["start"]
     val_end   = config.SPLIT_BOUNDARIES["val"]["end"]
     test_start = config.SPLIT_BOUNDARIES["test"]["start"]
+    test_end   = config.SPLIT_BOUNDARIES["test"]["end"]
 
     if split == "train":
         return df.loc[:train_end].copy()
@@ -524,7 +526,7 @@ def load_features_csv(
     elif split == "train_val":
         return df.loc[:val_end].copy()
     elif split == "test":
-        return df.loc[test_start:].copy()
+        return df.loc[test_start:test_end].copy()
     elif split == "all":
         return df.copy()
     else:
@@ -612,6 +614,7 @@ def load_drawings_csv(
     val_start = config.SPLIT_BOUNDARIES["val"]["start"]
     val_end   = config.SPLIT_BOUNDARIES["val"]["end"]
     test_start = config.SPLIT_BOUNDARIES["test"]["start"]
+    test_end   = config.SPLIT_BOUNDARIES["test"]["end"]
 
     if split == "train":
         return df.loc[:train_end].copy()
@@ -620,7 +623,7 @@ def load_drawings_csv(
     elif split == "train_val":
         return df.loc[:val_end].copy()
     elif split == "test":
-        return df.loc[test_start:].copy()
+        return df.loc[test_start:test_end].copy()
     elif split == "all":
         return df.copy()
     else:
