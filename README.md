@@ -15,6 +15,8 @@
 > **Repository:** [https://github.com/DSK-champ/Stock-Market-ML-Indicator](https://github.com/DSK-champ/Stock-Market-ML-Indicator)
 
 ---
+<img width="1440" height="810" alt="poster" src="https://github.com/user-attachments/assets/246f6122-79bc-45ce-ae15-f1f3525922cc" />
+---
 
 ## 📹 Video Demonstration
 
