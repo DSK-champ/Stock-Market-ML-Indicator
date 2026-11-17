@@ -27,7 +27,7 @@ Watch the full end-to-end interactive demonstration of the live streaming engine
 
 ---
 
-## 1. Executive Summary & Core Achievements
+## 1. Summary & Achievements
 
 This repository contains the complete end-to-end, leak-free machine learning framework for high-frequency Bitcoin directional forecasting and disciplined trade execution. Designed to resolve the pervasive flaws of classical technical indicators—microstructure noise, silent repainting, and total disregard for trading frictions—the system formulates price direction as an asymmetric, cost-sensitive three-class problem:
 
