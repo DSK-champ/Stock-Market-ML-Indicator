@@ -12,7 +12,7 @@
 > **Student:** Darla Sravan Kumar | **Roll Number:** 2401CS45  
 > **Target Asset:** Binance Spot BTCUSDT | **Resolution:** 5-Minute ($N=2$, 10-Minute Forward Horizon)  
 > **Friction Floor:** $c = 23.0\text{ bps}$ ($0.0023$) Production Round-Trip Cost Barrier  
-> **Repository:** [https://github.com/DarlaSravan/Stock-Market-ML-Indicator](https://github.com/DarlaSravan/Stock-Market-ML-Indicator)
+> **Repository:** [https://github.com/DarlaSravan/Stock-Market-ML-Indicator](https://github.com/DSK-champ/Stock-Market-ML-Indicator)
 
 ---
 
